@@ -19,6 +19,9 @@ make init
 
 ## Development
 
+branch structure: 
+`main` -> `dev` -> `[insert-name]-dev`
+
 To update dependencies, modify `requirements/main.in`. 
 
 Then compile and freeze dependencies:
