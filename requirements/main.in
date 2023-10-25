@@ -1,0 +1,9 @@
+# Config requirements
+pyrallis
+# Logging requirements
+wandb
+tensorboard
+# Experiment requirements
+transformers
+torch
+numpy
