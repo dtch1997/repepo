@@ -2,6 +2,7 @@ MUJOCO_LOG.TXT
 wandb
 # Dataset files
 *.hdf5
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
