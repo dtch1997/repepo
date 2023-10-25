@@ -1,5 +1,6 @@
 MUJOCO_LOG.TXT
 wandb
+output
 # Dataset files
 *.hdf5
 *.json
