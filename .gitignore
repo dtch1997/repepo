@@ -4,6 +4,8 @@ output
 # Dataset files
 *.hdf5
 *.json
+# Direnv config
+.envrc
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
