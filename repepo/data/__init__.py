@@ -3,11 +3,13 @@ import functools
 from typing import Tuple
 from .io import jload, jdump
 
+from repepo.variables import Environ
+
 def _get_current_dir() -> pathlib.Path:
     return pathlib.Path(__file__).parent.absolute()
 
 def get_dataset_dir() -> pathlib.Path:
-    return _get_current_dir() / 'datasets'
+    return Environ.DatasetDir
 
 _DATASETS = {
     'stereoset': get_dataset_dir() / 'stereoset.json',

@@ -1,5 +1,5 @@
 """ Dataset for supervised fine-tuning workflow. """
-
+import copy
 import torch
 import transformers
 import logging
@@ -7,7 +7,7 @@ import logging
 from torch.utils.data import Dataset
 from typing import Dict, Sequence
 from dataclasses import dataclass
-from repepo.data.utils import preprocess, IGNORE_INDEX
+from repepo.data.utils import tokenize, IGNORE_INDEX
 
 PROMPT_DICT = {
     "prompt_input": (
@@ -22,6 +22,23 @@ PROMPT_DICT = {
     ),
 }
 
+def preprocess(
+    sources: Sequence[str],
+    targets: Sequence[str],
+    tokenizer: transformers.PreTrainedTokenizer,
+) -> Dict:
+    """Preprocess the data by tokenizing."""
+    examples = [s + t for s, t in zip(sources, targets)]
+    examples_tokenized, sources_tokenized = [tokenize(strings, tokenizer) for strings in (examples, sources)]
+    input_ids = examples_tokenized["input_ids"]
+    
+    # Set labels to IGNORE_INDEX for prompt tokens
+    # This ensures that loss is not backprop'd to prompt tokens
+    labels = copy.deepcopy(input_ids)
+    for label, source_len in zip(labels, sources_tokenized["input_ids_lens"]):
+        label[:source_len] = IGNORE_INDEX
+    return dict(input_ids=input_ids, labels=labels)
+
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
@@ -29,10 +46,14 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
         logging.warning("Formatting inputs...")
         prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
+
+        # Map the examples into prompt format 
         sources = [
             prompt_input.format_map(example) if example.get("input", "") != "" else prompt_no_input.format_map(example)
             for example in list_data_dict
         ]
+
+        # Add explicit EOS token
         targets = [f"{example['output']}{tokenizer.eos_token}" for example in list_data_dict]
 
         logging.warning("Tokenizing inputs... This may take some time...")
@@ -56,10 +77,10 @@ class DataCollatorForSupervisedDataset(object):
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
         input_ids, labels = tuple([instance[key] for instance in instances] for key in ("input_ids", "labels"))
-        input_ids = torch.nn.io.rnn.pad_sequence(
+        input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
-        labels = torch.nn.io.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
+        labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
         return dict(
             input_ids=input_ids,
             labels=labels,

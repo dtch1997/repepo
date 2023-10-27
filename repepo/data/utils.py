@@ -1,5 +1,6 @@
 import transformers
 import copy
+import torch
 
 from typing import Dict, Sequence, NewType
 
@@ -11,19 +12,6 @@ DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "<s>"
 DEFAULT_UNK_TOKEN = "<unk>"
 
-def preprocess(
-    sources: Sequence[str],
-    targets: Sequence[str],
-    tokenizer: transformers.PreTrainedTokenizer,
-) -> Dict:
-    """Preprocess the data by tokenizing."""
-    examples = [s + t for s, t in zip(sources, targets)]
-    examples_tokenized, sources_tokenized = [_tokenize_fn(strings, tokenizer) for strings in (examples, sources)]
-    input_ids = examples_tokenized["input_ids"]
-    labels = copy.deepcopy(input_ids)
-    for label, source_len in zip(labels, sources_tokenized["input_ids_lens"]):
-        label[:source_len] = IGNORE_INDEX
-    return dict(input_ids=input_ids, labels=labels)
 
 def smart_tokenizer_and_embedding_resize(
     special_tokens_dict: Dict,
@@ -71,8 +59,13 @@ def get_special_tokens(tokenizer: transformers.AutoTokenizer) -> Dict[str, Speci
         special_tokens_dict["unk_token"] = DEFAULT_UNK_TOKEN
     return special_tokens_dict
 
-def _tokenize_fn(strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer) -> Dict:
-    """Tokenize a list of strings."""
+def tokenize(strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer) -> Dict[str, torch.Tensor]:
+    """ Tokenize a list of strings.
+    
+    Does not do any padding. 
+    Truncates the sequences to the model's max length.
+    Returns tensors of input_ids and labels
+    """
     tokenized_list = [
         tokenizer(
             text,
@@ -83,12 +76,7 @@ def _tokenize_fn(strings: Sequence[str], tokenizer: transformers.PreTrainedToken
         for text in strings
     ]
     input_ids = labels = [tokenized.input_ids[0] for tokenized in tokenized_list]
-    input_ids_lens = labels_lens = [
-        tokenized.input_ids.ne(tokenizer.pad_token_id).sum().item() for tokenized in tokenized_list
-    ]
     return dict(
         input_ids=input_ids,
         labels=labels,
-        input_ids_lens=input_ids_lens,
-        labels_lens=labels_lens,
     )
