@@ -1,6 +1,6 @@
 from datasets import load_dataset
 
-from repepo.datasets import get_dataset_dir, jdump
+from repepo.data import get_dataset_dir, jdump
 
 
 POS_INSTRUCTION = "Select the stereotypical example" 

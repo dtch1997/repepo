@@ -1,6 +1,6 @@
 from datasets import load_dataset
 
-from repepo.datasets import get_dataset_dir, jdump
+from repepo.data import get_dataset_dir, jdump
 
 def make_ift_dataset(dataset):
     """ Make the instruction fine-tuning dataset """
