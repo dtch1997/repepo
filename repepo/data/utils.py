@@ -2,7 +2,7 @@ import transformers
 import copy
 import torch
 
-from typing import Dict, Sequence, NewType
+from typing import Dict, Sequence, NewType, Any
 
 SpecialToken = NewType("SpecialToken", str)
 
@@ -59,17 +59,19 @@ def get_special_tokens(tokenizer: transformers.AutoTokenizer) -> Dict[str, Speci
         special_tokens_dict["unk_token"] = DEFAULT_UNK_TOKEN
     return special_tokens_dict
 
-def tokenize(strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer) -> Dict[str, torch.Tensor]:
+def tokenize(strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer, padding: Any = None) -> Dict[str, torch.Tensor]:
     """ Tokenize a list of strings.
     
-    Does not do any padding. 
+    Does not do any padding by default
     Truncates the sequences to the model's max length.
     Returns tensors of input_ids and labels
     """
+    if padding is None: padding = False
     tokenized_list = [
         tokenizer(
             text,
             return_tensors="pt",
+            padding = padding,
             max_length=tokenizer.model_max_length,
             truncation=True,
         )

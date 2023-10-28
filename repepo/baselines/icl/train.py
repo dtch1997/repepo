@@ -39,23 +39,17 @@ class TrainingArguments(transformers.TrainingArguments):
         default=512,
         metadata={"help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."},
     )
-    evaluation_strategy: str = field(default="epoch")
 
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args: DataArguments) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
     list_data_dict = get_dataset(data_args.dataset_name)
     train_dataset = sft.SupervisedDataset(list_data_dict, tokenizer=tokenizer)
-    eval_dataset = sft.SupervisedDataset(list_data_dict, tokenizer=tokenizer, padding="max_length")
     data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
-    return dict(train_dataset=train_dataset, eval_dataset=eval_dataset, data_collator=data_collator)
+    return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 
 
 
 def train():
-    # import logging
-    # loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-    # for logger in loggers:
-    #     logger.setLevel(logging.INFO)
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
@@ -90,9 +84,7 @@ def train():
     
     # Train
     trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, compute_metrics=[compute_bleurt], **data_module)
-    trainer.train()
-    trainer.save_state()
-    trainer.save_model(output_dir=training_args.output_dir)
+    trainer.evaluate()
 
 
 if __name__ == "__main__":

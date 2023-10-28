@@ -5,7 +5,7 @@ import transformers
 import logging
 
 from torch.utils.data import Dataset
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Any
 from dataclasses import dataclass
 from repepo.data.utils import tokenize, IGNORE_INDEX
 
@@ -26,23 +26,25 @@ def preprocess(
     sources: Sequence[str],
     targets: Sequence[str],
     tokenizer: transformers.PreTrainedTokenizer,
+    padding: Any = None,
 ) -> Dict:
     """Preprocess the data by tokenizing."""
     examples = [s + t for s, t in zip(sources, targets)]
-    examples_tokenized, sources_tokenized = [tokenize(strings, tokenizer) for strings in (examples, sources)]
+    examples_tokenized, sources_tokenized = [tokenize(strings, tokenizer, padding) for strings in (examples, sources)]
     input_ids = examples_tokenized["input_ids"]
     
     # Set labels to IGNORE_INDEX for prompt tokens
     # This ensures that loss is not backprop'd to prompt tokens
     labels = copy.deepcopy(input_ids)
-    for label, source_len in zip(labels, sources_tokenized["input_ids_lens"]):
+    for label, source_ids in zip(labels, sources_tokenized["input_ids"]):
+        source_len = len(source_ids)
         label[:source_len] = IGNORE_INDEX
     return dict(input_ids=input_ids, labels=labels)
 
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, list_data_dict, tokenizer: transformers.PreTrainedTokenizer):
+    def __init__(self, list_data_dict, tokenizer: transformers.PreTrainedTokenizer, padding: Any = None):
         super(SupervisedDataset, self).__init__()
         logging.warning("Formatting inputs...")
         prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
@@ -57,7 +59,7 @@ class SupervisedDataset(Dataset):
         targets = [f"{example['output']}{tokenizer.eos_token}" for example in list_data_dict]
 
         logging.warning("Tokenizing inputs... This may take some time...")
-        data_dict = preprocess(sources, targets, tokenizer)
+        data_dict = preprocess(sources, targets, tokenizer, padding)
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
