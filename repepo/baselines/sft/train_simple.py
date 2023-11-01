@@ -186,7 +186,7 @@ def train_model():
     model.to(device)
 
     # Set up optimizer and scheduler
-    optimizer = AdamW(model.parameters(), lr=5e-5)
+    optimizer = AdamW(model.parameters(), lr=training_args.learning_rate)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=len(train_dataloader) * 3)
 
     # Set up metrics, meters
