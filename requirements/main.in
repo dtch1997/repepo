@@ -8,3 +8,7 @@ transformers
 datasets
 torch
 numpy
+# Evaluate requirements
+evaluate
+rouge_score
+bleurt @ git+https://github.com/google-research/bleurt

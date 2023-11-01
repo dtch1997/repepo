@@ -1,5 +1,6 @@
 import torch
 import evaluate
+import numpy as np
 from torch.utils.data import DataLoader, RandomSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
 from tqdm import tqdm
@@ -77,11 +78,17 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
 class Metrics:
     def __init__(self):
         self.bleu = evaluate.load("bleu")
+        self.bleurt = evaluate.load("bleurt", module_type="metric")
+        self.rouge = evaluate.load("rouge")
 
     def compute_metrics(self, predictions: List[str], references: List[str]) -> Dict[str, float]:
-        results = self.bleu.compute(predictions=predictions, references=references)
+        bleu_results = self.bleu.compute(predictions=predictions, references=references)
+        bleurt_results = self.bleurt.compute(predictions=predictions, references=references)
+        rouge_results = self.rouge.compute(predictions=predictions, references=references)
         return {
-            'bleu': results['bleu']
+            'bleu': bleu_results['bleu'],
+            'bleurt': np.mean(bleurt_results['scores']),
+            'rouge1': rouge_results['rouge1']
         }
     
 class AverageMeter:

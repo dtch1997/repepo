@@ -13,7 +13,7 @@ source .venv/bin/activate
 ```
 
 Then, install dependencies
-```bash 
+```bash
 make init
 ```
 
