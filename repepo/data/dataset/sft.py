@@ -42,6 +42,7 @@ def preprocess(
     return dict(
         input_ids=input_ids, 
         labels=labels, 
+        prompt_ids = sources_tokenized['input_ids'],
         reference_ids = targets_tokenized['input_ids']
     )
 
@@ -67,6 +68,7 @@ class SupervisedDataset(Dataset):
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
+        self.prompt_ids = data_dict["prompt_ids"]
         self.reference_ids = data_dict["reference_ids"]
 
     def __len__(self):
@@ -76,6 +78,7 @@ class SupervisedDataset(Dataset):
         return dict(
             input_ids=self.input_ids[i],
             labels=self.labels[i],
+            prompt_ids=self.prompt_ids[i],
             reference_ids=self.reference_ids[i]
         )
 
@@ -87,9 +90,15 @@ class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
-        input_ids, labels, reference_ids = tuple([instance[key] for instance in instances] for key in ("input_ids", "labels", "reference_ids"))
+        input_ids, labels, prompt_ids, reference_ids = tuple(
+            [instance[key] for instance in instances] \
+                for key in ("input_ids", "labels", "prompt_ids", "reference_ids")
+        )
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+        )
+        prompt_ids = torch.nn.utils.rnn.pad_sequence(
+            prompt_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
         reference_ids = torch.nn.utils.rnn.pad_sequence(
             reference_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
@@ -98,6 +107,7 @@ class DataCollatorForSupervisedDataset(object):
         return dict(
             input_ids=input_ids,
             labels=labels,
+            prompt_ids=prompt_ids,
             reference_ids=reference_ids,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )

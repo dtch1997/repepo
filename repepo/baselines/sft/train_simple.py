@@ -1,4 +1,5 @@
 import torch
+import evaluate
 from torch.utils.data import DataLoader, RandomSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
 from tqdm import tqdm
@@ -73,44 +74,62 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
         eval_dataloader=eval_dataloader,
     )
 
-def generate_completion(
-    model: AutoModelForCausalLM,
-    tokenizer: AutoTokenizer,
-    input_ids: torch.Tensor, 
-    max_length: int =50, 
-    temperature: float =0.7
-) -> List[str]:
-    """
-    Generate a text completion given a prompt using a pre-trained causal language model.
-    
-    Parameters:
-    - input_ids: torch.Tensor of shape (B, T), token IDs describing the prompt
-    - model_name: str, identifier of the pre-trained model
-    - max_length: int, maximum length of the generated text
-    - temperature: float, sampling temperature for diversity (higher values make output more random)
-    
-    Returns:
-    - str, generated text completion
-    """
-  
-    # Generate text completion
-    completion = model.generate(
-        input_ids,
-        max_length=max_length, 
-        temperature=temperature, 
-        pad_token_id=tokenizer.pad_token_id
-    )
+class Metrics:
+    def __init__(self):
+        self.bleu = evaluate.load("bleu")
 
-    # Step 1: Get the total length of the input tokens
-    input_length = input_ids.shape[-1]
-    # Step 2: Slice the completion tensor to keep only the generated tokens, omitting the input tokens
-    generated_tokens = completion[:, input_length:]
-    # Step 3: If we have a batch, select the generated tokens of the first sequence
-    generated_tokens_first_sequence = generated_tokens[0]
-    # Step 4: Decode the token IDs of the generated tokens to a readable string, skipping special tokens
-    completion_text = tokenizer.decode(generated_tokens_first_sequence, skip_special_tokens=True)
+    def compute_metrics(self, predictions: List[str], references: List[str]) -> Dict[str, float]:
+        results = self.bleu.compute(predictions=predictions, references=references)
+        return {
+            'bleu': results['bleu']
+        }
+    
+class AverageMeter:
+    def __init__(self):
+        self.metrics = {}
         
-    return completion_text
+    def update(self, name, value, n=1):
+        """
+        Update a named metric with a new value.
+        
+        Parameters:
+        - name: The name of the metric.
+        - value: The new value to incorporate.
+        - n: The weight/count of the value. Default is 1.
+        """
+        if name not in self.metrics:
+            self.metrics[name] = {'val': 0, 'sum': 0, 'count': 0, 'avg': 0}
+        
+        metric = self.metrics[name]
+        metric['val'] = value
+        metric['sum'] += value * n
+        metric['count'] += n
+        metric['avg'] = metric['sum'] / metric['count']
+        
+    def get_avg(self, name):
+        """
+        Get the running average of a named metric.
+        
+        Parameters:
+        - name: The name of the metric.
+        """
+        return self.metrics[name]['avg'] if name in self.metrics else None
+    
+    def reset(self, name=None):
+        """
+        Resets statistics of a named metric or all metrics if name is None.
+        
+        Parameters:
+        - name: The name of the metric.
+        """
+        if name:
+            self.metrics[name] = {'val': 0, 'sum': 0, 'count': 0, 'avg': 0}
+        else:
+            for metric in self.metrics.values():
+                metric['val'] = 0
+                metric['sum'] = 0
+                metric['count'] = 0
+                metric['avg'] = 0
 
 def train_model():
     """ Simple PyTorch-only training loop """
@@ -156,6 +175,10 @@ def train_model():
     optimizer = AdamW(model.parameters(), lr=5e-5)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=len(train_dataloader) * 3)
 
+    # Set up metrics, meters
+    metric_fns = Metrics()
+    meter = AverageMeter()
+
     # Training loop
     model.train()
     for epoch in range(int(training_args.num_train_epochs)):
@@ -179,6 +202,39 @@ def train_model():
             optimizer.step()
             scheduler.step()
             model.zero_grad()
+
+        # Evaluation step (after each epoch)
+        with torch.no_grad():
+
+            meter.reset()
+            for batch in eval_dataloader:
+                batch = {k : v.to(device) for k, v in batch.items()}
+                prediction_ids = model.generate(
+                    batch['prompt_ids'],
+                    max_length = training_args.model_max_length,
+                    temperature=0.3, # TODO: make configurable
+                    do_sample=True,
+                    # Do this to suppress warning: 
+                    # https://stackoverflow.com/questions/69609401/suppress-huggingface-logging-warning-setting-pad-token-id-to-eos-token-id/71397707#71397707
+                    pad_token_id = tokenizer.eos_token_id, 
+                )
+                prompts = [tokenizer.decode(prompt, skip_special_tokens=True) for prompt in batch['prompt_ids']]
+                predictions = [tokenizer.decode(pred, skip_special_tokens=True) for pred in prediction_ids]
+                # Remove the prompt text from predictions
+                predictions = [pred[len(prompt):] for prompt, pred in zip(prompts, predictions)]
+                references = [tokenizer.decode(ref, skip_special_tokens=True) for ref in batch['reference_ids']]
+                # Visualize predictions
+                print("Sample prompt: ", prompts[0])
+                print()
+                print("Predicted answer: ", predictions[0])
+                print("Reference answer: ", references[0])
+                print()
+                metrics = metric_fns.compute_metrics(predictions, references)
+                for name, metric in metrics.items():
+                    meter.update(name, metric)
+                
+            for name, metric in meter.metrics.items():
+                print(f"Average {name}: {metric['avg']}")
 
     # Save the fine-tuned model
     # model.save_pretrained("./fine_tuned_model")
