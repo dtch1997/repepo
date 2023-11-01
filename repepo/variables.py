@@ -10,10 +10,10 @@ def _get_project_dir() -> pathlib.Path:
     return pathlib.Path(__file__).parent.parent.absolute()
 
 class Environ:
-    HuggingfaceCacheDir = os.environ.get("HUGGINGFACE_CACHE_DIR", _get_home_dir() / '.huggingface')
-    OutputDir = os.environ.get("OUTPUT_DIR", _get_project_dir() / 'output')
-    DatasetDir = os.environ.get("DATASET_DIR", _get_project_dir() / 'datasets')
-    LogDir = os.environ.get("LOG_DIR", _get_project_dir() / 'logs')
+    HuggingfaceCacheDir = str(os.environ.get("HUGGINGFACE_CACHE_DIR", _get_home_dir() / '.huggingface'))
+    OutputDir = str(os.environ.get("OUTPUT_DIR", _get_project_dir() / 'output'))
+    DatasetDir = str(os.environ.get("DATASET_DIR", _get_project_dir() / 'datasets'))
+    LogDir = str(os.environ.get("LOG_DIR", _get_project_dir() / 'logs'))
 
 # Model names
 class Model:

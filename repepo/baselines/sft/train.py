@@ -89,7 +89,7 @@ def train():
         return outputs
     
     # Train
-    trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, compute_metrics=[compute_bleurt], **data_module)
+    trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args, compute_metrics=compute_bleurt, **data_module)
     trainer.train()
     trainer.save_state()
     trainer.save_model(output_dir=training_args.output_dir)

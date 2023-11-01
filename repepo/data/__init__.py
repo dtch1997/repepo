@@ -9,7 +9,7 @@ def _get_current_dir() -> pathlib.Path:
     return pathlib.Path(__file__).parent.absolute()
 
 def get_dataset_dir() -> pathlib.Path:
-    return Environ.DatasetDir
+    return pathlib.Path(Environ.DatasetDir)
 
 _DATASETS = {
     'stereoset': get_dataset_dir() / 'stereoset.json',
