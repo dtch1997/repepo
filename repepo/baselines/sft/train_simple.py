@@ -19,6 +19,13 @@ from repepo.data import utils, get_dataset
 from repepo.data.dataset import sft
 from repepo.variables import Environ, Model
 
+@dataclass 
+class WandbArguments:
+    entity: str = field(default = Environ.WandbEntity)
+    project: str = field(default = Environ.WandbProject)
+    name: str = field(default = "sft")
+    track: bool = field(default = False)
+
 @dataclass
 class ModelArguments:
     model_name_or_path: Optional[str] = field(default=Model.Pythia70m)
@@ -142,8 +149,8 @@ def train_model():
     """ Simple PyTorch-only training loop """
     
     # Parse CLI args
-    parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments, WandbArguments))
+    model_args, data_args, training_args, wandb_args = parser.parse_args_into_dataclasses()
 
     # Load model and tokenizer
     model = transformers.AutoModelForCausalLM.from_pretrained(
@@ -186,13 +193,22 @@ def train_model():
     metric_fns = Metrics()
     meter = AverageMeter()
 
+    if wandb_args.track:
+        import wandb
+        wandb.init(
+            project=wandb_args.project,
+            entity=wandb_args.entity,
+            name=wandb_args.name
+        )
+
     # Training loop
+    global_step = 0
     model.train()
     for epoch in range(int(training_args.num_train_epochs)):
         # epoch_iterator = tqdm(train_dataloader, desc="Training")
         epoch_iterator = train_dataloader
         for step, batch in enumerate(epoch_iterator):
-
+            global_step += data_args.batch_size
             batch = {k : v.to(device) for k, v in batch.items()}
             outputs = model(
                 input_ids = batch['input_ids'],
@@ -200,15 +216,15 @@ def train_model():
                 attention_mask = batch['attention_mask']
             )
             loss = outputs.loss
-            loss.backward()
-            print(f"epoch : {epoch} | step: {step} | loss: {loss}")
-            
+            optimizer.zero_grad()
+            loss.backward()            
             # Gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            
             optimizer.step()
-            scheduler.step()
-            model.zero_grad()
+            scheduler.step()            
+            print(f"epoch : {epoch} | step: {step} | loss: {loss}")
+            if wandb_args.track:
+                wandb.log({'train/loss': loss}, step=global_step)
 
         # Evaluation step (after each epoch)
         with torch.no_grad():
@@ -241,7 +257,11 @@ def train_model():
                     meter.update(name, metric)
                 
             for name, metric in meter.metrics.items():
-                print(f"Average {name}: {metric['avg']}")
+                val = metric['avg']
+                print(f"Average {name}: {val}")
+                if wandb_args.track:
+                    wandb.log({f'eval/{name}': val}, step=global_step)
+                
 
     # Save the fine-tuned model
     # model.save_pretrained("./fine_tuned_model")
