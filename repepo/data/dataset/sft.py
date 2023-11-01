@@ -30,7 +30,7 @@ def preprocess(
 ) -> Dict:
     """Preprocess the data by tokenizing."""
     examples = [s + t for s, t in zip(sources, targets)]
-    examples_tokenized, sources_tokenized = [tokenize(strings, tokenizer, padding) for strings in (examples, sources)]
+    examples_tokenized, sources_tokenized, targets_tokenized = [tokenize(strings, tokenizer, padding) for strings in (examples, sources, targets)]
     input_ids = examples_tokenized["input_ids"]
     
     # Set labels to IGNORE_INDEX for prompt tokens
@@ -39,7 +39,11 @@ def preprocess(
     for label, source_ids in zip(labels, sources_tokenized["input_ids"]):
         source_len = len(source_ids)
         label[:source_len] = IGNORE_INDEX
-    return dict(input_ids=input_ids, labels=labels)
+    return dict(
+        input_ids=input_ids, 
+        labels=labels, 
+        reference_ids = targets_tokenized['input_ids']
+    )
 
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
@@ -63,12 +67,17 @@ class SupervisedDataset(Dataset):
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
+        self.reference_ids = data_dict["reference_ids"]
 
     def __len__(self):
         return len(self.input_ids)
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        return dict(input_ids=self.input_ids[i], labels=self.labels[i])
+        return dict(
+            input_ids=self.input_ids[i],
+            labels=self.labels[i],
+            reference_ids=self.reference_ids[i]
+        )
 
 
 @dataclass
@@ -78,13 +87,17 @@ class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
-        input_ids, labels = tuple([instance[key] for instance in instances] for key in ("input_ids", "labels"))
+        input_ids, labels, reference_ids = tuple([instance[key] for instance in instances] for key in ("input_ids", "labels", "reference_ids"))
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+        )
+        reference_ids = torch.nn.utils.rnn.pad_sequence(
+            reference_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
         labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
         return dict(
             input_ids=input_ids,
             labels=labels,
+            reference_ids=reference_ids,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )

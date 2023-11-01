@@ -4,11 +4,11 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 from tqdm import tqdm
 
 # Load pre-trained model and tokenizer from Huggingface
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence, List
 
 import transformers
 from transformers import Trainer
@@ -73,6 +73,45 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
         eval_dataloader=eval_dataloader,
     )
 
+def generate_completion(
+    model: AutoModelForCausalLM,
+    tokenizer: AutoTokenizer,
+    input_ids: torch.Tensor, 
+    max_length: int =50, 
+    temperature: float =0.7
+) -> List[str]:
+    """
+    Generate a text completion given a prompt using a pre-trained causal language model.
+    
+    Parameters:
+    - input_ids: torch.Tensor of shape (B, T), token IDs describing the prompt
+    - model_name: str, identifier of the pre-trained model
+    - max_length: int, maximum length of the generated text
+    - temperature: float, sampling temperature for diversity (higher values make output more random)
+    
+    Returns:
+    - str, generated text completion
+    """
+  
+    # Generate text completion
+    completion = model.generate(
+        input_ids,
+        max_length=max_length, 
+        temperature=temperature, 
+        pad_token_id=tokenizer.pad_token_id
+    )
+
+    # Step 1: Get the total length of the input tokens
+    input_length = input_ids.shape[-1]
+    # Step 2: Slice the completion tensor to keep only the generated tokens, omitting the input tokens
+    generated_tokens = completion[:, input_length:]
+    # Step 3: If we have a batch, select the generated tokens of the first sequence
+    generated_tokens_first_sequence = generated_tokens[0]
+    # Step 4: Decode the token IDs of the generated tokens to a readable string, skipping special tokens
+    completion_text = tokenizer.decode(generated_tokens_first_sequence, skip_special_tokens=True)
+        
+    return completion_text
+
 def train_model():
     """ Simple PyTorch-only training loop """
     
@@ -124,8 +163,12 @@ def train_model():
         epoch_iterator = train_dataloader
         for step, batch in enumerate(epoch_iterator):
 
-            batch = {k : v.to(device) for k, v in batch.items()}            
-            outputs = model(**batch)
+            batch = {k : v.to(device) for k, v in batch.items()}
+            outputs = model(
+                input_ids = batch['input_ids'],
+                labels = batch['labels'],
+                attention_mask = batch['attention_mask']
+            )
             loss = outputs.loss
             loss.backward()
             print(f"epoch : {epoch} | step: {step} | loss: {loss}")
