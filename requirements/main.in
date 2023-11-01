@@ -6,6 +6,5 @@ tensorboard
 # Experiment requirements
 transformers
 datasets
-alpaca-farm # Pre-trained, SFT, RLHF models
 torch
 numpy

@@ -9,19 +9,12 @@
 
 absl-py==2.0.0
     # via tensorboard
-accelerate==0.24.0
-    # via alpaca-farm
 aiohttp==3.8.6
     # via
     #   datasets
     #   fsspec
-    #   openai
 aiosignal==1.3.1
     # via aiohttp
-alpaca-eval==0.3.1
-    # via alpaca-farm
-alpaca-farm==0.1.9
-    # via -r requirements/main.in
 appdirs==1.4.4
     # via wandb
 async-timeout==4.0.3
@@ -34,37 +27,26 @@ certifi==2023.7.22
     # via
     #   requests
     #   sentry-sdk
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via
     #   aiohttp
     #   requests
 click==8.1.7
-    # via
-    #   nltk
-    #   wandb
+    # via wandb
 datasets==2.14.6
-    # via
-    #   -r requirements/main.in
-    #   alpaca-eval
-    #   alpaca-farm
+    # via -r requirements/main.in
 dill==0.3.7
     # via
     #   datasets
     #   multiprocess
 docker-pycreds==0.4.0
     # via wandb
-einops==0.7.0
-    # via alpaca-farm
-filelock==3.12.4
+filelock==3.13.1
     # via
     #   huggingface-hub
     #   torch
     #   transformers
     #   triton
-fire==0.5.0
-    # via
-    #   alpaca-eval
-    #   alpaca-farm
 frozenlist==1.4.0
     # via
     #   aiohttp
@@ -79,17 +61,16 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.40
     # via wandb
-google-auth==2.23.3
+google-auth==2.23.4
     # via
     #   google-auth-oauthlib
     #   tensorboard
 google-auth-oauthlib==1.1.0
     # via tensorboard
-grpcio==1.59.0
+grpcio==1.59.2
     # via tensorboard
 huggingface-hub==0.17.3
     # via
-    #   accelerate
     #   datasets
     #   tokenizers
     #   transformers
@@ -99,14 +80,8 @@ idna==3.4
     #   yarl
 jinja2==3.1.2
     # via torch
-joblib==1.3.2
-    # via
-    #   nltk
-    #   scikit-learn
-markdown==3.5
-    # via
-    #   alpaca-farm
-    #   tensorboard
+markdown==3.5.1
+    # via tensorboard
 markupsafe==2.1.3
     # via
     #   jinja2
@@ -121,21 +96,14 @@ multiprocess==0.70.15
     # via datasets
 mypy-extensions==1.0.0
     # via typing-inspect
-networkx==3.2
+networkx==3.2.1
     # via torch
-nltk==3.8.1
-    # via alpaca-farm
 numpy==1.26.1
     # via
     #   -r requirements/main.in
-    #   accelerate
     #   datasets
     #   pandas
-    #   patsy
     #   pyarrow
-    #   scikit-learn
-    #   scipy
-    #   statsmodels
     #   tensorboard
     #   transformers
 nvidia-cublas-cu12==12.1.3.1
@@ -171,35 +139,21 @@ nvidia-nvtx-cu12==12.1.105
     # via torch
 oauthlib==3.2.2
     # via requests-oauthlib
-openai==0.28.1
-    # via
-    #   alpaca-eval
-    #   alpaca-farm
 packaging==23.2
     # via
-    #   accelerate
     #   datasets
     #   huggingface-hub
-    #   statsmodels
     #   transformers
-pandas==2.1.1
-    # via
-    #   alpaca-eval
-    #   alpaca-farm
-    #   datasets
-    #   statsmodels
+pandas==2.1.2
+    # via datasets
 pathtools==0.1.2
     # via wandb
-patsy==0.5.3
-    # via statsmodels
 protobuf==4.23.4
     # via
     #   tensorboard
     #   wandb
 psutil==5.9.6
-    # via
-    #   accelerate
-    #   wandb
+    # via wandb
 pyarrow==13.0.0
     # via datasets
 pyasn1==0.5.0
@@ -212,32 +166,24 @@ pyrallis==0.3.1
     # via -r requirements/main.in
 python-dateutil==2.8.2
     # via pandas
-python-dotenv==1.0.0
-    # via alpaca-eval
 pytz==2023.3.post1
     # via pandas
 pyyaml==6.0.1
     # via
-    #   accelerate
     #   datasets
     #   huggingface-hub
     #   pyrallis
     #   transformers
     #   wandb
 regex==2023.10.3
-    # via
-    #   nltk
-    #   tiktoken
-    #   transformers
+    # via transformers
 requests==2.31.0
     # via
     #   datasets
     #   fsspec
     #   huggingface-hub
-    #   openai
     #   requests-oauthlib
     #   tensorboard
-    #   tiktoken
     #   transformers
     #   wandb
 requests-oauthlib==1.3.1
@@ -246,63 +192,34 @@ rsa==4.9
     # via google-auth
 safetensors==0.4.0
     # via transformers
-scikit-learn==1.3.2
-    # via alpaca-farm
-scipy==1.11.3
-    # via
-    #   scikit-learn
-    #   statsmodels
-sentencepiece==0.1.99
-    # via alpaca-farm
-sentry-sdk==1.32.0
+sentry-sdk==1.33.1
     # via wandb
 setproctitle==1.3.3
     # via wandb
 six==1.16.0
     # via
     #   docker-pycreds
-    #   fire
-    #   patsy
     #   python-dateutil
     #   tensorboard
 smmap==5.0.1
     # via gitdb
-statsmodels==0.14.0
-    # via alpaca-farm
 sympy==1.12
     # via torch
-tabulate==0.9.0
-    # via alpaca-farm
 tensorboard==2.15.0
     # via -r requirements/main.in
 tensorboard-data-server==0.7.2
     # via tensorboard
-termcolor==2.3.0
-    # via fire
-threadpoolctl==3.2.0
-    # via scikit-learn
-tiktoken==0.5.1
-    # via
-    #   alpaca-eval
-    #   alpaca-farm
 tokenizers==0.14.1
     # via transformers
 torch==2.1.0
-    # via
-    #   -r requirements/main.in
-    #   accelerate
-    #   alpaca-farm
+    # via -r requirements/main.in
 tqdm==4.66.1
     # via
     #   datasets
     #   huggingface-hub
-    #   nltk
-    #   openai
     #   transformers
 transformers==4.34.1
-    # via
-    #   -r requirements/main.in
-    #   alpaca-farm
+    # via -r requirements/main.in
 triton==2.1.0
     # via torch
 typing-extensions==4.8.0
@@ -319,9 +236,7 @@ urllib3==2.0.7
     #   requests
     #   sentry-sdk
 wandb==0.15.12
-    # via
-    #   -r requirements/main.in
-    #   alpaca-farm
+    # via -r requirements/main.in
 werkzeug==3.0.1
     # via tensorboard
 xxhash==3.4.1
