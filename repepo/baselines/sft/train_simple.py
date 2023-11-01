@@ -24,7 +24,7 @@ class ModelArguments:
 @dataclass
 class DataArguments:
     dataset_name: str = field(default="truthfulqa", metadata={"help": "Name of training dataset. See repepo.data.list_datasets() for details"})
-    batch_size: int = field(default = 256)
+    batch_size: int = field(default = 32)
     train_fraction: float = field(default = 0.8)
 
 @dataclass
@@ -93,6 +93,15 @@ def train_model():
         use_fast=True,
     )
 
+    # Add new tokens to tokenizer
+    special_tokens_dict = utils.get_pad_token(tokenizer)
+    special_tokens_dict.update(utils.get_special_tokens(tokenizer))
+    utils.smart_tokenizer_and_embedding_resize(
+        special_tokens_dict=special_tokens_dict,
+        tokenizer=tokenizer,
+        model=model,
+    )
+
     # Load dataset
     data_module = make_supervised_data_module(
         tokenizer, data_args
@@ -104,33 +113,33 @@ def train_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # # Set up optimizer and scheduler
-    # optimizer = AdamW(model.parameters(), lr=5e-5)
-    # scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=len(train_dataloader) * 3)
+    # Set up optimizer and scheduler
+    optimizer = AdamW(model.parameters(), lr=5e-5)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=len(train_dataloader) * 3)
 
-    # # Training loop
-    # model.train()
-    # for epoch in range(3):
-    #     epoch_iterator = tqdm(train_dataloader, desc="Training")
-    #     for step, batch in enumerate(epoch_iterator):
-    #         batch = tuple(t.to(device) for t in batch)
-    #         inputs = {
-    #             "input_ids": batch[0],
-    #             "attention_mask": batch[1],
-    #             "labels": batch[2],
-    #         }
-            
-    #         outputs = model(**inputs)
-    #         loss = outputs.loss
-    #         loss.backward()
-            
-    #         # Gradient clipping
-    #         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            
-    #         optimizer.step()
-    #         scheduler.step()
-    #         model.zero_grad()
+    # Training loop
+    model.train()
+    for epoch in range(int(training_args.num_train_epochs)):
+        # epoch_iterator = tqdm(train_dataloader, desc="Training")
+        epoch_iterator = train_dataloader
+        for step, batch in enumerate(epoch_iterator):
 
-    # # Save the fine-tuned model
+            batch = {k : v.to(device) for k, v in batch.items()}            
+            outputs = model(**batch)
+            loss = outputs.loss
+            loss.backward()
+            print(f"epoch : {epoch} | step: {step} | loss: {loss}")
+            
+            # Gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            
+            optimizer.step()
+            scheduler.step()
+            model.zero_grad()
+
+    # Save the fine-tuned model
     # model.save_pretrained("./fine_tuned_model")
     # tokenizer.save_pretrained("./fine_tuned_model")
+
+if __name__ == "__main__":
+    train_model()
