@@ -23,6 +23,7 @@ Our implementation is based off Stanford Alpaca.
 
 ```bash
 python repepo/baselines/sft/train.py --num_train_epochs 30
+# --dataset_name truthful_qa (truthful_qa, steroset)
 ```
 
 Watch the loss go down in WandB! 
