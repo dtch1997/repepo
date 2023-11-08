@@ -17,12 +17,8 @@ The datasets are stored in `datasets` in top-level directory.
 
 ## Supervised Fine-tuning
 
-Our implementation is based off Stanford Alpaca.
-
 ```bash
-python repepo/baselines/sft/train.py --num_train_epochs 30
+python repepo/baselines/sft/train_simple.py --num_train_epochs 30
 # --dataset_name truthful_qa (truthful_qa, steroset)
 # --model_name EleutherAI/Pythia70m (any HF model)
 ```
-
-Watch the loss go down in WandB!
