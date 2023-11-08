@@ -90,24 +90,34 @@ class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
-        input_ids, labels, prompt_ids, reference_ids = tuple(
+
+        keys = instances[0].keys()
+        return_dict = {}
+
+        # Prepare inputs for model training
+        input_ids, labels = tuple(
             [instance[key] for instance in instances] \
-                for key in ("input_ids", "labels", "prompt_ids", "reference_ids")
+                for key in ("input_ids", "labels")
         )
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
-        prompt_ids = torch.nn.utils.rnn.pad_sequence(
-            prompt_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
-        )
-        reference_ids = torch.nn.utils.rnn.pad_sequence(
-            reference_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
-        )
         labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
-        return dict(
-            input_ids=input_ids,
-            labels=labels,
-            prompt_ids=prompt_ids,
-            reference_ids=reference_ids,
-            attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
-        )
+        return_dict['input_ids'] = input_ids
+        return_dict['labels'] = labels
+        return_dict['attention_mask'] = input_ids.ne(self.tokenizer.pad_token_id)
+
+        # Optionally, prepare inputs for model eval
+        # TODO: figure out how to do this more nicely...
+        if 'prompt_ids' in keys:
+            prompt_ids = [instance['prompt_ids'] for instance in instances]
+            prompt_ids = torch.nn.utils.rnn.pad_sequence(
+                prompt_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+            )
+        if 'reference_ids' in keys:
+            reference_ids = [instance['reference_ids'] for instance in instances]
+            reference_ids = torch.nn.utils.rnn.pad_sequence(
+                reference_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+            )
+        
+        return return_dict
