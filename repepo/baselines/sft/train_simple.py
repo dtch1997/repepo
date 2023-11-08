@@ -16,7 +16,7 @@ import transformers
 from transformers import Trainer
 
 from repepo.data import utils, get_dataset
-from repepo.data.dataset import sft
+from repepo.data.dataset import format, sft
 from repepo.variables import Environ, Model
 
 @dataclass 
@@ -50,13 +50,15 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
     """Make dataset and collator for supervised fine-tuning."""
 
     # Get the dataset by name
-    list_data_dict = get_dataset(data_args.dataset_name)
+    examples: List[format.Example] = get_dataset(data_args.dataset_name)
+    # Format the dataset
+    completions: List[format.Completion] = format.InstructionFormatter().apply(examples)
 
     # Split the dataset
-    num_examples = len(list_data_dict)
-    train_size = int(num_examples * data_args.train_fraction)
-    val_size = num_examples - train_size
-    train_data, val_data = list_data_dict[:train_size], list_data_dict[train_size:]
+    num_completions = len(completions)
+    train_size = int(num_completions * data_args.train_fraction)
+    val_size = num_completions - train_size
+    train_data, val_data = completions[:train_size], completions[train_size:]
 
     # Initialize datasets
     train_dataset = sft.SupervisedDataset(train_data, tokenizer=tokenizer)
@@ -234,9 +236,20 @@ def train_model():
         # Evaluation step (after each epoch)
         with torch.no_grad():
 
+            model.eval()
             meter.reset()
             for batch in eval_dataloader:
                 batch = {k : v.to(device) for k, v in batch.items()}
+                # Calculate val loss
+                outputs = model(
+                    input_ids = batch['input_ids'],
+                    labels = batch['labels'],
+                    attention_mask = batch['attention_mask']
+                )
+                loss = outputs.loss
+                if wandb_args.track:
+                    wandb.log({'eval/loss': loss}, step=global_step)
+
                 prediction_ids = model.generate(
                     batch['prompt_ids'],
                     max_length = training_args.model_max_length,
@@ -266,6 +279,8 @@ def train_model():
                 print(f"Average {name}: {val}")
                 if wandb_args.track:
                     wandb.log({f'eval/{name}': val}, step=global_step)
+
+            model.train()
                 
 
     # Save the fine-tuned model
