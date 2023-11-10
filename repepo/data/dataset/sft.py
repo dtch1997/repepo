@@ -97,6 +97,7 @@ class DataCollatorForSupervisedDataset(object):
                 prompt_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
             )
             return_dict['prompt_ids'] = prompt_ids
+            
         if 'reference_ids' in keys:
             reference_ids = [instance['reference_ids'] for instance in instances]
             reference_ids = torch.nn.utils.rnn.pad_sequence(

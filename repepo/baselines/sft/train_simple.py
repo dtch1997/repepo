@@ -235,7 +235,6 @@ def train_model():
 
         # Evaluation step (after each epoch)
         with torch.no_grad():
-
             model.eval()
             meter.reset()
             for batch in eval_dataloader:
@@ -281,7 +280,6 @@ def train_model():
                     wandb.log({f'eval/{name}': val}, step=global_step)
 
             model.train()
-                
 
     # Save the fine-tuned model
     # model.save_pretrained("./fine_tuned_model")
