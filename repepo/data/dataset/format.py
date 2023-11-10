@@ -26,6 +26,21 @@ class AbstractFormatter(abc.ABC):
             completion = self.format_example(example)
             completions.append(completion)
         return completions
+    
+class QAFormatter(AbstractFormatter):
+    """ Format as a simple QA pair. """
+    QUESTION = "Q: {instruction} {input}"
+    ANSWER = "A: {output}"
+
+    def format_example(self, example: Dict[str, Any], **kwargs):
+        del kwargs
+        prompt = self.QUESTION.format_map(example)
+        response = self.ANSWER.format_map(example)
+        return {
+            'prompt': prompt, 
+            'response': response
+        }
+
 
 class InstructionFormatter(AbstractFormatter):
     """ Instruction formatter used for fine-tuning Alpaca. """
@@ -43,7 +58,7 @@ class InstructionFormatter(AbstractFormatter):
 
     def format_example(self, example: Dict[str, Any], **kwargs):
         del kwargs
-        if 'input' in example:
+        if 'input' in example and bool(example['input']):
             prompt = self.PROMPT_INPUT.format_map(example)
         else:
             prompt = self.PROMPT_NO_INPUT.format_map(example)
@@ -71,8 +86,8 @@ class FewShotPrompter:
             for _ in range(self.n_few_shot_examples):
                 done = False
                 while not done:
-                    idx = random.randint(0, len(completions))
-                    done = idx in selected_idxes
+                    idx = random.randint(0, len(completions) - 1) # range inclusive
+                    done = idx not in selected_idxes
                 few_shot_examples.append(
                     completion_to_str(completions[idx])
                 )
