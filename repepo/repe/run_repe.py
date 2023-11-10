@@ -7,8 +7,8 @@ import torch
 from tqdm import tqdm
 import numpy as np
 
-from repe.rep_reading_pipeline import RepReadingPipeline
-from repe.rep_control_pipeline import RepControlPipeline
+from repepo.repe.rep_reading_pipeline import RepReadingPipeline
+from repepo.repe.rep_control_pipeline import RepControlPipeline
 
 import random
 from datasets import Dataset, load_dataset
@@ -80,8 +80,8 @@ def ambig_prompt_dataset(path:str, user_tag='', assistant_tag='', seed=10, max_d
     }
 
 
-# model_name_or_path = "meta-llama/Llama-2-7b-chat-hf"
-model_name_or_path = "EleutherAI/pythia-6.9b"
+model_name_or_path = "meta-llama/Llama-2-7b-chat-hf"
+# model_name_or_path = "EleutherAI/pythia-6.9b"
 cache_dir = "/ext_usb"
 path_to_dataset = "data/testsets_ambiguous/sa_sentiment_uppercase.json"
 
@@ -114,8 +114,10 @@ rep_reader = rep_reading_pipeline.get_directions(
     train_labels=train_data['labels'], 
     direction_method=direction_method,
 )
+# pythia 70m params
+# layer_id = [-3,-2]
 
-layer_id = [-3,-2]
+
 block_name="decoder_block"
 control_method="reading_vec"
 
@@ -148,7 +150,7 @@ sentiment_inputs = [
 
 
 
-coeff=50
+coeff=3
 max_new_tokens=64
 
 activations = {}
@@ -164,3 +166,5 @@ for i,s,p in zip(sentiment_inputs, baseline_outputs, control_outputs):
     print(f"===== + Sentiment Control =====")
     print(p[0]['generated_text'].replace(i, ""))
     print()
+
+pass
