@@ -5,22 +5,9 @@ import transformers
 import logging
 
 from torch.utils.data import Dataset
-from typing import Dict, Sequence, Any
+from typing import List, Dict, Sequence, Any
 from dataclasses import dataclass
 from repepo.data.utils import tokenize, IGNORE_INDEX
-
-PROMPT_DICT = {
-    "prompt_input": (
-        "Below is an instruction that describes a task, paired with an input that provides further context. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:"
-    ),
-    "prompt_no_input": (
-        "Below is an instruction that describes a task. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Response:"
-    ),
-}
 
 def preprocess(
     sources: Sequence[str],
@@ -49,19 +36,15 @@ def preprocess(
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, list_data_dict, tokenizer: transformers.PreTrainedTokenizer, padding: Any = None):
+    def __init__(self, completions: List[Dict[str, Any]], tokenizer: transformers.PreTrainedTokenizer, padding: Any = None):
         super(SupervisedDataset, self).__init__()
-        logging.warning("Formatting inputs...")
-        prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
 
-        # Map the examples into prompt format 
-        sources = [
-            prompt_input.format_map(example) if example.get("input", "") != "" else prompt_no_input.format_map(example)
-            for example in list_data_dict
-        ]
-
+        sources, targets = tuple(
+            [completion[key] for completion in completions] \
+                for key in ('prompt', 'response')
+        )
         # Add explicit EOS token
-        targets = [f"{example['output']}{tokenizer.eos_token}" for example in list_data_dict]
+        targets = [f"{target}{tokenizer.eos_token}" for target in targets]
 
         logging.warning("Tokenizing inputs... This may take some time...")
         data_dict = preprocess(sources, targets, tokenizer, padding)
@@ -90,7 +73,6 @@ class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
-
         keys = instances[0].keys()
         return_dict = {}
 
@@ -114,10 +96,13 @@ class DataCollatorForSupervisedDataset(object):
             prompt_ids = torch.nn.utils.rnn.pad_sequence(
                 prompt_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
             )
+            return_dict['prompt_ids'] = prompt_ids
+            
         if 'reference_ids' in keys:
             reference_ids = [instance['reference_ids'] for instance in instances]
             reference_ids = torch.nn.utils.rnn.pad_sequence(
                 reference_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
             )
+            return_dict['reference_ids'] = reference_ids
         
         return return_dict
