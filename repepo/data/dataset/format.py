@@ -94,7 +94,7 @@ class FewShotPrompter:
                 selected_idxes.append(idx)
 
             # Concatenate completions
-            prompt = '\n'.join(few_shot_examples) + completion['prompt']
+            prompt = '\n'.join(few_shot_examples) + '\n' + completion['prompt']
             response = completion['response']
             output_completions.append(dict(
                 prompt=prompt, 
