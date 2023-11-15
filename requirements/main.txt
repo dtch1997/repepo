@@ -10,6 +10,8 @@ absl-py==2.0.0
     #   tensorboard
     #   tensorflow
     #   tf-slim
+accelerate==0.24.1
+    # via -r requirements/main.in
 aiohttp==3.8.6
     # via
     #   datasets
@@ -40,7 +42,7 @@ click==8.1.7
     # via
     #   nltk
     #   wandb
-datasets==2.14.6
+datasets==2.14.7
     # via
     #   -r requirements/main.in
     #   evaluate
@@ -82,7 +84,7 @@ google-auth==2.23.4
     # via
     #   google-auth-oauthlib
     #   tensorboard
-google-auth-oauthlib==1.0.0
+google-auth-oauthlib==1.1.0
     # via tensorboard
 google-pasta==0.2.0
     # via tensorflow
@@ -94,6 +96,7 @@ h5py==3.10.0
     # via tensorflow
 huggingface-hub==0.17.3
     # via
+    #   accelerate
     #   datasets
     #   evaluate
     #   tokenizers
@@ -106,7 +109,7 @@ jinja2==3.1.2
     # via torch
 joblib==1.3.2
     # via nltk
-keras==2.14.0
+keras==2.15.0
     # via tensorflow
 libclang==16.0.6
     # via tensorflow
@@ -134,9 +137,10 @@ networkx==3.2.1
     # via torch
 nltk==3.8.1
     # via rouge-score
-numpy==1.26.1
+numpy==1.26.2
     # via
     #   -r requirements/main.in
+    #   accelerate
     #   bleurt
     #   datasets
     #   evaluate
@@ -187,12 +191,13 @@ opt-einsum==3.3.0
     # via tensorflow
 packaging==23.2
     # via
+    #   accelerate
     #   datasets
     #   evaluate
     #   huggingface-hub
     #   tensorflow
     #   transformers
-pandas==2.1.2
+pandas==2.1.3
     # via
     #   bleurt
     #   datasets
@@ -203,8 +208,12 @@ protobuf==4.23.4
     #   tensorflow
     #   wandb
 psutil==5.9.6
-    # via wandb
-pyarrow==14.0.0
+    # via
+    #   accelerate
+    #   wandb
+pyarrow==14.0.1
+    # via datasets
+pyarrow-hotfix==0.5
     # via datasets
 pyasn1==0.5.0
     # via
@@ -220,6 +229,7 @@ pytz==2023.3.post1
     # via pandas
 pyyaml==6.0.1
     # via
+    #   accelerate
     #   datasets
     #   huggingface-hub
     #   pyrallis
@@ -254,7 +264,7 @@ scipy==1.11.3
     # via bleurt
 sentencepiece==0.1.99
     # via bleurt
-sentry-sdk==1.34.0
+sentry-sdk==1.35.0
     # via wandb
 setproctitle==1.3.3
     # via wandb
@@ -271,15 +281,15 @@ smmap==5.0.1
     # via gitdb
 sympy==1.12
     # via torch
-tensorboard==2.14.1
+tensorboard==2.15.1
     # via
     #   -r requirements/main.in
     #   tensorflow
 tensorboard-data-server==0.7.2
     # via tensorboard
-tensorflow==2.14.0
+tensorflow==2.15.0
     # via bleurt
-tensorflow-estimator==2.14.0
+tensorflow-estimator==2.15.0
     # via tensorflow
 tensorflow-io-gcs-filesystem==0.34.0
     # via tensorflow
@@ -290,7 +300,9 @@ tf-slim==1.1.0
 tokenizers==0.14.1
     # via transformers
 torch==2.1.0
-    # via -r requirements/main.in
+    # via
+    #   -r requirements/main.in
+    #   accelerate
 tqdm==4.66.1
     # via
     #   datasets
@@ -298,7 +310,7 @@ tqdm==4.66.1
     #   huggingface-hub
     #   nltk
     #   transformers
-transformers==4.35.0
+transformers==4.35.1
     # via -r requirements/main.in
 triton==2.1.0
     # via torch
@@ -312,7 +324,7 @@ typing-inspect==0.9.0
     # via pyrallis
 tzdata==2023.3
     # via pandas
-urllib3==2.0.7
+urllib3==2.1.0
     # via
     #   requests
     #   responses
