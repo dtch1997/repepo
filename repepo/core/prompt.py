@@ -5,7 +5,7 @@ from typing import List
 from repepo.core.types import Completion
 
 def completion_to_str(completion: Completion) -> str:
-    return completion['prompt'] + completion['response']
+    return completion.prompt + '\n' + completion.response
 
 class AbstractPrompter(abc.ABC):
     """ Interface for modifying completions """
@@ -30,12 +30,21 @@ class IdentityPrompter(AbstractPrompter):
 class FewShotPrompter(AbstractPrompter):
     """ Compose examples few-shot """
     
-    def __init__(self, n_few_shot_examples: int = 2):
-        self.n_few_shot_examples = n_few_shot_examples
+    def __init__(self, k_few_shot: int = 1):
+        self.k_few_shot = k_few_shot
 
-    def apply(self, completion, few_shot_examples=[]):
-        prompt = '\n'.join(few_shot_examples) + '\n' + completion['prompt']
-        response = completion['response']
+    def apply(self, 
+        completion: Completion, 
+        few_shot_completions: List[Completion] =[]
+    ) -> Completion:
+
+        prompt = ''        
+        for fs_comp in few_shot_completions:
+            prompt += completion_to_str(fs_comp) + '\n'
+        prompt += completion.prompt
+
+        response = completion.response
+
         return Completion(
             prompt=prompt, 
             response=response
@@ -48,14 +57,14 @@ class FewShotPrompter(AbstractPrompter):
         for i, completion in enumerate(completions):
 
             # Sample different completions for context
-            few_shot_examples = []
+            few_shot_completions = []
             selected_idxes = [i,]        
-            for _ in range(self.n_few_shot_examples):
+            for _ in range(self.k_few_shot):
                 done = False
                 while not done:
                     idx = random.randint(0, len(completions) - 1) # range inclusive
                     done = idx not in selected_idxes
-                few_shot_examples.append(
+                few_shot_completions.append(
                     completion_to_str(completions[idx])
                 )
                 selected_idxes.append(idx)
@@ -63,7 +72,7 @@ class FewShotPrompter(AbstractPrompter):
             # Concatenate completions
             output_completion = self.apply(
                 completion, 
-                few_shot_examples=few_shot_examples
+                few_shot_completions=few_shot_completions
             )
             output_completions.append(output_completion)
 

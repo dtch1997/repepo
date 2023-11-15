@@ -52,11 +52,16 @@ class InstructionFormatter(AbstractFormatter):
 
     def apply(self, example: Example, **kwargs):
         del kwargs
-        if 'input' in example and bool(example['input']):
-            prompt = self.PROMPT_INPUT.format_map(example)
+        if bool(example.input):
+            prompt = self.PROMPT_INPUT.format(
+                instruction=example.instruction, 
+                input=example.input
+            )
         else:
-            prompt = self.PROMPT_NO_INPUT.format_map(example)
-        response = example['output']
+            prompt = self.PROMPT_NO_INPUT.format_map(
+                instruction=example.instruction
+            )
+        response = example.output
         return Completion(
             prompt = prompt, 
             response = response
