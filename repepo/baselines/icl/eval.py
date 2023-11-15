@@ -54,7 +54,7 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
     examples: List[format.Example] = get_dataset(data_args.dataset_name)
     # Format the dataset
     completions: List[format.Completion] = format.QAFormatter().apply(examples)
-    completions = format.FewShotPrompter().apply(completions)
+    completions = format.FewShotPrompter(n_few_shot_examples=10).apply(completions)
 
     # Initialize dataset
     eval_dataset = sft.SupervisedDataset(completions, tokenizer=tokenizer)

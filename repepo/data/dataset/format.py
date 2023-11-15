@@ -13,7 +13,7 @@ Completion = NewType('Completion', Dict[str, Any])
 #   - a dict with keys 'prompt', 'response'
 
 def completion_to_str(completion: Completion) -> str:
-    return completion['prompt'] + completion['response']
+    return completion['prompt'] + '\n' + completion['response']
 
 class AbstractFormatter(abc.ABC):
         
