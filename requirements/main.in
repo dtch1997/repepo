@@ -6,6 +6,9 @@ tensorboard
 # Experiment requirements
 transformers
 datasets
-alpaca-farm # Pre-trained, SFT, RLHF models
 torch
 numpy
+# Evaluate requirements
+evaluate
+rouge_score
+bleurt @ git+https://github.com/google-research/bleurt
