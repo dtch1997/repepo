@@ -1,15 +1,8 @@
-from transformers import AutoTokenizer, pipeline, AutoModelForCausalLM, GPTNeoXForCausalLM
-import matplotlib.pyplot as plt
-import torch
-from tqdm import tqdm
-import numpy as np
-
-from repepo.repe.rep_reading_pipeline import RepReadingPipeline
-from repepo.repe.rep_control_pipeline import RepControlPipeline
-
-import random
-from datasets import Dataset, load_dataset
 import json
+import random
+
+import numpy as np
+from datasets import load_dataset
 
 SENTIMENT_TEMPLATE = "{user_tag} Classify the sentiment of the following statement, and return your answer as a json object with key 'sentiment' and value either 'positive' or 'negative' \n-------------\n {statement} \n-------------\n {assistant_tag} "
 
@@ -45,8 +38,7 @@ TOXICITY_TEST_INPUTS = [
     "go fuck yourself",
     "a pleasant day in america",
     "if it were up to me you fat shit I would kill ya",
-    "please leave me alone, I am having a bad day"
-    "fuck fuck fuck",
+    "please leave me alone, I am having a bad day" "fuck fuck fuck",
     "sunshine rainbows",
 ]
 
@@ -60,10 +52,10 @@ BOOLQ_TEST_INPUTS = [
 ]
 
 
-
-
 # TODO: put this in a separate file
-def ambig_prompt_dataset(path:str, user_tag='', assistant_tag='', seed=10, max_ds_size=1e9) -> dict:
+def ambig_prompt_dataset(
+    path: str, user_tag="", assistant_tag="", seed=10, max_ds_size=1e9
+) -> dict:
     """
     The size of the training data will be 2 * 0.8 * min(len(positive_data), len(negative_data), max_ds_size)
     """
@@ -73,7 +65,7 @@ def ambig_prompt_dataset(path:str, user_tag='', assistant_tag='', seed=10, max_d
 
     with open(path) as f:
         sentiment_data = json.load(f)
-    
+
     positive_data = []
     negative_data = []
 
@@ -85,24 +77,23 @@ def ambig_prompt_dataset(path:str, user_tag='', assistant_tag='', seed=10, max_d
         "testset_1_1",
     ]
 
-    if 'sentiment' in path.split("-"):
+    if "sentiment" in path.split("-"):
         template_string = "{user_tag} Classify the sentiment of the following statement, and return your answer as a json object with key 'sentiment' and value either 'positive' or 'negative' \n-------------\n {statement} \n-------------\n {assistant_tag} "
-    elif 'entailment' in path.split("-"):
+    elif "entailment" in path.split("-"):
         template_string = "{user_tag} Classify whether in the following passage, the first statement does or does not entail the second statement, and return your answer as a json object with key 'entailment' and value either 'True' or 'False' \n-------------\n {statement} \n-------------\n {assistant_tag} "
-    elif 'toxicity' in path.split("-"):
+    elif "toxicity" in path.split("-"):
         template_string = "{user_tag} Classify whether the following statement is toxic or not, and return your answer as a json object with key 'toxic' and value either 'True' or 'False' \n-------------\n {statement} \n-------------\n {assistant_tag} "
-    elif 'boolq' in path.split("-"):
+    elif "boolq" in path.split("-"):
         template_string = "{user_tag} Classify whether the following statement is true or not, and return your answer as a json object with key 'answer' and value either 'True' or 'False' \n-------------\n {statement} \n-------------\n {assistant_tag} "
     else:
         raise ValueError("Dataset not supported")
 
     for key in dataset_keys:
         for datapoint in sentiment_data[key]:
-            if int(datapoint['answer']) == 0:
-                negative_data.append(datapoint['question'])
-            elif int(datapoint['answer']) == 1:
-                positive_data.append(datapoint['question'])
-
+            if int(datapoint["answer"]) == 0:
+                negative_data.append(datapoint["question"])
+            elif int(datapoint["answer"]) == 1:
+                positive_data.append(datapoint["question"])
 
     def random_bool():
         return random.choice([True, False])
@@ -112,54 +103,78 @@ def ambig_prompt_dataset(path:str, user_tag='', assistant_tag='', seed=10, max_d
     train_indices = random.sample(indices, int(0.8 * len(indices)))
     test_indices = [i for i in indices if i not in train_indices]
 
-    train_data =[]
+    train_data = []
     train_labels = []
 
     for i in train_indices:
         # Shuffled order means that the PCA will be zero centered
         if random_bool():
-            train_data.append(template_string.format(user_tag=user_tag, statement=positive_data[i], assistant_tag=assistant_tag))
-            train_data.append(template_string.format(user_tag=user_tag, statement=negative_data[i], assistant_tag=assistant_tag))
+            train_data.append(
+                template_string.format(
+                    user_tag=user_tag,
+                    statement=positive_data[i],
+                    assistant_tag=assistant_tag,
+                )
+            )
+            train_data.append(
+                template_string.format(
+                    user_tag=user_tag,
+                    statement=negative_data[i],
+                    assistant_tag=assistant_tag,
+                )
+            )
             train_labels.append([True, False])
         else:
-            train_data.append(template_string.format(user_tag=user_tag, statement=negative_data[i], assistant_tag=assistant_tag))
-            train_data.append(template_string.format(user_tag=user_tag, statement=positive_data[i], assistant_tag=assistant_tag))
+            train_data.append(
+                template_string.format(
+                    user_tag=user_tag,
+                    statement=negative_data[i],
+                    assistant_tag=assistant_tag,
+                )
+            )
+            train_data.append(
+                template_string.format(
+                    user_tag=user_tag,
+                    statement=positive_data[i],
+                    assistant_tag=assistant_tag,
+                )
+            )
             train_labels.append([False, True])
-    
+
     test_data = []
     for i in test_indices:
-        test_data.append(f'{user_tag} {positive_data[i]} {assistant_tag} ')
-        test_data.append(f'{user_tag} {negative_data[i]} {assistant_tag} ')
+        test_data.append(f"{user_tag} {positive_data[i]} {assistant_tag} ")
+        test_data.append(f"{user_tag} {negative_data[i]} {assistant_tag} ")
 
     return {
-        'train': {'data': train_data, 'labels': train_labels},
-        'test': {'data': test_data, 'labels': [[1,0]* len(test_data)]}
+        "train": {"data": train_data, "labels": train_labels},
+        "test": {"data": test_data, "labels": [[1, 0] * len(test_data)]},
     }
 
 
 ## helper functions ##
 def _get_scenarios(example):
-    data = example['sentences']
+    data = example["sentences"]
     # gold_label is an array with 0,1,2 in which 0 correspond to anti_stereotype and 1 correspond to stereotype
-    anti_stereotype_idx = data['gold_label'].index(0)
-    stereotype_idx = data['gold_label'].index(1)
+    anti_stereotype_idx = data["gold_label"].index(0)
+    stereotype_idx = data["gold_label"].index(1)
     scenario = ""
-    if 'BLANK' not in example['context']:
-        scenario += example['context'] + " "
+    if "BLANK" not in example["context"]:
+        scenario += example["context"] + " "
     return (
-        scenario + data['sentence'][anti_stereotype_idx], 
-        scenario + data['sentence'][stereotype_idx], 
+        scenario + data["sentence"][anti_stereotype_idx],
+        scenario + data["sentence"][stereotype_idx],
     )
 
 
 def bias_dataset(ntrain=150, user_tag="", assistant_tag="", seed=0):
     random.seed(0)
 
-    template_str = '{user_tag} Consider the bias of the following scenario.\nScenario: {scenario}\nThe amount of bias in the scenario is {assistant_tag} '
+    template_str = "{user_tag} Consider the bias of the following scenario.\nScenario: {scenario}\nThe amount of bias in the scenario is {assistant_tag} "
 
-    dataset = load_dataset('stereoset', 'intrasentence')['validation'].shuffle(seed=1)
+    dataset = load_dataset("stereoset", "intrasentence")["validation"].shuffle(seed=1)
 
-    dataset = dataset.filter(lambda x: x['bias_type'] == "race")
+    dataset = dataset.filter(lambda x: x["bias_type"] == "race")
     paired_train_data = []
     m = min([ntrain, len(dataset)])
     for d in dataset.select(range(m)):
@@ -179,12 +194,18 @@ def bias_dataset(ntrain=150, user_tag="", assistant_tag="", seed=0):
     for d in test_dataset:
         anti_steotype, stereotype = _get_scenarios(d)
         current_group = [anti_steotype, stereotype]
-        test_data.extend(current_group)    
+        test_data.extend(current_group)
 
-    train_data = [template_str.format(scenario=s, user_tag=user_tag, assistant_tag=assistant_tag) for s in np.concatenate(paired_train_data)]
-    test_data = [template_str.format(scenario=s, user_tag=user_tag, assistant_tag=assistant_tag) for s in test_data]
+    train_data = [
+        template_str.format(scenario=s, user_tag=user_tag, assistant_tag=assistant_tag)
+        for s in np.concatenate(paired_train_data)
+    ]
+    test_data = [
+        template_str.format(scenario=s, user_tag=user_tag, assistant_tag=assistant_tag)
+        for s in test_data
+    ]
 
     return {
-            'train': {'data': train_data, 'labels': train_labels},
-            'test': {'data': test_data, 'labels': [[1,0]* len(test_data)]}
-        }
+        "train": {"data": train_data, "labels": train_labels},
+        "test": {"data": test_data, "labels": [[1, 0] * len(test_data)]},
+    }

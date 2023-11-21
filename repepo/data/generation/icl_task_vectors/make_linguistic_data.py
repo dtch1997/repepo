@@ -1,4 +1,5 @@
 import json
+
 import requests
 
 from repepo.data import get_dataset_dir
@@ -15,9 +16,7 @@ def prepare_verb_conjugations():
 
     output_file_path_template = str(data_dir / "{mapping_name}.json")
 
-    verbs_conjugations_url = (
-        "https://raw.githubusercontent.com/Drulac/English-Verbs-Conjugates/master/verbs-conjugations.json"
-    )
+    verbs_conjugations_url = "https://raw.githubusercontent.com/Drulac/English-Verbs-Conjugates/master/verbs-conjugations.json"
 
     # load verbs conjugations
     verbs_conjugations = requests.get(verbs_conjugations_url, timeout=5).json()
@@ -28,7 +27,8 @@ def prepare_verb_conjugations():
     mappings["present_simple_past_simple"] = {
         verb["verb"]: most_common_value(verb["indicative"]["imperfect"])
         for verb in verbs_conjugations
-        if "imperfect" in verb["indicative"] and len(verb["indicative"]["imperfect"]) > 0
+        if "imperfect" in verb["indicative"]
+        and len(verb["indicative"]["imperfect"]) > 0
     }
     # 2. regular verb to gerund [e.g. "go" -> "going"]
     mappings["present_simple_gerund"] = {
@@ -44,10 +44,15 @@ def prepare_verb_conjugations():
     }
     # filter out past_perfect that end with "ed"
     mappings["present_simple_past_perfect"] = {
-        k: v for k, v in mappings["present_simple_past_perfect"].items() if not v.endswith("ed")
+        k: v
+        for k, v in mappings["present_simple_past_perfect"].items()
+        if not v.endswith("ed")
     }
     # keep only alphabet letters
-    mappings = {k: {k2: v2 for k2, v2 in v.items() if k2.isalpha() and v2.isalpha()} for k, v in mappings.items()}
+    mappings = {
+        k: {k2: v2 for k2, v2 in v.items() if k2.isalpha() and v2.isalpha()}
+        for k, v in mappings.items()
+    }
 
     # Save to files
     for mapping_name, mapping in mappings.items():

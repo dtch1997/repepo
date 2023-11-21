@@ -1,13 +1,16 @@
 """ Dataset for supervised fine-tuning workflow. """
 import copy
+import logging
+from dataclasses import dataclass
+from typing import Any, Dict, List, Sequence
+
 import torch
 import transformers
-import logging
-
 from torch.utils.data import Dataset
-from typing import List, Dict, Sequence, Any
-from dataclasses import dataclass
-from repepo.data.utils import tokenize, IGNORE_INDEX
+
+from repepo.data.utils import IGNORE_INDEX
+from repepo.data.utils import tokenize
+
 
 def preprocess(
     sources: Sequence[str],
@@ -17,9 +20,12 @@ def preprocess(
 ) -> Dict:
     """Preprocess the data by tokenizing."""
     examples = [s + t for s, t in zip(sources, targets)]
-    examples_tokenized, sources_tokenized, targets_tokenized = [tokenize(strings, tokenizer, padding) for strings in (examples, sources, targets)]
+    examples_tokenized, sources_tokenized, targets_tokenized = [
+        tokenize(strings, tokenizer, padding)
+        for strings in (examples, sources, targets)
+    ]
     input_ids = examples_tokenized["input_ids"]
-    
+
     # Set labels to IGNORE_INDEX for prompt tokens
     # This ensures that loss is not backprop'd to prompt tokens
     labels = copy.deepcopy(input_ids)
@@ -27,21 +33,27 @@ def preprocess(
         source_len = len(source_ids)
         label[:source_len] = IGNORE_INDEX
     return dict(
-        input_ids=input_ids, 
-        labels=labels, 
-        prompt_ids = sources_tokenized['input_ids'],
-        reference_ids = targets_tokenized['input_ids']
+        input_ids=input_ids,
+        labels=labels,
+        prompt_ids=sources_tokenized["input_ids"],
+        reference_ids=targets_tokenized["input_ids"],
     )
+
 
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, completions: List[Dict[str, Any]], tokenizer: transformers.PreTrainedTokenizer, padding: Any = None):
+    def __init__(
+        self,
+        completions: List[Dict[str, Any]],
+        tokenizer: transformers.PreTrainedTokenizer,
+        padding: Any = None,
+    ):
         super(SupervisedDataset, self).__init__()
 
         sources, targets = tuple(
-            [completion[key] for completion in completions] \
-                for key in ('prompt', 'response')
+            [completion[key] for completion in completions]
+            for key in ("prompt", "response")
         )
         # Add explicit EOS token
         targets = [f"{target}{tokenizer.eos_token}" for target in targets]
@@ -62,7 +74,7 @@ class SupervisedDataset(Dataset):
             input_ids=self.input_ids[i],
             labels=self.labels[i],
             prompt_ids=self.prompt_ids[i],
-            reference_ids=self.reference_ids[i]
+            reference_ids=self.reference_ids[i],
         )
 
 
@@ -78,31 +90,34 @@ class DataCollatorForSupervisedDataset(object):
 
         # Prepare inputs for model training
         input_ids, labels = tuple(
-            [instance[key] for instance in instances] \
-                for key in ("input_ids", "labels")
+            [instance[key] for instance in instances] for key in ("input_ids", "labels")
         )
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
-        labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
-        return_dict['input_ids'] = input_ids
-        return_dict['labels'] = labels
-        return_dict['attention_mask'] = input_ids.ne(self.tokenizer.pad_token_id)
+        labels = torch.nn.utils.rnn.pad_sequence(
+            labels, batch_first=True, padding_value=IGNORE_INDEX
+        )
+        return_dict["input_ids"] = input_ids
+        return_dict["labels"] = labels
+        return_dict["attention_mask"] = input_ids.ne(self.tokenizer.pad_token_id)
 
         # Optionally, prepare inputs for model eval
         # TODO: figure out how to do this more nicely...
-        if 'prompt_ids' in keys:
-            prompt_ids = [instance['prompt_ids'] for instance in instances]
+        if "prompt_ids" in keys:
+            prompt_ids = [instance["prompt_ids"] for instance in instances]
             prompt_ids = torch.nn.utils.rnn.pad_sequence(
                 prompt_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
             )
-            return_dict['prompt_ids'] = prompt_ids
-            
-        if 'reference_ids' in keys:
-            reference_ids = [instance['reference_ids'] for instance in instances]
+            return_dict["prompt_ids"] = prompt_ids
+
+        if "reference_ids" in keys:
+            reference_ids = [instance["reference_ids"] for instance in instances]
             reference_ids = torch.nn.utils.rnn.pad_sequence(
-                reference_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+                reference_ids,
+                batch_first=True,
+                padding_value=self.tokenizer.pad_token_id,
             )
-            return_dict['reference_ids'] = reference_ids
-        
+            return_dict["reference_ids"] = reference_ids
+
         return return_dict

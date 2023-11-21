@@ -118,3 +118,6 @@ ENV/
 
 # OS files
 .DS_Store
+
+# ruff
+.ruff_cache/
