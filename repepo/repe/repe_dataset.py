@@ -77,13 +77,13 @@ def ambig_prompt_dataset(
         "testset_1_1",
     ]
 
-    if "sentiment" in path.split("-"):
+    if "sentiment" in path.split("_"):
         template_string = "{user_tag} Classify the sentiment of the following statement, and return your answer as a json object with key 'sentiment' and value either 'positive' or 'negative' \n-------------\n {statement} \n-------------\n {assistant_tag} "
-    elif "entailment" in path.split("-"):
+    elif "entailment" in path.split("_"):
         template_string = "{user_tag} Classify whether in the following passage, the first statement does or does not entail the second statement, and return your answer as a json object with key 'entailment' and value either 'True' or 'False' \n-------------\n {statement} \n-------------\n {assistant_tag} "
-    elif "toxicity" in path.split("-"):
+    elif "toxicity" in path.split("_"):
         template_string = "{user_tag} Classify whether the following statement is toxic or not, and return your answer as a json object with key 'toxic' and value either 'True' or 'False' \n-------------\n {statement} \n-------------\n {assistant_tag} "
-    elif "boolq" in path.split("-"):
+    elif "boolq" in path.split("_"):
         template_string = "{user_tag} Classify whether the following statement is true or not, and return your answer as a json object with key 'answer' and value either 'True' or 'False' \n-------------\n {statement} \n-------------\n {assistant_tag} "
     else:
         raise ValueError("Dataset not supported")
