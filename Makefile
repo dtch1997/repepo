@@ -27,7 +27,7 @@ fmt: # run code formatter
 	ruff --fix .
 
 test: # run tests
-	pytest tests
+	pytest
 
 .PHONY: style fmt test
 

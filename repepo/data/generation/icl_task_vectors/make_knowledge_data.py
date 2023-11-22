@@ -1,9 +1,9 @@
-import requests
 import json
 import os
 
-from repepo.data import get_dataset_dir
+import requests
 
+from repepo.data import get_dataset_dir
 
 RELATIONS_TO_INCLUDE = {
     "P36": "country_capital",
@@ -47,11 +47,22 @@ def prepare_knowledge_data():
         relation_examples = {x["input"]: x["output"] for x in relation_examples}
 
         if relation_name == "location_religion":
-            relation_examples = {k: v.replace("Christianity", "Christian") for k, v in relation_examples.items()}
-            relation_examples = {k: v.replace("Judaism", "Jewish") for k, v in relation_examples.items()}
-            relation_examples = {k: v.replace("Islam", "Muslim") for k, v in relation_examples.items()}
+            relation_examples = {
+                k: v.replace("Christianity", "Christian")
+                for k, v in relation_examples.items()
+            }
+            relation_examples = {
+                k: v.replace("Judaism", "Jewish") for k, v in relation_examples.items()
+            }
+            relation_examples = {
+                k: v.replace("Islam", "Muslim") for k, v in relation_examples.items()
+            }
             # keep only Christian, Jewish, Muslim
-            relation_examples = {k: v for k, v in relation_examples.items() if v in ["Christian", "Jewish", "Muslim"]}
+            relation_examples = {
+                k: v
+                for k, v in relation_examples.items()
+                if v in ["Christian", "Jewish", "Muslim"]
+            }
 
         # write to file
         output_file_path = output_file_path_template.format(relation_name=relation_name)

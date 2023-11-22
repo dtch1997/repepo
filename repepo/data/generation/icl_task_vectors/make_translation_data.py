@@ -1,9 +1,9 @@
-import os
 import json
-import requests
 
 import nltk
+import requests
 from nltk.corpus import wordnet as wn
+
 from repepo.data import get_dataset_dir
 
 
@@ -51,13 +51,29 @@ def prepare_translation_data():
         lang_to_wn_lang = {"it": "ita", "fr": "fra", "es": "spa", "en": "eng"}
         wn_base_language = lang_to_wn_lang[BASE_LANGUAGE]
         wn_language = lang_to_wn_lang[language]
-        mapping = {k: v for k, v in mapping.items() if len(wn.synsets(v, lang=wn_language)) > 0}
-        inverse_mapping = {k: v for k, v in inverse_mapping.items() if len(wn.synsets(v, lang=wn_base_language)) > 0}
+        mapping = {
+            k: v for k, v in mapping.items() if len(wn.synsets(v, lang=wn_language)) > 0
+        }
+        inverse_mapping = {
+            k: v
+            for k, v in inverse_mapping.items()
+            if len(wn.synsets(v, lang=wn_base_language)) > 0
+        }
 
-        with open(output_file_path_template.format(mapping_name=f"{BASE_LANGUAGE}_{language}"), "w") as f:
+        with open(
+            output_file_path_template.format(
+                mapping_name=f"{BASE_LANGUAGE}_{language}"
+            ),
+            "w",
+        ) as f:
             json.dump(mapping, f, indent=4)
 
-        with open(output_file_path_template.format(mapping_name=f"{language}_{BASE_LANGUAGE}"), "w") as f:
+        with open(
+            output_file_path_template.format(
+                mapping_name=f"{language}_{BASE_LANGUAGE}"
+            ),
+            "w",
+        ) as f:
             json.dump(inverse_mapping, f, indent=4)
 
 

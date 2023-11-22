@@ -1,12 +1,13 @@
-import abc 
-import random
-
+import abc
 from typing import List
-from repepo.core.types import Completion, Example
+
+from repepo.core.types import Completion
+from repepo.core.types import Example
+
 
 class AbstractFormatter(abc.ABC):
-    """ Describes how to format examples as completions """
-        
+    """Describes how to format examples as completions"""
+
     @abc.abstractmethod
     def apply(self, example: Example, **kwargs) -> str:
         raise NotImplementedError()
@@ -17,27 +18,25 @@ class AbstractFormatter(abc.ABC):
             completion = self.apply(example)
             completions.append(completion)
         return completions
-    
-class InputOutputFormatter(AbstractFormatter):
-    """ Format as a simple input-output pair. """
 
-    PROMPT_TEMPLATE = (
-        "Input: {instruction} {input} \n"
-        "Output: "
-    )
+
+class InputOutputFormatter(AbstractFormatter):
+    """Format as a simple input-output pair."""
+
+    PROMPT_TEMPLATE = "Input: {instruction} {input} \n" "Output: "
 
     def apply(self, example: Example, **kwargs):
         del kwargs
         return Completion(
-            prompt = self.PROMPT_TEMPLATE.format(
-                instruction=example.instruction, 
-                input = example.input
+            prompt=self.PROMPT_TEMPLATE.format(
+                instruction=example.instruction, input=example.input
             ),
-            response = example.output
+            response=example.output,
         )
-    
+
+
 class InstructionFormatter(AbstractFormatter):
-    """ Instruction formatter used for fine-tuning Alpaca. """
+    """Instruction formatter used for fine-tuning Alpaca."""
 
     PROMPT_INPUT: str = (
         "Below is an instruction that describes a task, paired with an input that provides further context. "
@@ -54,15 +53,9 @@ class InstructionFormatter(AbstractFormatter):
         del kwargs
         if bool(example.input):
             prompt = self.PROMPT_INPUT.format(
-                instruction=example.instruction, 
-                input=example.input
+                instruction=example.instruction, input=example.input
             )
         else:
-            prompt = self.PROMPT_NO_INPUT.format_map(
-                instruction=example.instruction
-            )
+            prompt = self.PROMPT_NO_INPUT.format_map(instruction=example.instruction)
         response = example.output
-        return Completion(
-            prompt = prompt, 
-            response = response
-        )
+        return Completion(prompt=prompt, response=response)

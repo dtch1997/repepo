@@ -1,7 +1,10 @@
-from transformers import AutoModel, AutoModelForCausalLM
+from transformers import AutoModel
+from transformers import AutoModelForCausalLM
 from transformers.pipelines import PIPELINE_REGISTRY
-from .rep_reading_pipeline import RepReadingPipeline
+
 from .rep_control_pipeline import RepControlPipeline
+from .rep_reading_pipeline import RepReadingPipeline
+
 
 def repe_pipeline_registry():
     PIPELINE_REGISTRY.register_pipeline(
@@ -15,5 +18,3 @@ def repe_pipeline_registry():
         pipeline_class=RepControlPipeline,
         pt_model=AutoModelForCausalLM,
     )
-
-
