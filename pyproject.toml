@@ -54,9 +54,8 @@ exclude = ["**/node_modules", "**/__pycache__", "repepo/repe"]
 
 reportMissingImports = true
 reportMissingTypeStubs = false
-
-pythonVersion = "3.9"
-pythonPlatform = "Linux"
+useLibraryCodeForTypes = true
+typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

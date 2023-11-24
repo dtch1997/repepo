@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import torch
 import transformers
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer
 from termcolor import colored
 from torch.utils.data import DataLoader
 
@@ -59,7 +60,7 @@ class TrainingArguments(transformers.TrainingArguments):
 
 
 def make_supervised_data_module(
-    tokenizer: transformers.PreTrainedTokenizer, data_args: DataArguments
+    tokenizer: PreTrainedTokenizer, data_args: DataArguments
 ) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
 
@@ -154,16 +155,20 @@ def eval_model():
     ) = parser.parse_args_into_dataclasses()
 
     # Load model and tokenizer
-    model = transformers.AutoModelForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    tokenizer = transformers.AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=training_args.cache_dir,
-        model_max_length=training_args.model_max_length,
-        padding_side="right",
-        use_fast=True,
+    # TODO: figure out typing for this
+    tokenizer = cast(
+        PreTrainedTokenizer,
+        AutoTokenizer.from_pretrained(
+            model_args.model_name_or_path,
+            cache_dir=training_args.cache_dir,
+            model_max_length=training_args.model_max_length,
+            padding_side="right",
+            use_fast=True,
+        ),
     )
 
     # Add new tokens to tokenizer
