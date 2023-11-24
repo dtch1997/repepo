@@ -1,11 +1,11 @@
-from repepo.core import BaseDataset
-from repepo.core import BasePipeline
+from repepo.core import Dataset
+from repepo.core import Pipeline
 
 from .base import BaseAlgorithm
 
 
 class SupervisedFineTuning(BaseAlgorithm):
-    def run(self, pipeline: BasePipeline, dataset: BaseDataset) -> BasePipeline:
+    def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
         """Modifies the base model weights"""
 
         # Make supervised data module

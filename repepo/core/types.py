@@ -1,4 +1,4 @@
-import abc
+from dataclasses import dataclass
 from typing import Any, List, NewType, NamedTuple
 
 # Placeholder type definitions
@@ -20,35 +20,12 @@ class Completion(NamedTuple):
     response: str
 
 
-class BaseDataset(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def instruction(self) -> str:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def examples(self) -> List[Example]:
-        pass
+Dataset = List[Example]
 
 
-class BasePipeline(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def model(self) -> Model:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def tokenizer(self) -> Tokenizer:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def prompter(self) -> Prompter:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def formatter(self) -> Formatter:
-        pass
+@dataclass
+class Pipeline:
+    model: Model
+    tokenizer: Tokenizer
+    prompter: Prompter
+    formatter: Formatter

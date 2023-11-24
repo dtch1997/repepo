@@ -1,2 +1,4 @@
-from .types import BaseDataset
-from .types import BasePipeline
+from .types import Dataset
+from .types import Pipeline
+
+__all__ = ["Dataset", "Pipeline"]
