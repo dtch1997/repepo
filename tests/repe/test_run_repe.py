@@ -4,14 +4,13 @@ from repepo.repe.repe_dataset import bias_dataset
 from repepo.repe.rep_control_pipeline import RepControlPipeline
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 import torch
-from transformers import TextGenerationPipeline
+
 
 def test_run_repe(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
     assert model.config.name_or_path == "EleutherAI/pythia-70m"
 
 
 def test_rep_readers(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
-
     rep_token = -1
     hidden_layers = list(range(-1, -model.config.num_hidden_layers, -1))
     n_difference = 1
@@ -20,7 +19,9 @@ def test_rep_readers(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
     block_name = "decoder_block"
     control_method = "reading_vec"
 
-    tokenizer.pad_token_id = 0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+    tokenizer.pad_token_id = (
+        0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+    )
     tokenizer.bos_token_id = 1
 
     rep_reading_pipeline = RepReadingPipeline(model=model, tokenizer=tokenizer)
@@ -55,8 +56,9 @@ def test_rep_readers(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
     activations = {}
     for layer in layer_id:
         activations[layer] = (
-            torch.tensor(coeff * rep_reader.directions[layer] * rep_reader.direction_signs[layer])
-            .to(model.device)
+            torch.tensor(
+                coeff * rep_reader.directions[layer] * rep_reader.direction_signs[layer]
+            ).to(model.device)
             # .bfloat16()
         )
     inputs = "12345"
@@ -67,7 +69,6 @@ def test_rep_readers(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
         max_new_tokens=max_new_tokens,
         do_sample=False,
     )
-
 
     # rep_control_pipeline = RepControlPipeline(
     #     model=model,
@@ -83,10 +84,9 @@ def test_rep_readers(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
     # control_outputs_test = test_pipeline(
     #     inputs,
     # )
-    print('\n\n', control_outputs[0]["generated_text"])
+    print("\n\n", control_outputs[0]["generated_text"])
     # print('\n\n', control_outputs_test[0]["generated_text"])
 
-    
     breakpoint()
     generated_text = control_outputs[0]["generated_text"].replace(inputs, "")
     print(generated_text)
