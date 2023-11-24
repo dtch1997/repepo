@@ -87,11 +87,11 @@ def test_rep_readers(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
     print("\n\n", control_outputs[0]["generated_text"])
     # print('\n\n', control_outputs_test[0]["generated_text"])
 
-    breakpoint()
+    # breakpoint()
     generated_text = control_outputs[0]["generated_text"].replace(inputs, "")
     print(generated_text)
     print(" get rid of me ")
-    breakpoint()
+    # breakpoint()
 
     expected_text = '  I apologize, but the question contains harmful language and is not factually coherent. The term "yelled" is not a appropriate or respectful way to describe a situation, and it is not clear who is being referred to as "the doctor" or "the nurse." Additionally, the'
 

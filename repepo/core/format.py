@@ -1,5 +1,6 @@
 import abc
 from typing import List
+from typing_extensions import override
 
 from repepo.core.types import Completion
 from repepo.core.types import Example
@@ -9,11 +10,11 @@ class AbstractFormatter(abc.ABC):
     """Describes how to format examples as completions"""
 
     @abc.abstractmethod
-    def apply(self, example: Example, **kwargs) -> str:
-        raise NotImplementedError()
+    def apply(self, example: Example, **kwargs) -> Completion:
+        pass
 
     def apply_list(self, examples: List[Example]) -> List[Completion]:
-        completions = []
+        completions: list[Completion] = []
         for example in examples:
             completion = self.apply(example)
             completions.append(completion)
@@ -25,6 +26,7 @@ class InputOutputFormatter(AbstractFormatter):
 
     PROMPT_TEMPLATE = "Input: {instruction} {input} \n" "Output: "
 
+    @override
     def apply(self, example: Example, **kwargs):
         del kwargs
         return Completion(
@@ -49,6 +51,7 @@ class InstructionFormatter(AbstractFormatter):
         "### Instruction:\n{instruction}\n\n### Response:"
     )
 
+    @override
     def apply(self, example: Example, **kwargs):
         del kwargs
         if bool(example.input):

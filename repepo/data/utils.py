@@ -3,6 +3,8 @@ from typing import Any, Dict, NewType, Sequence
 import torch
 import transformers
 
+from repepo.core.types import Tokenizer
+
 SpecialToken = NewType("SpecialToken", str)
 
 IGNORE_INDEX = -100
@@ -14,7 +16,7 @@ DEFAULT_UNK_TOKEN = "<unk>"
 
 def smart_tokenizer_and_embedding_resize(
     special_tokens_dict: Dict,
-    tokenizer: transformers.PreTrainedTokenizer,
+    tokenizer: Tokenizer,
     model: transformers.PreTrainedModel,
 ):
     """Resize tokenizer and embedding.
@@ -40,7 +42,7 @@ def smart_tokenizer_and_embedding_resize(
 
 
 def get_pad_token(
-    tokenizer: transformers.PreTrainedTokenizer,
+    tokenizer: Tokenizer,
 ) -> Dict[str, SpecialToken]:
     """Set the padding token of the tokenizer if it doesn't have one
 
@@ -54,7 +56,7 @@ def get_pad_token(
 
 
 def get_special_tokens(
-    tokenizer: transformers.PreTrainedTokenizer,
+    tokenizer: Tokenizer,
 ) -> Dict[str, SpecialToken]:
     """Get special tokens that must be added to model, tokenizer"""
     # Add special tokens
@@ -71,7 +73,7 @@ def get_special_tokens(
 
 def tokenize(
     strings: Sequence[str],
-    tokenizer: transformers.PreTrainedTokenizer,
+    tokenizer: Tokenizer,
     padding: Any = None,
 ) -> dict[str, list[torch.Tensor]]:
     """Tokenize a list of strings.

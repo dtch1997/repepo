@@ -13,6 +13,6 @@ def test_identity_prompter():
 def test_few_shot_prompter():
     completion = Completion(prompt="Hello", response="Hi!")
     examples = [Completion(prompt="Example 1", response="Response 1")]
-    prompter = FewShotPrompter(k_few_shot=1)
-    output = prompter.apply(completion, examples)
+    prompter = FewShotPrompter(examples)
+    output = prompter.apply(completion)
     assert output.prompt == examples[0].prompt + "\n" + examples[0].response + "\nHello"
