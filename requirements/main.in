@@ -9,6 +9,7 @@ datasets
 torch
 numpy
 accelerate
+scikit-learn
 # Evaluate requirements
 evaluate
 rouge_score
