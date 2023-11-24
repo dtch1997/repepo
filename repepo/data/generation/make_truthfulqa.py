@@ -1,4 +1,5 @@
-from datasets import load_dataset
+from typing import cast
+from datasets import load_dataset, DatasetDict
 
 from repepo.data import get_dataset_dir
 from repepo.data import jdump
@@ -18,7 +19,7 @@ def make_ift_dataset(dataset):
 
 
 def main():
-    dataset = load_dataset("truthful_qa", "generation")["validation"]
+    dataset = cast(DatasetDict, load_dataset("truthful_qa", "generation"))["validation"]
     ift_dataset = make_ift_dataset(dataset)
     jdump(ift_dataset, get_dataset_dir() / "truthfulqa.json")
 

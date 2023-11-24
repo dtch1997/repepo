@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Sequence
 import torch
 import transformers
 from torch.utils.data import Dataset
+from repepo.core.types import Completion
 
 from repepo.data.utils import IGNORE_INDEX
 from repepo.data.utils import tokenize
@@ -45,16 +46,14 @@ class SupervisedDataset(Dataset):
 
     def __init__(
         self,
-        completions: List[Dict[str, Any]],
+        completions: List[Completion],
         tokenizer: transformers.PreTrainedTokenizer,
         padding: Any = None,
     ):
         super(SupervisedDataset, self).__init__()
 
-        sources, targets = tuple(
-            [completion[key] for completion in completions]
-            for key in ("prompt", "response")
-        )
+        sources = [completion.prompt for completion in completions]
+        targets = [completion.response for completion in completions]
         # Add explicit EOS token
         targets = [f"{target}{tokenizer.eos_token}" for target in targets]
 
@@ -87,6 +86,9 @@ class DataCollatorForSupervisedDataset(object):
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
         keys = instances[0].keys()
         return_dict = {}
+
+        # keep pyright happy
+        assert self.tokenizer.pad_token_id is not None
 
         # Prepare inputs for model training
         input_ids, labels = tuple(

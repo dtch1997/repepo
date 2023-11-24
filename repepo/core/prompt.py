@@ -61,6 +61,7 @@ class FewShotPrompter(AbstractPrompter):
             ]
             for _ in range(self.k_few_shot):
                 done = False
+                idx = i  # assigning here so pyright is happy
                 while not done:
                     idx = random.randint(0, len(completions) - 1)  # range inclusive
                     done = idx not in selected_idxes

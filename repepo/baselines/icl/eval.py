@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-import evaluate
-import numpy as np
 import torch
 import transformers
 from termcolor import colored
@@ -14,8 +12,12 @@ from repepo.data import get_dataset
 from repepo.data import utils
 from repepo.data.dataset import format
 from repepo.data.dataset import sft
+from repepo.utils.metrics import Metrics
 from repepo.variables import Environ
 from repepo.variables import Model
+
+# keep pyright happy
+assert Environ.WandbEntity is not None
 
 
 @dataclass
@@ -84,29 +86,6 @@ def make_supervised_data_module(
     )
 
 
-class Metrics:
-    def __init__(self):
-        self.bleu = evaluate.load("bleu")
-        self.bleurt = evaluate.load("bleurt", module_type="metric")
-        self.rouge = evaluate.load("rouge")
-
-    def compute_metrics(
-        self, predictions: List[str], references: List[str]
-    ) -> Dict[str, float]:
-        bleu_results = self.bleu.compute(predictions=predictions, references=references)
-        bleurt_results = self.bleurt.compute(
-            predictions=predictions, references=references
-        )
-        rouge_results = self.rouge.compute(
-            predictions=predictions, references=references
-        )
-        return {
-            "bleu": bleu_results["bleu"],
-            "bleurt": np.mean(bleurt_results["scores"]),
-            "rouge1": rouge_results["rouge1"],
-        }
-
-
 class AverageMeter:
     def __init__(self):
         self.metrics = {}
@@ -159,9 +138,14 @@ def eval_model():
     """Simple Pytorch-only eval loop"""
 
     # Parse CLI args
-    parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments, WandbArguments)
+    # TODO: figure out typing for this
+    parser_args: Any = (
+        ModelArguments,
+        DataArguments,
+        TrainingArguments,
+        WandbArguments,
     )
+    parser = transformers.HfArgumentParser(parser_args)
     (
         model_args,
         data_args,
@@ -203,6 +187,7 @@ def eval_model():
     metric_fns = Metrics()
     meter = AverageMeter()
 
+    wandb = None
     if wandb_args.track:
         import wandb
 
@@ -223,7 +208,7 @@ def eval_model():
                 attention_mask=batch["attention_mask"],
             )
             loss = outputs.loss
-            if wandb_args.track:
+            if wandb_args.track and wandb is not None:
                 wandb.log({"eval/loss": loss}, step=global_step)
 
             prediction_ids = model.generate(
@@ -265,7 +250,7 @@ def eval_model():
         for name, metric in meter.metrics.items():
             val = metric["avg"]
             print(f"Average {name}: {val}")
-            if wandb_args.track:
+            if wandb_args.track and wandb is not None:
                 wandb.log({f"eval/{name}": val}, step=global_step)
 
     # Save the fine-tuned model

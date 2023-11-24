@@ -15,27 +15,33 @@ Completion = namedtuple("Completion", ("prompt", "response"))
 
 class BaseDataset(abc.ABC):
     @property
+    @abc.abstractmethod
     def instruction(self) -> str:
-        return self._instruction
+        pass
 
     @property
+    @abc.abstractmethod
     def examples(self) -> List[Example]:
-        return self._examples
+        pass
 
 
 class BasePipeline(abc.ABC):
     @property
+    @abc.abstractmethod
     def model(self) -> Model:
-        return self._model
+        pass
 
     @property
+    @abc.abstractmethod
     def tokenizer(self) -> Tokenizer:
-        return self._tokenizer
+        pass
 
     @property
+    @abc.abstractmethod
     def prompter(self) -> Prompter:
-        return self._prompter
+        pass
 
     @property
+    @abc.abstractmethod
     def formatter(self) -> Formatter:
-        return self._formatter
+        pass

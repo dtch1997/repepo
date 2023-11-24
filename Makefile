@@ -26,6 +26,9 @@ fmt: # run code formatter
 	black .
 	ruff --fix .
 
+typecheck: # run pyright
+	pyright
+
 test: # run tests
 	pytest
 

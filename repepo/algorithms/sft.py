@@ -10,3 +10,6 @@ class SupervisedFineTuning(BaseAlgorithm):
 
         # Make supervised data module
         # Run training, with optional WandB eval
+
+        # keep pyright happy for now
+        return pipeline
