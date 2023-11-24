@@ -1,12 +1,11 @@
 import abc
 
-from repepo.core import BaseDataset
-from repepo.core import BasePipeline
+from repepo.core import Dataset, Pipeline
 
 
 class BaseAlgorithm(abc.ABC):
     @abc.abstractmethod
-    def run(self, pipeline: BasePipeline, dataset: BaseDataset) -> BasePipeline:
+    def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
         raise NotImplementedError()
 
 
