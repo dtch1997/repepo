@@ -56,6 +56,8 @@ class InstructionFormatter(AbstractFormatter):
                 instruction=example.instruction, input=example.input
             )
         else:
-            prompt = self.PROMPT_NO_INPUT.format_map(instruction=example.instruction)
+            prompt = self.PROMPT_NO_INPUT.format_map(
+                {"instruction": example.instruction}
+            )
         response = example.output
         return Completion(prompt=prompt, response=response)

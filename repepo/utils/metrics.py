@@ -3,8 +3,14 @@ from typing import Dict, List
 import evaluate
 import numpy as np
 
+from evaluate import EvaluationModule
+
 
 class Metrics:
+    bleu: EvaluationModule
+    bleurt: EvaluationModule
+    rouge: EvaluationModule
+
     def __init__(self):
         self.bleu = evaluate.load("bleu")
         self.bleurt = evaluate.load("bleurt", module_type="metric")
@@ -20,6 +26,10 @@ class Metrics:
         rouge_results = self.rouge.compute(
             predictions=predictions, references=references
         )
+        # keep pyright happy
+        assert bleu_results is not None
+        assert bleurt_results is not None
+        assert rouge_results is not None
         return {
             "bleu": bleu_results["bleu"],
             "bleurt": np.mean(bleurt_results["scores"]),

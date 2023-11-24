@@ -39,7 +39,9 @@ def smart_tokenizer_and_embedding_resize(
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
 
-def get_pad_token(tokenizer: transformers.AutoTokenizer) -> Dict[str, SpecialToken]:
+def get_pad_token(
+    tokenizer: transformers.PreTrainedTokenizer,
+) -> Dict[str, SpecialToken]:
     """Set the padding token of the tokenizer if it doesn't have one
 
     Handled separately from other tokens because this can be used for pure inference workflows.
@@ -52,7 +54,7 @@ def get_pad_token(tokenizer: transformers.AutoTokenizer) -> Dict[str, SpecialTok
 
 
 def get_special_tokens(
-    tokenizer: transformers.AutoTokenizer,
+    tokenizer: transformers.PreTrainedTokenizer,
 ) -> Dict[str, SpecialToken]:
     """Get special tokens that must be added to model, tokenizer"""
     # Add special tokens
@@ -71,7 +73,7 @@ def tokenize(
     strings: Sequence[str],
     tokenizer: transformers.PreTrainedTokenizer,
     padding: Any = None,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, list[torch.Tensor]]:
     """Tokenize a list of strings.
 
     Does not do any padding by default

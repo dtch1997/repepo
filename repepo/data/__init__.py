@@ -1,6 +1,6 @@
 import functools
 import pathlib
-from typing import List, Tuple
+from typing import List
 
 from repepo.variables import Environ
 
@@ -22,8 +22,8 @@ for path in get_all_json_filepaths(get_dataset_dir()):
 
 
 @functools.lru_cache(1)
-def list_datasets() -> Tuple[str]:
-    return list(_DATASETS.keys())
+def list_datasets() -> tuple[str, ...]:
+    return tuple(_DATASETS.keys())
 
 
 @functools.lru_cache(1)

@@ -1,22 +1,16 @@
 import abc
 import random
-from typing import Any, Dict, List, NewType
+from typing import Any, Dict, List
 
-Example = NewType("Example", Dict[str, Any])
-# Example:
-#   - a dict with keys 'instruction', 'input', 'output'
-#   - could also have additional metadata
-
-Completion = NewType("Completion", Dict[str, Any])
-# Completion:
-#   - a dict with keys 'prompt', 'response'
+from repepo.core.types import Completion, Example
 
 
 def completion_to_str(completion: Completion) -> str:
-    return completion["prompt"] + "\n" + completion["response"]
+    return completion.prompt + "\n" + completion.response
 
 
 class AbstractFormatter(abc.ABC):
+    @abc.abstractmethod
     def format_example(self, example: Example, **kwargs) -> Completion:
         pass
 
@@ -82,6 +76,7 @@ class FewShotPrompter:
             ]
             for _ in range(self.n_few_shot_examples):
                 done = False
+                idx = i  # assigning here so pyright is happy
                 while not done:
                     idx = random.randint(0, len(completions) - 1)  # range inclusive
                     done = idx not in selected_idxes
@@ -89,8 +84,8 @@ class FewShotPrompter:
                 selected_idxes.append(idx)
 
             # Concatenate completions
-            prompt = "\n".join(few_shot_examples) + "\n" + completion["prompt"]
-            response = completion["response"]
+            prompt = "\n".join(few_shot_examples) + "\n" + completion.prompt
+            response = completion.response
             output_completions.append(dict(prompt=prompt, response=response))
 
         return output_completions

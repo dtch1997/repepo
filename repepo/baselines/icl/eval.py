@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
-import evaluate
-import numpy as np
 import torch
 import transformers
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer
 from termcolor import colored
 from torch.utils.data import DataLoader
 
@@ -14,8 +13,12 @@ from repepo.data import get_dataset
 from repepo.data import utils
 from repepo.data.dataset import format
 from repepo.data.dataset import sft
+from repepo.utils.metrics import Metrics
 from repepo.variables import Environ
 from repepo.variables import Model
+
+# keep pyright happy
+assert Environ.WandbEntity is not None
 
 
 @dataclass
@@ -57,7 +60,7 @@ class TrainingArguments(transformers.TrainingArguments):
 
 
 def make_supervised_data_module(
-    tokenizer: transformers.PreTrainedTokenizer, data_args: DataArguments
+    tokenizer: PreTrainedTokenizer, data_args: DataArguments
 ) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
 
@@ -82,29 +85,6 @@ def make_supervised_data_module(
     return dict(
         eval_dataloader=eval_dataloader,
     )
-
-
-class Metrics:
-    def __init__(self):
-        self.bleu = evaluate.load("bleu")
-        self.bleurt = evaluate.load("bleurt", module_type="metric")
-        self.rouge = evaluate.load("rouge")
-
-    def compute_metrics(
-        self, predictions: List[str], references: List[str]
-    ) -> Dict[str, float]:
-        bleu_results = self.bleu.compute(predictions=predictions, references=references)
-        bleurt_results = self.bleurt.compute(
-            predictions=predictions, references=references
-        )
-        rouge_results = self.rouge.compute(
-            predictions=predictions, references=references
-        )
-        return {
-            "bleu": bleu_results["bleu"],
-            "bleurt": np.mean(bleurt_results["scores"]),
-            "rouge1": rouge_results["rouge1"],
-        }
 
 
 class AverageMeter:
@@ -159,9 +139,14 @@ def eval_model():
     """Simple Pytorch-only eval loop"""
 
     # Parse CLI args
-    parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments, WandbArguments)
+    # TODO: figure out typing for this
+    parser_args: Any = (
+        ModelArguments,
+        DataArguments,
+        TrainingArguments,
+        WandbArguments,
     )
+    parser = transformers.HfArgumentParser(parser_args)
     (
         model_args,
         data_args,
@@ -170,16 +155,20 @@ def eval_model():
     ) = parser.parse_args_into_dataclasses()
 
     # Load model and tokenizer
-    model = transformers.AutoModelForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    tokenizer = transformers.AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=training_args.cache_dir,
-        model_max_length=training_args.model_max_length,
-        padding_side="right",
-        use_fast=True,
+    # TODO: figure out typing for this
+    tokenizer = cast(
+        PreTrainedTokenizer,
+        AutoTokenizer.from_pretrained(
+            model_args.model_name_or_path,
+            cache_dir=training_args.cache_dir,
+            model_max_length=training_args.model_max_length,
+            padding_side="right",
+            use_fast=True,
+        ),
     )
 
     # Add new tokens to tokenizer
@@ -203,6 +192,7 @@ def eval_model():
     metric_fns = Metrics()
     meter = AverageMeter()
 
+    wandb = None
     if wandb_args.track:
         import wandb
 
@@ -223,7 +213,7 @@ def eval_model():
                 attention_mask=batch["attention_mask"],
             )
             loss = outputs.loss
-            if wandb_args.track:
+            if wandb_args.track and wandb is not None:
                 wandb.log({"eval/loss": loss}, step=global_step)
 
             prediction_ids = model.generate(
@@ -265,7 +255,7 @@ def eval_model():
         for name, metric in meter.metrics.items():
             val = metric["avg"]
             print(f"Average {name}: {val}")
-            if wandb_args.track:
+            if wandb_args.track and wandb is not None:
                 wandb.log({f"eval/{name}": val}, step=global_step)
 
     # Save the fine-tuned model

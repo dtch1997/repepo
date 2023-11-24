@@ -1,6 +1,5 @@
 import abc
-from collections import namedtuple
-from typing import Any, List, NewType
+from typing import Any, List, NewType, NamedTuple
 
 # Placeholder type definitions
 Model = NewType("Model", Any)
@@ -8,34 +7,48 @@ Tokenizer = NewType("Tokenizer", Any)
 Prompter = NewType("Prompter", Any)
 Formatter = NewType("Formatter", Any)
 
+
 # Base types
-Example = namedtuple("Example", ("instruction", "input", "output"))
-Completion = namedtuple("Completion", ("prompt", "response"))
+class Example(NamedTuple):
+    instruction: str
+    input: str
+    output: str
+
+
+class Completion(NamedTuple):
+    prompt: str
+    response: str
 
 
 class BaseDataset(abc.ABC):
     @property
+    @abc.abstractmethod
     def instruction(self) -> str:
-        return self._instruction
+        pass
 
     @property
+    @abc.abstractmethod
     def examples(self) -> List[Example]:
-        return self._examples
+        pass
 
 
 class BasePipeline(abc.ABC):
     @property
+    @abc.abstractmethod
     def model(self) -> Model:
-        return self._model
+        pass
 
     @property
+    @abc.abstractmethod
     def tokenizer(self) -> Tokenizer:
-        return self._tokenizer
+        pass
 
     @property
+    @abc.abstractmethod
     def prompter(self) -> Prompter:
-        return self._prompter
+        pass
 
     @property
+    @abc.abstractmethod
     def formatter(self) -> Formatter:
-        return self._formatter
+        pass

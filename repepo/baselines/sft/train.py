@@ -14,10 +14,10 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 import transformers
-from transformers import Trainer
+from transformers import Trainer, PreTrainedTokenizer, AutoTokenizer
 
 from repepo.data import get_dataset
 from repepo.data import utils
@@ -71,9 +71,9 @@ def train():
     # loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
     # for logger in loggers:
     #     logger.setLevel(logging.INFO)
-    parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments)
-    )
+    # TODO: figure out typing for this
+    parser_args: Any = (ModelArguments, DataArguments, TrainingArguments)
+    parser = transformers.HfArgumentParser(parser_args)
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     model = transformers.AutoModelForCausalLM.from_pretrained(
@@ -81,12 +81,16 @@ def train():
         cache_dir=training_args.cache_dir,
     )
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=training_args.cache_dir,
-        model_max_length=training_args.model_max_length,
-        padding_side="right",
-        use_fast=True,
+    # TODO: figure out typing for this
+    tokenizer = cast(
+        PreTrainedTokenizer,
+        AutoTokenizer.from_pretrained(
+            model_args.model_name_or_path,
+            cache_dir=training_args.cache_dir,
+            model_max_length=training_args.model_max_length,
+            padding_side="right",
+            use_fast=True,
+        ),
     )
 
     special_tokens_dict = utils.get_pad_token(tokenizer)

@@ -13,5 +13,7 @@ jobs:
         run: make update
       - name: linting
         run: make style
+      - name: type checking
+        run: make typecheck
       - name: tests
         run: make test
