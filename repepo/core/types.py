@@ -1,6 +1,5 @@
 import abc
-from collections import namedtuple
-from typing import Any, List, NewType
+from typing import Any, List, NewType, NamedTuple
 
 # Placeholder type definitions
 Model = NewType("Model", Any)
@@ -8,9 +7,17 @@ Tokenizer = NewType("Tokenizer", Any)
 Prompter = NewType("Prompter", Any)
 Formatter = NewType("Formatter", Any)
 
+
 # Base types
-Example = namedtuple("Example", ("instruction", "input", "output"))
-Completion = namedtuple("Completion", ("prompt", "response"))
+class Example(NamedTuple):
+    instruction: str
+    input: str
+    output: str
+
+
+class Completion(NamedTuple):
+    prompt: str
+    response: str
 
 
 class BaseDataset(abc.ABC):
