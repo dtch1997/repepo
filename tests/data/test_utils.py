@@ -1,10 +1,10 @@
 from torch import tensor, allclose
-from transformers import PreTrainedTokenizer
+from repepo.core.types import Tokenizer
 
 from repepo.data.utils import tokenize
 
 
-def test_tokenize(tokenizer: PreTrainedTokenizer) -> None:
+def test_tokenize(tokenizer: Tokenizer) -> None:
     # TODO: pythia default tokenizer max length breaks tokenize()
     tokenizer.model_max_length = 256
     res = tokenize(["Hello world"], tokenizer)

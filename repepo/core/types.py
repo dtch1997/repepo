@@ -1,11 +1,10 @@
-from dataclasses import dataclass
-from typing import Any, List, NewType, NamedTuple
+from typing import List, NamedTuple
+
+from transformers import PreTrainedTokenizerBase, PreTrainedModel
 
 # Placeholder type definitions
-Model = NewType("Model", Any)
-Tokenizer = NewType("Tokenizer", Any)
-Prompter = NewType("Prompter", Any)
-Formatter = NewType("Formatter", Any)
+Model = PreTrainedModel
+Tokenizer = PreTrainedTokenizerBase
 
 
 # Base types
@@ -21,11 +20,3 @@ class Completion(NamedTuple):
 
 
 Dataset = List[Example]
-
-
-@dataclass
-class Pipeline:
-    model: Model
-    tokenizer: Tokenizer
-    prompter: Prompter
-    formatter: Formatter

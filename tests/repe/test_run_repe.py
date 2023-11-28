@@ -80,5 +80,3 @@ def test_rep_readers_and_control(model: GPTNeoXForCausalLM, tokenizer: Tokenizer
     )
 
     assert control_outputs[0]["generated_text"] == '123456789_1\n\n#define S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S'
-
-

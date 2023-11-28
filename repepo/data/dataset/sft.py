@@ -5,9 +5,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Sequence
 
 import torch
-import transformers
 from torch.utils.data import Dataset
-from repepo.core.types import Completion
+from repepo.core.types import Completion, Tokenizer
 
 from repepo.data.utils import IGNORE_INDEX
 from repepo.data.utils import tokenize
@@ -16,7 +15,7 @@ from repepo.data.utils import tokenize
 def preprocess(
     sources: Sequence[str],
     targets: Sequence[str],
-    tokenizer: transformers.PreTrainedTokenizer,
+    tokenizer: Tokenizer,
     padding: Any = None,
 ) -> Dict:
     """Preprocess the data by tokenizing."""
@@ -47,7 +46,7 @@ class SupervisedDataset(Dataset):
     def __init__(
         self,
         completions: List[Completion],
-        tokenizer: transformers.PreTrainedTokenizer,
+        tokenizer: Tokenizer,
         padding: Any = None,
     ):
         super(SupervisedDataset, self).__init__()
@@ -81,7 +80,7 @@ class SupervisedDataset(Dataset):
 class DataCollatorForSupervisedDataset(object):
     """Collate examples for supervised fine-tuning."""
 
-    tokenizer: transformers.PreTrainedTokenizer
+    tokenizer: Tokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
         keys = instances[0].keys()

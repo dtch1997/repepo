@@ -1,4 +1,4 @@
 from .types import Dataset
-from .types import Pipeline
+from .pipeline import Pipeline
 
 __all__ = ["Dataset", "Pipeline"]

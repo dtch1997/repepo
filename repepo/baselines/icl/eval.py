@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 import torch
 import transformers
-from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from termcolor import colored
 from torch.utils.data import DataLoader
+from repepo.core.types import Tokenizer
 
 # Load pre-trained model and tokenizer from Huggingface
 from repepo.data import get_dataset
@@ -59,9 +60,7 @@ class TrainingArguments(transformers.TrainingArguments):
     )
 
 
-def make_supervised_data_module(
-    tokenizer: PreTrainedTokenizer, data_args: DataArguments
-) -> Dict:
+def make_supervised_data_module(tokenizer: Tokenizer, data_args: DataArguments) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
 
     # Get the dataset by name
@@ -159,16 +158,12 @@ def eval_model():
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    # TODO: figure out typing for this
-    tokenizer = cast(
-        PreTrainedTokenizer,
-        AutoTokenizer.from_pretrained(
-            model_args.model_name_or_path,
-            cache_dir=training_args.cache_dir,
-            model_max_length=training_args.model_max_length,
-            padding_side="right",
-            use_fast=True,
-        ),
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_args.model_name_or_path,
+        cache_dir=training_args.cache_dir,
+        model_max_length=training_args.model_max_length,
+        padding_side="right",
+        use_fast=True,
     )
 
     # Add new tokens to tokenizer

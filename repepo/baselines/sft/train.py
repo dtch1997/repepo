@@ -14,10 +14,11 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 import transformers
-from transformers import Trainer, PreTrainedTokenizer, AutoTokenizer
+from transformers import Trainer, AutoTokenizer
+from repepo.core.types import Tokenizer
 
 from repepo.data import get_dataset
 from repepo.data import utils
@@ -54,9 +55,7 @@ class TrainingArguments(transformers.TrainingArguments):
     )
 
 
-def make_supervised_data_module(
-    tokenizer: transformers.PreTrainedTokenizer, data_args: DataArguments
-) -> Dict:
+def make_supervised_data_module(tokenizer: Tokenizer, data_args: DataArguments) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
     list_data_dict = get_dataset(data_args.dataset_name)
     train_dataset = sft.SupervisedDataset(list_data_dict, tokenizer=tokenizer)
@@ -82,15 +81,12 @@ def train():
     )
 
     # TODO: figure out typing for this
-    tokenizer = cast(
-        PreTrainedTokenizer,
-        AutoTokenizer.from_pretrained(
-            model_args.model_name_or_path,
-            cache_dir=training_args.cache_dir,
-            model_max_length=training_args.model_max_length,
-            padding_side="right",
-            use_fast=True,
-        ),
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_args.model_name_or_path,
+        cache_dir=training_args.cache_dir,
+        model_max_length=training_args.model_max_length,
+        padding_side="right",
+        use_fast=True,
     )
 
     special_tokens_dict = utils.get_pad_token(tokenizer)

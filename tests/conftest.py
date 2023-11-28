@@ -1,9 +1,10 @@
-from typing import cast
-from transformers import PreTrainedTokenizer
+from typing import Any
 import pytest
 import torch
 
 from transformers import GPTNeoXForCausalLM, AutoTokenizer
+
+from repepo.core.types import Tokenizer
 
 
 _model: GPTNeoXForCausalLM | None = None
@@ -17,12 +18,11 @@ def _load_model() -> GPTNeoXForCausalLM:
             "EleutherAI/pythia-70m",
             # torch_dtype=torch.bfloat16,
             torch_dtype=torch.float64,
-            device_map="auto",
             token=True,
         )
         assert type(_pretrained_model) == GPTNeoXForCausalLM
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        _model = _pretrained_model.eval()
+        device: Any = "cuda" if torch.cuda.is_available() else "cpu"
+        _model = _pretrained_model.to(device).eval()
     return _model
 
 
@@ -37,6 +37,5 @@ def model() -> GPTNeoXForCausalLM:
 
 
 @pytest.fixture
-def tokenizer() -> PreTrainedTokenizer:
-    # TODO: figure out what the corrrect type to use is here
-    return cast(PreTrainedTokenizer, _tokenizer)
+def tokenizer() -> Tokenizer:
+    return _tokenizer
