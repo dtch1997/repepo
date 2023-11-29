@@ -38,13 +38,13 @@ class Repe(BaseAlgorithm):
         self.coeff = 0.1
         self.max_new_tokens = 64
 
-    def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
+    def run(self, pipeline: Pipeline, dataset: Dataset) -> None:
         """
         Modifes the model only by running repe on the dataset
         """
 
-        # TODO: return a pipeline object that works
-        # TODO: get datasets working properly and with control
+        # TODO: return a pipeline object that works, mostly done
+        # TODO: get datasets working properly and with control: i) direction specification and ids for each datapoint with its corresponding opposite, ii) bool value for each datapoint
 
         train_data = convert_repepo_format_to_old_format(dataset)  # TODO: this is a temporary hack
 
@@ -76,29 +76,19 @@ class Repe(BaseAlgorithm):
             control_method=self.control_method,
         )
 
+        wrapped_model = rep_control_pipeline.wrapped_model
+
         activations = {}
-        # TODO: potential errors here
         for layer in layer_ids:
             activations[layer] = (
                 torch.tensor(self.coeff * rep_reader.directions[layer] * rep_reader.direction_signs[layer])
                 .to(model.device)
                 .half()
             )
+        
+        wrapped_model.set_activations(activations, layer_ids, self.block_name)
+        pipeline.model = wrapped_model
 
-        from functools import partial
-
-        control_outputs = partial(
-            rep_control_pipeline,
-            activations=activations,
-            batch_size=4,
-            max_new_tokens=self.max_new_tokens,
-            do_sample=False,
-        )
-        pipeline.model = control_outputs
-        breakpoint()
-        # TODO: how to format the new model so that it works with pipeline abstractions?
-
-        return pipeline
 
 
 if __name__ == "__main__":
@@ -148,7 +138,7 @@ if __name__ == "__main__":
 
     pipeline = Pipeline(model=model, tokenizer=tokenizer, prompter=IdentityPrompter(), formatter=InstructionFormatter())
 
-    output = pipeline.generate(dataset[0].to(model.device))
-    print(f"output is \n{output}")
+    # output = pipeline.generate(dataset[0])
+    # print(f"output is \n{output}")
 
-    new_pipeline = Repe().run(pipeline=pipeline, dataset=dataset)
+    Repe().run(pipeline=pipeline, dataset=dataset)
