@@ -46,17 +46,17 @@ def test_icl_Pipeline_build_generation_prompt(
     assert (
         res
         == """
-Input:  Paris is in 
-Output: 
+Input:  Paris is in
+Output:
 France
-Input:  London is in 
-Output: 
+Input:  London is in
+Output:
 England
-Input:  Berlin is in 
-Output: 
+Input:  Berlin is in
+Output:
 Germany
-Input:  Beijing is in 
-Output: 
+Input:  Beijing is in
+Output:
 """.strip()
         + " "
     )

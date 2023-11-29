@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [project]
 name = "repepo"
@@ -9,7 +9,21 @@ authors = [
   { name = "Daniel C.H. Tan", email = "dtch1997@users.noreply.github.com" },
 ]
 classifiers = ["Private :: Do Not Upload"]
-requires-python = ">=3.10"
+requires-python = ">=3.9,<3.11"
+dependencies = [
+    "pyrallis>=0.3.1",
+    "wandb>=0.16.0",
+    "tensorboard>=2.15.1",
+    "transformers>=4.35.2",
+    "torch>=2.1.1",
+    "datasets>=2.15.0",
+    "numpy>=1.26.2",
+    "accelerate>=0.24.1",
+    "scikit-learn>=1.3.2",
+    "evaluate>=0.4.1",
+    "rouge-score>=0.1.2",
+    "bleurt @ git+https://github.com/google-research/bleurt",
+]
 
 [tool.black]
 line-length = 88
@@ -28,7 +42,7 @@ exclude = '''
 '''
 
 [tool.ruff]
-line-length = 120
+line-length = 88
 select = [
   "E", # pycodestyle
   "F", # pyflakes
@@ -61,3 +75,18 @@ reportPrivateImportUsage = "none"
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests"]
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "notebook>=7.0.6",
+    "ipykernel>=6.27.1",
+    "matplotlib>=3.8.2",
+    "seaborn>=0.13.0",
+    "ffmpeg>=1.4",
+    "pytest>=7.4.3",
+    "black>=23.11.0",
+    "ruff>=0.1.6",
+    "pyright>=1.1.338",
+    "jupyter>=1.0.0",
+    "pre-commit>=3.5.0",
+]
