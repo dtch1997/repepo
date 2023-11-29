@@ -30,7 +30,7 @@ jobs:
         run: pdm install
 
       - name: Lint
-        run: pre-commit run --all-files
+        run: pdm run pre-commit run --all-files
 
       - name: Test
-        run: python -m pytest tests
+        run: pdm run python -m pytest tests
