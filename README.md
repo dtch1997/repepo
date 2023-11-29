@@ -12,6 +12,7 @@ pipx install pdm
 Setup is as simple as:
 ```bash
 pdm install
+pdm run pre-commit install
 ```
 
 This creates a virtual environment in `.venv` with the appropriate libraries, installed from the PDM lock file.
