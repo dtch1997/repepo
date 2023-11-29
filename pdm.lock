@@ -5,7 +5,7 @@
 groups = ["default", "jupyter", "pre-commit", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:846fb22babbdd2543fb0665cf5f5d8e945112c47db593b835f5fd9ead7a35f51"
+content_hash = "sha256:83188f4aeb612d671559fb7778d7908eec4677ae1d6380f1d038168d9319fc4a"
 
 [[package]]
 name = "absl-py"
@@ -3183,6 +3183,19 @@ files = [
 ]
 
 [[package]]
+name = "syrupy"
+version = "4.6.0"
+requires_python = ">=3.8.1,<4"
+summary = "Pytest Snapshot Test Utility"
+dependencies = [
+    "pytest<8.0.0,>=7.0.0",
+]
+files = [
+    {file = "syrupy-4.6.0-py3-none-any.whl", hash = "sha256:747aae1bcf3cb3249e33b1e6d81097874d23615982d5686ebe637875b0775a1b"},
+    {file = "syrupy-4.6.0.tar.gz", hash = "sha256:231b1f5d00f1f85048ba81676c79448076189c4aef4d33f21ae32f3b4c565a54"},
+]
+
+[[package]]
 name = "tensorboard"
 version = "2.15.1"
 requires_python = ">=3.9"
@@ -3222,30 +3235,9 @@ version = "2.15.0"
 requires_python = ">=3.9"
 summary = "TensorFlow is an open source machine learning framework for everyone."
 dependencies = [
-    "absl-py>=1.0.0",
-    "astunparse>=1.6.0",
-    "flatbuffers>=23.5.26",
-    "gast!=0.5.0,!=0.5.1,!=0.5.2,>=0.2.1",
-    "google-pasta>=0.1.1",
-    "grpcio<2.0,>=1.24.3",
-    "h5py>=2.9.0",
-    "keras<2.16,>=2.15.0",
-    "libclang>=13.0.0",
-    "ml-dtypes~=0.2.0",
-    "numpy<2.0.0,>=1.23.5",
-    "opt-einsum>=2.3.2",
-    "packaging",
-    "protobuf!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.20.3",
-    "setuptools",
-    "six>=1.12.0",
-    "tensorboard<2.16,>=2.15",
     "tensorflow-cpu-aws==2.15.0; platform_system == \"Linux\" and (platform_machine == \"arm64\" or platform_machine == \"aarch64\")",
-    "tensorflow-estimator<2.16,>=2.15.0",
     "tensorflow-intel==2.15.0; platform_system == \"Windows\"",
-    "tensorflow-io-gcs-filesystem>=0.23.1",
-    "termcolor>=1.1.0",
-    "typing-extensions>=3.6.6",
-    "wrapt<1.15,>=1.11.0",
+    "tensorflow-macos==2.15.0; platform_system == \"Darwin\" and platform_machine == \"arm64\"",
 ]
 files = [
     {file = "tensorflow-2.15.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:9b248e0f4316b3a3c54cd1f83edfb7a761d473060c1972a8ea31a90d5de3aa72"},
@@ -3351,6 +3343,40 @@ files = [
     {file = "tensorflow_io_gcs_filesystem-0.34.0-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:0dafed144673e1173528768fe208a7c5a6e8edae40208381cac420ee7c918ec9"},
     {file = "tensorflow_io_gcs_filesystem-0.34.0-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:396bfff61b49f80b86ddebe0c76ae0f2731689cee49ad7d782625180b50b13af"},
     {file = "tensorflow_io_gcs_filesystem-0.34.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b20622f8572fcb6c93e8f7d626327472f263e47ebd63d2153ef09162ef5ef7b5"},
+]
+
+[[package]]
+name = "tensorflow-macos"
+version = "2.15.0"
+requires_python = ">=3.9"
+summary = "TensorFlow is an open source machine learning framework for everyone."
+dependencies = [
+    "absl-py>=1.0.0",
+    "astunparse>=1.6.0",
+    "flatbuffers>=23.5.26",
+    "gast!=0.5.0,!=0.5.1,!=0.5.2,>=0.2.1",
+    "google-pasta>=0.1.1",
+    "grpcio<2.0,>=1.24.3",
+    "h5py>=2.9.0",
+    "keras<2.16,>=2.15.0",
+    "libclang>=13.0.0",
+    "ml-dtypes~=0.2.0",
+    "numpy<2.0.0,>=1.23.5",
+    "opt-einsum>=2.3.2",
+    "packaging",
+    "protobuf!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.20.3",
+    "setuptools",
+    "six>=1.12.0",
+    "tensorboard<2.16,>=2.15",
+    "tensorflow-estimator<2.16,>=2.15.0",
+    "tensorflow-io-gcs-filesystem>=0.23.1",
+    "termcolor>=1.1.0",
+    "typing-extensions>=3.6.6",
+    "wrapt<1.15,>=1.11.0",
+]
+files = [
+    {file = "tensorflow_macos-2.15.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:cdfb4cd80ddfdf189212f4e3747a4404702d58cc6a346ab8887bd567ca3284f8"},
+    {file = "tensorflow_macos-2.15.0-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:9bffd0da3f63ef5f16b198aa225eec1220c199ec937ba6bddcd34bc5bda13fd2"},
 ]
 
 [[package]]
