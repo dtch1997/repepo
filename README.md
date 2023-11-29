@@ -4,7 +4,7 @@ Codebase for benchmarking Representation Engineering
 
 ## Installation
 
-First make a virtual environment and activate it. We support Python 3.9, 3.10
+First make a virtual environment and activate it. We support Python >=3.10
 
 ```bash
 # Example with virtualenv; you can also use Conda
@@ -13,18 +13,19 @@ source .venv/bin/activate
 ```
 
 Then, install dependencies
+
 ```bash
 make init
 ```
 
 ## Development
 
-branch structure: 
-`main` -> `dev` -> `[insert-name]-dev`
+Branching follows [Github workflow](https://githubflow.github.io/)
 
-To update dependencies, modify `requirements/main.in`. 
+To update dependencies, modify `requirements/main.in`.
 
 Then compile and freeze dependencies:
+
 ```bash
 make update-deps
 ```
@@ -33,6 +34,8 @@ This creates frozen requirements in `requirements/main.txt` and `requirements.de
 
 ### Code Style
 
-Run `make check` to check code format. 
+Run `make check` to check code format.
 
 Run `make fmt` to run Black, Ruff linters.
+
+Run `make test` to run Pytest
