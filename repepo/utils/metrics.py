@@ -2,6 +2,7 @@ from typing import Dict, List
 
 import evaluate
 import numpy as np
+from statistics import stdev, mean
 
 from evaluate import EvaluationModule
 
@@ -83,3 +84,33 @@ class AverageMeter:
                 metric["sum"] = 0
                 metric["count"] = 0
                 metric["avg"] = 0
+
+
+class AggregateMetric:
+    _values: list[float]
+
+    def __init__(self, values: list[float]):
+        self._values = values
+
+    @property
+    def mean(self) -> float:
+        return mean(self._values)
+
+    @property
+    def stdev(self) -> float:
+        return stdev(self._values)
+
+    @property
+    def count(self) -> int:
+        return len(self._values)
+
+    @property
+    def min(self) -> float:
+        return min(self._values)
+
+    @property
+    def max(self) -> float:
+        return max(self._values)
+
+    def __repr__(self) -> str:
+        return f"{self.mean:.3f} ± {self.stdev:.3f}"

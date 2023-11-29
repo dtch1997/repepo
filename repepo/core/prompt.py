@@ -6,7 +6,7 @@ from repepo.core.types import Completion
 
 
 def completion_to_str(completion: Completion) -> str:
-    return completion.prompt + "\n" + completion.response
+    return completion.prompt.rstrip() + " " + completion.response.lstrip() + "\n"
 
 
 class AbstractPrompter(abc.ABC):
