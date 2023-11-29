@@ -43,9 +43,7 @@ def test_icl_Pipeline_build_generation_prompt(
     res = pipeline.build_generation_prompt(
         Example(instruction="", input="Beijing is in", output="China"),
     )
-    assert (
-        res
-        == """
+    expected = """
 Input:  Paris is in
 Output:
 France
@@ -57,6 +55,5 @@ Output:
 Germany
 Input:  Beijing is in
 Output:
-""".strip()
-        + " "
-    )
+"""
+    assert res == expected.strip() + " "

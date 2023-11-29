@@ -29,7 +29,9 @@ def test_rep_readers_and_control(
     )
     tokenizer.bos_token_id = 1
 
-    rep_reading_pipeline = RepReadingPipeline(model=model, tokenizer=tokenizer)
+    rep_reading_pipeline = RepReadingPipeline(
+        model=model, tokenizer=tokenizer, device="cuda"
+    )
 
     default_user_tag = "[INST]"
     assistant_tag = "[/INST]"
@@ -55,6 +57,7 @@ def test_rep_readers_and_control(
         layers=hidden_layers,
         block_name=block_name,
         control_method=control_method,
+        device="cuda",
     )
 
     coeff = 0.1
