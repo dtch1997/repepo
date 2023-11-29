@@ -142,7 +142,7 @@ class RepReadingPipeline(Pipeline):
         self,
         train_inputs: Union[str, List[str], List[List[str]]],
         rep_token: Union[str, int] = -1,
-        hidden_layers: Union[str, int] = -1,
+        hidden_layers: Union[list, int] = -1,
         n_difference: int = 1,
         batch_size: int = 8,
         train_labels: List[int] = None,
