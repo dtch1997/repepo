@@ -1,4 +1,4 @@
-name: 'ci'
+name: "ci"
 on: # rebuild any PRs and main branch changes
   pull_request:
   push:
@@ -23,16 +23,11 @@ jobs:
       - name: Checkout (GitHub)
         uses: actions/checkout@v4
 
-      - name: pdm cache
-        uses: actions/cache@v3
-        with:
-          path: .cache/pdm
-          key: ${{ runner.os }}-pdm-${{ hashFiles('pdm.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pdm-
-
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v3
+        with:
+          python-version: 3.10
+          cache: true
 
       - name: Install dependencies
         run: pdm install
