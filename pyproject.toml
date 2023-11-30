@@ -89,4 +89,5 @@ dev = [
     "jupyter>=1.0.0",
     "pre-commit>=3.5.0",
     "syrupy>=4.6.0",
+    "ml-dtypes>=0.2.0",
 ]
