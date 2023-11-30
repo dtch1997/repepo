@@ -5,7 +5,7 @@
 groups = ["default", "jupyter", "pre-commit", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:425ebcc2fd06b03442cf0f287d68413cac7f8ff2475edacd37fc049417b00ea6"
+content_hash = "sha256:7c1bfe05136ec60c9681d6ba773af8a3b9ec345e4c7706af0e069da8b276a307"
 
 [[package]]
 name = "absl-py"
