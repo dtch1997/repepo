@@ -2,14 +2,14 @@
 # name: test_icl_Pipeline_build_generation_prompt
   '''
   Input:  Paris is in 
-  Output: 
-  France
+  Output: France
+  
   Input:  London is in 
-  Output: 
-  England
+  Output: England
+  
   Input:  Berlin is in 
-  Output: 
-  Germany
+  Output: Germany
+  
   Input:  Beijing is in 
   Output: 
   '''
