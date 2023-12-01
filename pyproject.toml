@@ -9,7 +9,7 @@ authors = [
   { name = "Daniel C.H. Tan", email = "dtch1997@users.noreply.github.com" },
 ]
 classifiers = ["Private :: Do Not Upload"]
-requires-python = ">=3.9,<3.11"
+requires-python = ">=3.9,<4.0"
 dependencies = [
     "pyrallis>=0.3.1",
     "wandb>=0.16.0",
