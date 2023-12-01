@@ -32,6 +32,7 @@ class Pipeline:
         """Generate a completion for a given example"""
         base_prompt = self.build_generation_prompt(example)
         inputs: Any = self.tokenizer(base_prompt, return_tensors="pt")
+        inputs = inputs.to(self.model.device)
         outputs = self.model.generate(
             **inputs,
             generation_config=generation_config,
