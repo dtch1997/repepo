@@ -25,6 +25,8 @@ class RepReadingPipeline(Pipeline):
             outputs["hidden_states"] = outputs[f"{which_hidden_states}_hidden_states"]
 
         hidden_states_layers = {}
+        if isinstance(hidden_layers, int):
+            hidden_layers = [hidden_layers]
         for layer in hidden_layers:
             hidden_states = outputs["hidden_states"][layer]
             hidden_states = hidden_states[:, rep_token, :]
