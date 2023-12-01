@@ -5,12 +5,29 @@ from repepo.repe.rep_control_pipeline import RepControlPipeline
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 import torch
 import math
-
-def test_run_repe(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
-    assert model.config.name_or_path == "EleutherAI/pythia-70m"
+import pytest
 
 
-def test_rep_readers_and_control(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
+@pytest.mark.parametrize(
+    "device",
+    [
+        pytest.param(
+            "cuda",
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="Cuda not available"
+            ),
+        ),
+        pytest.param(
+            "cpu",
+            marks=pytest.mark.skipif(
+                torch.cuda.is_available(), reason="Cuda is available"
+            ),
+        ),
+    ],
+)
+def test_rep_readers_and_control(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer, device: str
+) -> None:
     """
     Test that the rep readers work for Pythia 70m with double precision
     """
@@ -26,7 +43,9 @@ def test_rep_readers_and_control(model: GPTNeoXForCausalLM, tokenizer: Tokenizer
     )
     tokenizer.bos_token_id = 1
 
-    rep_reading_pipeline = RepReadingPipeline(model=model, tokenizer=tokenizer)
+    rep_reading_pipeline = RepReadingPipeline(
+        model=model, tokenizer=tokenizer, device=device
+    )
 
     default_user_tag = "[INST]"
     assistant_tag = "[/INST]"
@@ -46,13 +65,13 @@ def test_rep_readers_and_control(model: GPTNeoXForCausalLM, tokenizer: Tokenizer
     assert rep_reader.directions is not None
     assert math.isclose(rep_reader.directions[-3][0][0], 0.00074, abs_tol=1e-5)
 
-
     rep_control_pipeline = RepControlPipeline(
         model=model,
         tokenizer=tokenizer,
         layers=hidden_layers,
         block_name=block_name,
         control_method=control_method,
+        device=device,
     )
 
     coeff = 0.1
@@ -68,7 +87,9 @@ def test_rep_readers_and_control(model: GPTNeoXForCausalLM, tokenizer: Tokenizer
         )
 
     assert activations[-3].shape == torch.Size([1, 512])
-    assert math.isclose(float(activations[-3][0][0]), 7.410049147438258e-05, abs_tol=1e-6)
+    assert math.isclose(
+        float(activations[-3][0][0]), 7.410049147438258e-05, abs_tol=1e-6
+    )
 
     inputs = "12345"
     control_outputs = rep_control_pipeline(
@@ -79,4 +100,7 @@ def test_rep_readers_and_control(model: GPTNeoXForCausalLM, tokenizer: Tokenizer
         do_sample=False,
     )
 
-    assert control_outputs[0]["generated_text"] == '123456789_1\n\n#define S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S'
+    assert (
+        control_outputs[0]["generated_text"]
+        == "123456789_1\n\n#define S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S"
+    )

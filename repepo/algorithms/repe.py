@@ -1,5 +1,5 @@
 from repepo.core import Dataset, Pipeline
-from repepo.core.types import Example, RepExample
+from repepo.core.types import RepExample
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 from repepo.repe.rep_control_pipeline import RepControlPipeline
 

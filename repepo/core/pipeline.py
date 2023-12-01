@@ -32,10 +32,12 @@ class Pipeline:
     ) -> str:
         """Generate a completion for a given example"""
         base_prompt = self.build_generation_prompt(example)
-        base_prompt = example.input
-        inputs: Any = self.tokenizer(base_prompt, return_tensors="pt").to(self.model.device)
-        with torch.autocast(device_type=self.model.device.type):
-            outputs = self.model.generate(inputs)[0]
+        inputs: Any = self.tokenizer(base_prompt, return_tensors="pt")
+        inputs = inputs.to(self.model.device)
+        outputs = self.model.generate(
+            **inputs,
+            config=config,
+        )[0]
         outputs_str = self.tokenizer.decode(outputs, skip_special_tokens=True)
         if remove_base_prompt:
             return outputs_str.replace(base_prompt, "")

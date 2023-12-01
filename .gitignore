@@ -6,6 +6,7 @@ output
 *.json
 # Direnv config
 .envrc
+.pdm-python
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
