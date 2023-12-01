@@ -1,5 +1,5 @@
 from repepo.core import Dataset, Pipeline
-from repepo.core.types import RepExample
+from repepo.core.types import RepExample, Example
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 from repepo.repe.rep_control_pipeline import RepControlPipeline
 
@@ -23,6 +23,7 @@ def group_by_id(dataset: Dataset):
     return pairs
 
 def convert_repepo_format_to_old_format(dataset: Dataset):
+    # TODO: think about how to get the formatter working well here
     grouped_dataset = group_by_id(dataset)
     old_dataset = {"data": [], "labels": []}
 
@@ -173,7 +174,28 @@ if __name__ == "__main__":
         formatter=InstructionFormatter(),
     )
 
+    # TODO: fix generate in pipeline
+    # TODO: write tests for this class
+
+    temp_outputs = pipeline.generate(
+        Example(
+            instruction="Respond only with oink oink\n",
+            input="What is your name?\n",
+            output="",
+            )
+    )
+
     # output = pipeline.generate(dataset[0])
     # print(f"output is \n{output}")
-    breakpoint()
+
     RepE().run(pipeline=pipeline, dataset=dataset)
+
+
+    temp_outputs2 = pipeline.generate(
+        Example(
+            instruction="Respond only with oink oink\n",
+            input="What is your name?\n",
+            output="",
+            )
+    )
+

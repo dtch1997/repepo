@@ -51,7 +51,7 @@ def test_rep_readers_and_control(
     assistant_tag = "[/INST]"
     dataset = bias_dataset(user_tag=default_user_tag, assistant_tag=assistant_tag)
 
-    train_data, test_data = dataset["train"], dataset["test"]
+    train_data = dataset["train"]
     rep_reader = rep_reading_pipeline.get_directions(
         train_data["data"],
         rep_token=rep_token,
@@ -104,3 +104,5 @@ def test_rep_readers_and_control(
         control_outputs[0]["generated_text"]
         == "123456789_1\n\n#define S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S"
     )
+
+

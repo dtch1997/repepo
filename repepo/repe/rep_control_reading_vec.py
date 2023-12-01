@@ -135,25 +135,27 @@ class WrappedReadingVecModel(torch.nn.Module):
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
-    def generate(self, inputs, max_new_tokens=100, random_seed=0, use_cache=True):
+    def generate(self, input_ids, attention_mask, max_new_tokens=100, random_seed=0, use_cache=True, config=None):
         # swapped prompt for inputs in the function arguments
+        # TODO: handle the config
         self.reset_activations()
         with torch.no_grad():
             with torch.autocast(device_type=self.model.device.type):
                 torch.random.manual_seed(random_seed)
                 """
-                Aengus: Commented code is from the original generate function, but is not needed with the pipeline object
+                Aengus: Commented code is from the original generate function, but is not needed with the pipeline object. This generate function does not affect the call method from RepControlPipeline.
                 """
-                # inputs = self.tokenizer(
-                #     prompt,
+                # print("\n\nI EXIST\n\n")
+                # inputs2 = self.tokenizer(
+                #     'prompt',
                 #     return_tensors="pt",
                 #     padding=True,
                 #     max_length=512,
                 #     truncation=True,
                 # )
-                attention_mask = inputs.attention_mask.to(self.model.device)
+                # attention_mask = inputs.attention_mask.to(self.model.device)
                 generate_ids = self.model.generate(
-                    inputs.input_ids.to(self.model.device),
+                    input_ids,
                     attention_mask=attention_mask,
                     max_new_tokens=max_new_tokens,
                     use_cache=use_cache,
