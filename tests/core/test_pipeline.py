@@ -1,4 +1,6 @@
 from transformers import GPTNeoXForCausalLM
+from syrupy import SnapshotAssertion
+
 from repepo.core.format import InputOutputFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.core.prompt import FewShotPrompter
@@ -29,7 +31,7 @@ def test_basic_Pipeline_build_generation_prompt(
 
 
 def test_icl_Pipeline_build_generation_prompt(
-    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer, snapshot: SnapshotAssertion
 ) -> None:
     dataset = [
         Example(instruction="", input="Paris is in", output="France"),
@@ -43,20 +45,4 @@ def test_icl_Pipeline_build_generation_prompt(
     res = pipeline.build_generation_prompt(
         Example(instruction="", input="Beijing is in", output="China"),
     )
-    assert (
-        res
-        == """
-Input:  Paris is in 
-Output: 
-France
-Input:  London is in 
-Output: 
-England
-Input:  Berlin is in 
-Output: 
-Germany
-Input:  Beijing is in 
-Output: 
-""".strip()
-        + " "
-    )
+    assert res == snapshot

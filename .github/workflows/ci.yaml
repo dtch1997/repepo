@@ -1,21 +1,41 @@
-name: CI
-on: [push]
+name: "ci"
+on: # rebuild any PRs and main branch changes
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.repository_owner }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: "1"
+  PYTHONUNBUFFERED: "1"
+
 jobs:
-  lint_test_and_build:
+  test:
     runs-on: ubuntu-latest
-    env:
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v4
+
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v3
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: "3.10"
+          cache: true
+
       - name: Install dependencies
-        run: make update
-      - name: linting
-        run: make style
-      - name: type checking
-        run: make typecheck
-      - name: tests
-        run: make test
+        run: pdm install
+
+      - name: Lint
+        run: pdm run pre-commit run --all-files
+
+      - name: Test
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: pdm run python -m pytest tests

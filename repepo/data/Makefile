@@ -8,11 +8,11 @@ truthfulqa: # Make TruthfulQA
 	python generation/make_truthfulqa.py
 
 ambigprompt: # Make Ambigprompt
-	python download/download_ambigprompt.py 
+	python download/download_ambigprompt.py
 
 datasets: # Make all datasets
-	make stereoset 
-	make truthfulqa 
+	make stereoset
+	make truthfulqa
 	make ambigprompt
 
 .PHONY: help
