@@ -3,7 +3,7 @@ from transformers import GenerationConfig
 
 from repepo.algorithms.icl import InContextLearning
 from repepo.core.benchmark import Benchmark, train_and_evaluate_benchmark
-from repepo.core.evaluate import ClassificationEvaluator
+from repepo.core.evaluate import AccuracyEvaluator
 from repepo.core.types import Dataset, Example, Tokenizer, Model
 
 
@@ -23,7 +23,7 @@ def test_evaluate_benchmark(larger_model: Model, larger_tokenizer: Tokenizer) ->
         name="test benchmark",
         train_dataset=train_dataset,
         test_dataset=test_dataset,
-        evaluator=ClassificationEvaluator(),
+        evaluators=[AccuracyEvaluator()],
     )
     algorithms = [InContextLearning()]
 
@@ -37,12 +37,8 @@ def test_evaluate_benchmark(larger_model: Model, larger_tokenizer: Tokenizer) ->
         ),
     )
 
-    assert len(results.eval_results) == 3
-    assert results.eval_results[0].example == test_dataset[0]
-    assert results.eval_results[0].is_correct is True
-    assert results.eval_results[1].example == test_dataset[1]
-    assert results.eval_results[1].is_correct is True
-    assert results.eval_results[2].example == test_dataset[2]
-    assert results.eval_results[2].is_correct is False
-    assert results.stats["score"].mean == pytest.approx(2 / 3)
-    assert results.stats["score"].stdev == pytest.approx(0.577, abs=0.001)
+    assert len(results.predictions) == 3
+    assert results.predictions[0].example == test_dataset[0]
+    assert results.predictions[1].example == test_dataset[1]
+    assert results.predictions[2].example == test_dataset[2]
+    assert results.metrics["accuracy"] == pytest.approx(2 / 3)
