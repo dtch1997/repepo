@@ -28,7 +28,7 @@ def convert_repepo_format_to_old_format(dataset: Dataset):
     return old_dataset
 
 
-class Repe(BaseAlgorithm):
+class RepE(BaseAlgorithm):
     def __init__(self):
         self.rep_token = -1
         self.n_difference = 1
@@ -43,10 +43,11 @@ class Repe(BaseAlgorithm):
         Modifes the model only by running repe on the dataset
         """
 
-        # TODO: return a pipeline object that works, mostly done
         # TODO: get datasets working properly and with control: i) direction specification and ids for each datapoint with its corresponding opposite, ii) bool value for each datapoint
 
-        train_data = convert_repepo_format_to_old_format(dataset)  # TODO: this is a temporary hack
+        train_data = convert_repepo_format_to_old_format(
+            dataset
+        )  # TODO: this is a temporary hack
 
         model = pipeline.model
         tokenizer = pipeline.tokenizer
@@ -55,7 +56,9 @@ class Repe(BaseAlgorithm):
         # TODO: make parameter
         layer_ids = [idx for idx in hidden_layers if idx % 3 == 0]
 
-        tokenizer.pad_token_id = 0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+        tokenizer.pad_token_id = (
+            0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+        )
         tokenizer.bos_token_id = 1
 
         rep_reading_pipeline = RepReadingPipeline(model=model, tokenizer=tokenizer)
@@ -81,19 +84,22 @@ class Repe(BaseAlgorithm):
         activations = {}
         for layer in layer_ids:
             activations[layer] = (
-                torch.tensor(self.coeff * rep_reader.directions[layer] * rep_reader.direction_signs[layer])
+                torch.tensor(
+                    self.coeff
+                    * rep_reader.directions[layer]
+                    * rep_reader.direction_signs[layer]
+                )
                 .to(model.device)
                 .half()
             )
         
+        # TODO: how is this working for each position in the sequence? Does it modify the previous activations? Does it modify every future activation with the same values?
+
         wrapped_model.set_activations(activations, layer_ids, self.block_name)
         pipeline.model = wrapped_model
 
 
-
 if __name__ == "__main__":
-
-
     from repepo.repe.repe_dataset import bias_dataset
 
     old_dataset = bias_dataset()
@@ -133,12 +139,19 @@ if __name__ == "__main__":
         token=True,
         cache_dir=cache_dir,
     )
-    tokenizer.pad_token_id = 0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+    tokenizer.pad_token_id = (
+        0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
+    )
     tokenizer.bos_token_id = 1
 
-    pipeline = Pipeline(model=model, tokenizer=tokenizer, prompter=IdentityPrompter(), formatter=InstructionFormatter())
+    pipeline = Pipeline(
+        model=model,
+        tokenizer=tokenizer,
+        prompter=IdentityPrompter(),
+        formatter=InstructionFormatter(),
+    )
 
     # output = pipeline.generate(dataset[0])
     # print(f"output is \n{output}")
 
-    Repe().run(pipeline=pipeline, dataset=dataset)
+    RepE().run(pipeline=pipeline, dataset=dataset)

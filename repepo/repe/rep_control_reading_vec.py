@@ -141,6 +141,9 @@ class WrappedReadingVecModel(torch.nn.Module):
         with torch.no_grad():
             with torch.autocast(device_type=self.model.device.type):
                 torch.random.manual_seed(random_seed)
+                """
+                Aengus: Commented code is from the original generate function, but is not needed with the pipeline object
+                """
                 # inputs = self.tokenizer(
                 #     prompt,
                 #     return_tensors="pt",

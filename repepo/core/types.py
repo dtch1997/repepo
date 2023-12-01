@@ -1,9 +1,10 @@
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Union
 
 from transformers import PreTrainedTokenizerBase, PreTrainedModel
+from repepo.repe.rep_control_reading_vec import WrappedReadingVecModel
 
 # Placeholder type definitions
-Model = PreTrainedModel
+Model = Union[PreTrainedModel, WrappedReadingVecModel]
 Tokenizer = PreTrainedTokenizerBase
 
 
