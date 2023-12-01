@@ -1,5 +1,5 @@
 from repepo.core import Dataset, Pipeline
-from repepo.core.types import Example, Completion
+from repepo.core.types import Example, RepExample
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 from repepo.repe.rep_control_pipeline import RepControlPipeline
 
@@ -9,27 +9,63 @@ from repepo.core.prompt import IdentityPrompter
 from repepo.core.format import InstructionFormatter
 
 import torch
+from collections import defaultdict
 
+
+def group_by_id(dataset: Dataset):
+    pairs = defaultdict(list)
+
+    # Group examples by their id
+    for example in dataset:
+        assert isinstance(example, RepExample)
+        pairs[example.id].append(example)
+
+    return pairs
 
 def convert_repepo_format_to_old_format(dataset: Dataset):
-    """
-    TODO:
-    - add metadata to the Dataset type to include id of sample and its opposite, and its bool value
-    - enforce that input datapoint pairs are minimally different except for the semantics
-    """
+    grouped_dataset = group_by_id(dataset)
     old_dataset = {"data": [], "labels": []}
-    for idx, example in enumerate(dataset):
-        if idx % 2 == 0:
-            old_dataset["data"].append(example.input)
-            old_dataset["labels"].append([example.output, ""])
-        else:
-            old_dataset["data"].append(example.input)
-            old_dataset["labels"][-1][1] = example.output
+
+    for pair_id, examples in grouped_dataset.items():
+        if len(examples) != 2:
+            raise ValueError(f"Expected 2 examples for id {pair_id}, got {len(examples)}")
+
+        example1, example2 = examples
+        if example1.direction == example2.direction:
+            raise ValueError(f"Expected different directions for examples with id {pair_id}")
+
+        old_dataset["data"].append(example1.instruction + example1.input)
+        old_dataset["labels"].append([example1.direction, ""])
+        old_dataset["data"].append(example2.instruction + example2.input)
+        old_dataset["labels"][-1][1] = example2.direction
+
     return old_dataset
+
+def convert_old_to_new(dataset):
+    new_dataset = []
+    for idx, label_pair in enumerate(dataset["train"]["labels"]):
+        input1, label1 = dataset["train"]["data"][idx * 2], label_pair[0]
+        input2, label2 = dataset["train"]["data"][idx * 2 + 1], label_pair[1]
+
+        new_dataset.append(
+            RepExample(
+                instruction="", input=input1, output="", id=idx, direction=label1
+            )
+        )
+        new_dataset.append(
+            RepExample(
+                instruction="", input=input2, output="", id=idx, direction=label2
+            )
+        )
+    return new_dataset
+
+# TODO: add tests for this code to make sure the dataset is being converted correctly
+
 
 
 class RepE(BaseAlgorithm):
     def __init__(self):
+        # TODO: make these parameters
         self.rep_token = -1
         self.n_difference = 1
         self.direction_method = "pca"
@@ -37,13 +73,12 @@ class RepE(BaseAlgorithm):
         self.control_method = "reading_vec"
         self.coeff = 0.1
         self.max_new_tokens = 64
+        self.layer_gap = 3
 
     def run(self, pipeline: Pipeline, dataset: Dataset) -> None:
         """
         Modifes the model only by running repe on the dataset
         """
-
-        # TODO: get datasets working properly and with control: i) direction specification and ids for each datapoint with its corresponding opposite, ii) bool value for each datapoint
 
         train_data = convert_repepo_format_to_old_format(
             dataset
@@ -52,9 +87,7 @@ class RepE(BaseAlgorithm):
         model = pipeline.model
         tokenizer = pipeline.tokenizer
         hidden_layers = list(range(-1, -model.config.num_hidden_layers, -1))
-
-        # TODO: make parameter
-        layer_ids = [idx for idx in hidden_layers if idx % 3 == 0]
+        layer_ids = [idx for idx in hidden_layers if idx % self.layer_gap == 0]
 
         tokenizer.pad_token_id = (
             0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
@@ -92,7 +125,7 @@ class RepE(BaseAlgorithm):
                 .to(model.device)
                 .half()
             )
-        
+
         # TODO: how is this working for each position in the sequence? Does it modify the previous activations? Does it modify every future activation with the same values?
 
         wrapped_model.set_activations(activations, layer_ids, self.block_name)
@@ -103,17 +136,6 @@ if __name__ == "__main__":
     from repepo.repe.repe_dataset import bias_dataset
 
     old_dataset = bias_dataset()
-
-    def convert_old_to_new(dataset):
-        new_dataset = []
-        for idx, label_pair in enumerate(dataset["train"]["labels"]):
-            input1, label1 = dataset["train"]["data"][idx * 2], label_pair[0]
-            input2, label2 = dataset["train"]["data"][idx * 2 + 1], label_pair[1]
-
-            new_dataset.append(Example(instruction="", input=input1, output=label1))
-            new_dataset.append(Example(instruction="", input=input2, output=label2))
-        return new_dataset
-
     dataset = convert_old_to_new(old_dataset)
 
     from transformers import AutoModelForCausalLM
@@ -153,5 +175,5 @@ if __name__ == "__main__":
 
     # output = pipeline.generate(dataset[0])
     # print(f"output is \n{output}")
-
+    breakpoint()
     RepE().run(pipeline=pipeline, dataset=dataset)
