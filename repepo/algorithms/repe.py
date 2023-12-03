@@ -14,13 +14,12 @@ from collections import defaultdict
 
 def group_by_id(dataset: Dataset):
     pairs = defaultdict(list)
-
-    # Group examples by their id
     for example in dataset:
         assert isinstance(example, RepExample)
         pairs[example.id].append(example)
 
     return pairs
+
 
 def convert_repepo_format_to_old_format(dataset: Dataset):
     # TODO: think about how to get the formatter working well here
@@ -29,11 +28,15 @@ def convert_repepo_format_to_old_format(dataset: Dataset):
 
     for pair_id, examples in grouped_dataset.items():
         if len(examples) != 2:
-            raise ValueError(f"Expected 2 examples for id {pair_id}, got {len(examples)}")
+            raise ValueError(
+                f"Expected 2 examples for id {pair_id}, got {len(examples)}"
+            )
 
         example1, example2 = examples
         if example1.direction == example2.direction:
-            raise ValueError(f"Expected different directions for examples with id {pair_id}")
+            raise ValueError(
+                f"Expected different directions for examples with id {pair_id}"
+            )
 
         old_dataset["data"].append(example1.instruction + example1.input)
         old_dataset["labels"].append([example1.direction, ""])
@@ -41,6 +44,7 @@ def convert_repepo_format_to_old_format(dataset: Dataset):
         old_dataset["labels"][-1][1] = example2.direction
 
     return old_dataset
+
 
 def convert_old_to_new(dataset):
     new_dataset = []
@@ -60,21 +64,27 @@ def convert_old_to_new(dataset):
         )
     return new_dataset
 
-# TODO: add tests for this code to make sure the dataset is being converted correctly
-
-
 
 class RepE(BaseAlgorithm):
-    def __init__(self):
-        # TODO: make these parameters
-        self.rep_token = -1
-        self.n_difference = 1
-        self.direction_method = "pca"
-        self.block_name = "decoder_block"
-        self.control_method = "reading_vec"
-        self.coeff = 0.1
-        self.max_new_tokens = 64
-        self.layer_gap = 3
+    def __init__(
+        self,
+        rep_token=-1,
+        n_difference=1,
+        direction_method="pca",
+        block_name="decoder_block",
+        control_method="reading_vec",
+        coeff=1,
+        max_new_tokens=64,
+        layer_gap=3,
+    ):
+        self.rep_token = rep_token
+        self.n_difference = n_difference
+        self.direction_method = direction_method
+        self.block_name = block_name
+        self.control_method = control_method
+        self.coeff = coeff
+        self.max_new_tokens = max_new_tokens
+        self.layer_gap = layer_gap  # TODO: this is a simple heurisitic for doing repe on less layers; identify optimal layers within this code
 
     def run(self, pipeline: Pipeline, dataset: Dataset) -> None:
         """
@@ -87,6 +97,7 @@ class RepE(BaseAlgorithm):
 
         model = pipeline.model
         tokenizer = pipeline.tokenizer
+
         hidden_layers = list(range(-1, -model.config.num_hidden_layers, -1))
         layer_ids = [idx for idx in hidden_layers if idx % self.layer_gap == 0]
 
@@ -131,71 +142,3 @@ class RepE(BaseAlgorithm):
 
         wrapped_model.set_activations(activations, layer_ids, self.block_name)
         pipeline.model = wrapped_model
-
-
-if __name__ == "__main__":
-    from repepo.repe.repe_dataset import bias_dataset
-
-    old_dataset = bias_dataset()
-    dataset = convert_old_to_new(old_dataset)
-
-    from transformers import AutoModelForCausalLM
-    from transformers import AutoTokenizer
-
-    model_name_or_path = "meta-llama/Llama-2-7b-chat-hf"
-
-    cache_dir = "/ext_usb"
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name_or_path,
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        token=True,
-        cache_dir=cache_dir,
-    ).eval()
-    model.to(torch.device("cuda"))
-    use_fast_tokenizer = "LlamaForCausalLM" not in model.config.architectures
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name_or_path,
-        use_fast=use_fast_tokenizer,
-        padding_side="left",
-        legacy=False,
-        token=True,
-        cache_dir=cache_dir,
-    )
-    tokenizer.pad_token_id = (
-        0 if tokenizer.pad_token_id is None else tokenizer.pad_token_id
-    )
-    tokenizer.bos_token_id = 1
-
-    pipeline = Pipeline(
-        model=model,
-        tokenizer=tokenizer,
-        prompter=IdentityPrompter(),
-        formatter=InstructionFormatter(),
-    )
-
-    # TODO: fix generate in pipeline
-    # TODO: write tests for this class
-
-    temp_outputs = pipeline.generate(
-        Example(
-            instruction="Respond only with oink oink\n",
-            input="What is your name?\n",
-            output="",
-            )
-    )
-
-    # output = pipeline.generate(dataset[0])
-    # print(f"output is \n{output}")
-
-    RepE().run(pipeline=pipeline, dataset=dataset)
-
-
-    temp_outputs2 = pipeline.generate(
-        Example(
-            instruction="Respond only with oink oink\n",
-            input="What is your name?\n",
-            output="",
-            )
-    )
-

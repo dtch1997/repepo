@@ -105,4 +105,16 @@ def test_rep_readers_and_control(
         == "123456789_1\n\n#define S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S_S"
     )
 
+    # TODO: remove this
+    from functools import partial
+    model_wrapper = partial(
+        rep_control_pipeline,
+        activations=activations,
+        batch_size=4,
+        max_new_tokens=max_new_tokens,
+        do_sample=False,
+    )
+
+    breakpoint()
+
 

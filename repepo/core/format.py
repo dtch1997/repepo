@@ -64,3 +64,18 @@ class InstructionFormatter(AbstractFormatter):
             )
         response = example.output
         return Completion(prompt=prompt, response=response)
+
+class MinimalFormatter(AbstractFormatter):
+    """Format as instruction + input"""
+
+    PROMPT_TEMPLATE = "{instruction} {input}"
+
+    @override
+    def apply(self, example: Example, **kwargs):
+        del kwargs
+        return Completion(
+            prompt=self.PROMPT_TEMPLATE.format(
+                instruction=example.instruction, input=example.input
+            ),
+            response=example.output,
+        )

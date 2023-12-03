@@ -2,13 +2,13 @@
 .PHONY: datasets stereoset truthfulqa ambigprompt
 
 stereoset: # Make Stereoset
-	python generation/make_stereoset.py
+	python3 -m repepo.data.generation.make_stereoset
 
 truthfulqa: # Make TruthfulQA
-	python generation/make_truthfulqa.py
+	python3 -m repepo.data.generation.make_truthfulqa
 
 ambigprompt: # Make Ambigprompt
-	python download/download_ambigprompt.py
+	python3 -m repepo.data.download.download_ambigprompt
 
 datasets: # Make all datasets
 	make stereoset
