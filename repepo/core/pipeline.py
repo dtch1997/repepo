@@ -26,7 +26,7 @@ class Pipeline:
     def generate(
         self,
         example: Example,
-        config: Optional[GenerationConfig] = None,
+        generation_config: Optional[GenerationConfig] = None,
         remove_base_prompt: bool = True,
     ) -> str:
         """Generate a completion for a given example"""
@@ -35,7 +35,7 @@ class Pipeline:
         inputs = inputs.to(self.model.device)
         outputs = self.model.generate(
             **inputs,
-            config=config,
+            generation_config=generation_config,
         )[0]
         outputs_str = self.tokenizer.decode(outputs, skip_special_tokens=True)
         if remove_base_prompt:
