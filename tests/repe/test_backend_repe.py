@@ -59,6 +59,7 @@ def test_rep_readers_and_control(
         n_difference=n_difference,
         train_labels=train_data["labels"],
         direction_method=direction_method,
+        batch_size=2
     )
 
     assert rep_reader is not None

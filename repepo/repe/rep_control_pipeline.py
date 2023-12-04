@@ -33,7 +33,7 @@ class RepControlPipeline(TextGenerationPipeline):
             self.wrapped_model.reset()
             self.wrapped_model.set_controller(self.layers, activations, self.block_name)
 
-        with torch.autocast(device_type="cuda"):
+        with torch.autocast(device_type=self.wrapped_model.device.type):
             outputs = super().__call__(text_inputs, **kwargs)
         self.wrapped_model.reset()
 
