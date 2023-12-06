@@ -23,7 +23,7 @@ class Environ:
 
     # WandB
     WandbProject = os.environ.get("WANDB_PROJECT", "Rep-Eng")
-    WandbEntity = os.environ.get("WANDB_GROUP", os.environ.get("USERNAME"))
+    WandbEntity = os.environ.get("WANDB_GROUP", os.environ.get("USERNAME", "unknown"))
 
 
 # Model names
