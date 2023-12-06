@@ -20,3 +20,7 @@ def test_SupervisedFineTuning_run(
     ]
 
     new_pipeline = algorithm.run(pipeline, dataset=dataset)
+
+    # Skip testing outputs as they will be gibberish
+    # TODO: assert final train loss lower than starting train loss?
+    # How to expose this cleanly?
