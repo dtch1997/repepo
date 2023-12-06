@@ -55,7 +55,7 @@ def parse_split(split_string, start_index, end_index) -> Any:
 
     else:
         # Invalid format, return None
-        raise NotImplementedError
+        raise ValueError(f"Parse string {split_string} not recognized")
 
 
 @functools.lru_cache(1)
