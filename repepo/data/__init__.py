@@ -28,21 +28,10 @@ def list_datasets() -> tuple[str, ...]:
     return tuple(_DATASETS.keys())
 
 
-DELIMITER = "___"
-
-
 @dataclass
 class DatasetSpec:
     name: str
     split: str = ":100%"
-
-    @classmethod
-    def from_string(cls, string: str):
-        name, split = string.split(DELIMITER, 1)
-        return DatasetSpec(name, split)
-
-    def to_string(self):
-        return DELIMITER.join([self.name, self.split])
 
 
 def parse_split(split_string, start_index, end_index) -> Any:
