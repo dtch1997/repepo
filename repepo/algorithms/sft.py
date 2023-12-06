@@ -1,7 +1,7 @@
 from repepo.core import Dataset
 from repepo.core import Pipeline
 
-from repepo.algorithms.base import BaseAlgorithm
+from repepo.algorithms.base import Algorithm
 from overrides import override
 
 from dataclasses import dataclass
@@ -71,7 +71,7 @@ class WandbLogger:
             self.wandb.finish()
 
 
-class SupervisedFineTuning(BaseAlgorithm):
+class SupervisedFineTuning(Algorithm):
     @override
     def __init__(self, config: SupervisedFineTuningConfig):
         self.config = config

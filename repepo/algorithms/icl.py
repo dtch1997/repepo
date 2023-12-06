@@ -1,10 +1,10 @@
 from dataclasses import replace
 from repepo.core.prompt import FewShotPrompter
-from .base import BaseAlgorithm
+from .base import Algorithm
 from repepo.core import Pipeline, Dataset
 
 
-class InContextLearning(BaseAlgorithm):
+class InContextLearning(Algorithm):
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
         """Uses an in-context learning prefix to prompts"""
 

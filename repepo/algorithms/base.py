@@ -3,7 +3,7 @@ import abc
 from repepo.core import Dataset, Pipeline
 
 
-class BaseAlgorithm(abc.ABC):
+class Algorithm(abc.ABC):
     @abc.abstractmethod
     def run(self, pipeline: Pipeline, dataset: Dataset, **kwargs) -> Pipeline:
         raise NotImplementedError()
