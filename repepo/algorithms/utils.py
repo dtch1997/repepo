@@ -1,31 +1,3 @@
-from repepo.core import BaseDataset, BasePipeline
-
-from typing import List
-from repepo.data.dataset import sft
-from torch.utils.data import DataLoader
-
-
-def prepare_dataloader(
-    pipeline: BasePipeline, dataset: BaseDataset, batch_size: int, shuffle: bool = False
-) -> DataLoader:
-    examples: List[format.Example] = dataset.examples
-    # Format the dataset
-    completions: List[format.Completion] = pipeline.formatter.apply(examples)
-    completions: List[format.Completion] = pipeline.prompter.apply(completions)
-
-    supervised_dataset = sft.SupervisedDataset(
-        completions, tokenizer=pipeline.tokenizer
-    )
-    data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=pipeline.tokenizer)
-
-    return DataLoader(
-        supervised_dataset,
-        collate_fn=data_collator,
-        batch_size=batch_size,
-        shuffle=shuffle,
-    )
-
-
 class AverageMeter:
     def __init__(self):
         self.metrics = {}
