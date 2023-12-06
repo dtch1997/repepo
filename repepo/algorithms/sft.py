@@ -1,13 +1,14 @@
 from repepo.core import Dataset
 from repepo.core import Pipeline
 
-from .base import BaseAlgorithm
+from repepo.algorithms.base import BaseAlgorithm
 
 from dataclasses import dataclass
 from dataclasses import field
 from typing import List
 
 import torch
+import pprint
 from torch.utils.data import DataLoader
 from transformers import AdamW
 
@@ -198,6 +199,7 @@ if __name__ == "__main__":
     import pyrallis
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    @dataclass
     class TrainSFTConfig:
         sft: SupervisedFineTuningConfig = SupervisedFineTuningConfig()
         dataset: str = "truthfulqa"
@@ -214,6 +216,7 @@ if __name__ == "__main__":
         output_dir: str = Environ.OutputDir
 
     config = pyrallis.parse(TrainSFTConfig)
+    pprint.pprint(config)
 
     algorithm = SupervisedFineTuning(config.sft)
     model = AutoModelForCausalLM.from_pretrained(
