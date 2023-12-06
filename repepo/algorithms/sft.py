@@ -106,7 +106,7 @@ class SupervisedFineTuning(BaseAlgorithm):
 
         # Set device
         device = self.config.device if torch.cuda.is_available() else "cpu"
-        model.to(device)
+        model.to(device)  # type: ignore
 
         # Set up optimizer and scheduler
         num_training_steps = self.config.num_train_epochs * len(train_dataloader)
