@@ -2,6 +2,7 @@ from repepo.core import Dataset
 from repepo.core import Pipeline
 
 from repepo.algorithms.base import BaseAlgorithm
+from overrides import override
 
 from dataclasses import dataclass
 from dataclasses import field
@@ -71,6 +72,7 @@ class WandbLogger:
 
 
 class SupervisedFineTuning(BaseAlgorithm):
+    @override
     def __init__(self, config: SupervisedFineTuningConfig):
         self.config = config
 
@@ -172,7 +174,6 @@ if __name__ == "__main__":
     config = pyrallis.parse(TrainSFTConfig)
     pprint.pprint(config)
 
-    algorithm = SupervisedFineTuning(config.sft)
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name_or_path,
         cache_dir=config.cache_dir,
@@ -191,4 +192,5 @@ if __name__ == "__main__":
     dataset = make_dataset(config.dataset)
 
     with WandbLogger(config.wandb) as logger:
-        algorithm.run(pipeline, dataset, logger)
+        algorithm = SupervisedFineTuning(config.sft)
+        algorithm.run(pipeline, dataset, logger=logger)
