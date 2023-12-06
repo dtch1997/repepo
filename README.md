@@ -31,7 +31,7 @@ If you cannot install the dependencies, try re-compiling with `pdm lock`.
 
 Activate the virtual environment with:
 ``` bash
-pdm venv activate
+source .venv/bin/activate
 ```
 
 Branching follows [Github workflow](https://githubflow.github.io/)
@@ -41,5 +41,7 @@ Branching follows [Github workflow](https://githubflow.github.io/)
 Run `make check` to check code format.
 
 Run `make fmt` to run Black, Ruff linters.
+
+Run `make typecheck` to run Pyright type checking
 
 Run `make test` to run Pytest
