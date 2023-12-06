@@ -65,6 +65,7 @@ class InstructionFormatter(AbstractFormatter):
         response = example.output
         return Completion(prompt=prompt, response=response)
 
+
 class MinimalFormatter(AbstractFormatter):
     """Format as instruction + input"""
 

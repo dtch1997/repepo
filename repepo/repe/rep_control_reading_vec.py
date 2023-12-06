@@ -122,21 +122,33 @@ class WrappedReadingVecModel(torch.nn.Module):
         self.is_gpt_neox = isinstance(model, GPTNeoXForCausalLM)
         self.device = model.device
         self.activations = None
-    
+
     def set_activations(self, activations, layer_ids, block_name):
         self.activations = activations
         self.layer_ids = layer_ids
         self.block_name = block_name
-    
+
     def reset_activations(self):
         self.activations = self.activations
         self.reset()
-        self.set_controller(layer_ids=self.layer_ids, activations=self.activations, block_name=self.block_name)
+        self.set_controller(
+            layer_ids=self.layer_ids,
+            activations=self.activations,
+            block_name=self.block_name,
+        )
 
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
-    def generate(self, input_ids, attention_mask, max_new_tokens=100, random_seed=0, use_cache=True, config=None):
+    def generate(
+        self,
+        input_ids,
+        attention_mask,
+        max_new_tokens=100,
+        random_seed=0,
+        use_cache=True,
+        generation_config=None,
+    ):
         # swapped prompt for inputs in the function arguments
         # TODO: handle the config
         self.reset_activations()
@@ -160,6 +172,7 @@ class WrappedReadingVecModel(torch.nn.Module):
                     attention_mask=attention_mask,
                     max_new_tokens=max_new_tokens,
                     use_cache=use_cache,
+                    generation_config=generation_config,
                 )
                 # return self.tokenizer.batch_decode(
                 #     generate_ids,
@@ -191,19 +204,25 @@ class WrappedReadingVecModel(torch.nn.Module):
     def wrap_gptneox_self_attn(self, layer_id):
         block = self.model.gpt_neox.layers[layer_id].attention
         if not self.is_wrapped(block):
-            self.model.gpt_neox.layers[layer_id].attention = WrappedBlock(block, self.model.device)
+            self.model.gpt_neox.layers[layer_id].attention = WrappedBlock(
+                block, self.model.device
+            )
 
     # TODO: clean up
     def wrap_gptneox_mlp(self, layer_id):
         block = self.model.gpt_neox.layers[layer_id].mlp
         if not self.is_wrapped(block):
-            self.model.gpt_neox.layers[layer_id].mlp = WrappedBlock(block, self.model.device)
+            self.model.gpt_neox.layers[layer_id].mlp = WrappedBlock(
+                block, self.model.device
+            )
 
     # TODO: clean up
     def wrap_gptneox_input_layernorm(self, layer_id):
         block = self.model.gpt_neox.layers[layer_id].input_layernorm
         if not self.is_wrapped(block):
-            self.model.gpt_neox.layers[layer_id].input_layernorm = WrappedBlock(block, self.model.device)
+            self.model.gpt_neox.layers[layer_id].input_layernorm = WrappedBlock(
+                block, self.model.device
+            )
 
     # TODO: clean up
     def wrap_gptneox_post_attention_layernorm(self, layer_id):
@@ -222,11 +241,15 @@ class WrappedReadingVecModel(torch.nn.Module):
             if self.is_wrapped(self.model.encoder.layers[layer_id]):
                 block = self.model.encoder.layers[layer_id].attention
                 if not self.is_wrapped(block):
-                    self.model.encoder.layers[layer_id].attention = WrappedBlock(block, self.model.device)
+                    self.model.encoder.layers[layer_id].attention = WrappedBlock(
+                        block, self.model.device
+                    )
             else:
                 block = self.model.encoder.layers[layer_id].attention
                 if not self.is_wrapped(block):
-                    self.model.encoder.layers[layer_id].attention = WrappedBlock(block, self.model.device)
+                    self.model.encoder.layers[layer_id].attention = WrappedBlock(
+                        block, self.model.device
+                    )
 
     def wrap_mlp(self, layer_id):
         if self.is_gpt_neox:
@@ -237,11 +260,15 @@ class WrappedReadingVecModel(torch.nn.Module):
             if self.is_wrapped(self.model.model.layers[layer_id]):
                 block = self.model.model.layers[layer_id].block.mlp
                 if not self.is_wrapped(block):
-                    self.model.model.layers[layer_id].block.mlp = WrappedBlock(block, self.model.device)
+                    self.model.model.layers[layer_id].block.mlp = WrappedBlock(
+                        block, self.model.device
+                    )
             else:
                 block = self.model.model.layers[layer_id].mlp
                 if not self.is_wrapped(block):
-                    self.model.model.layers[layer_id].mlp = WrappedBlock(block, self.model.device)
+                    self.model.model.layers[layer_id].mlp = WrappedBlock(
+                        block, self.model.device
+                    )
 
     def wrap_input_layernorm(self, layer_id):
         if self.is_wrapped(self.model.model.layers[layer_id]):
@@ -253,7 +280,9 @@ class WrappedReadingVecModel(torch.nn.Module):
         else:
             block = self.model.model.layers[layer_id].input_layernorm
             if not self.is_wrapped(block):
-                self.model.model.layers[layer_id].input_layernorm = WrappedBlock(block, self.model.device)
+                self.model.model.layers[layer_id].input_layernorm = WrappedBlock(
+                    block, self.model.device
+                )
 
     def wrap_post_attention_layernorm(self, layer_id):
         if self.is_wrapped(self.model.model.layers[layer_id]):
@@ -261,7 +290,9 @@ class WrappedReadingVecModel(torch.nn.Module):
             if not self.is_wrapped(block):
                 self.model.model.layers[
                     layer_id
-                ].block.post_attention_layernorm = WrappedBlock(block, self.model.device)
+                ].block.post_attention_layernorm = WrappedBlock(
+                    block, self.model.device
+                )
         else:
             block = self.model.model.layers[layer_id].post_attention_layernorm
             if not self.is_wrapped(block):
@@ -273,11 +304,15 @@ class WrappedReadingVecModel(torch.nn.Module):
         if self.is_gpt_neox:
             block = self.model.gpt_neox.layers[layer_id]
             if not self.is_wrapped(block):
-                self.model.gpt_neox.layers[layer_id] = WrappedBlock(block, self.model.device)
+                self.model.gpt_neox.layers[layer_id] = WrappedBlock(
+                    block, self.model.device
+                )
         else:
             block = self.model.model.layers[layer_id]
             if not self.is_wrapped(block):
-                self.model.model.layers[layer_id] = WrappedBlock(block, self.model.device)
+                self.model.model.layers[layer_id] = WrappedBlock(
+                    block, self.model.device
+                )
 
     def wrap_all(self):
         for layer_id, layer in enumerate(self.model.model.layers):

@@ -1,3 +1,5 @@
+# pyright: strict, reportMissingTypeStubs=false
+
 from transformers import GPTNeoXForCausalLM
 from repepo.algorithms.repe import (
     RepE,
@@ -5,10 +7,9 @@ from repepo.algorithms.repe import (
     convert_repepo_format_to_old_format,
 )
 from repepo.core.pipeline import Pipeline
-from repepo.core.prompt import FewShotPrompter
 from repepo.core.format import MinimalFormatter
 
-from repepo.core.types import Completion, Example, Tokenizer, RepExample, Dataset
+from repepo.core.types import Example, Tokenizer, Dataset
 
 
 def test_RepE_run(
@@ -36,4 +37,4 @@ def test_RepE_run(
 def test_repe_dataset_conversion(repe_bias_dataset) -> None:
     new_dataset = convert_old_to_new(repe_bias_dataset)
     new_new_dataset = convert_repepo_format_to_old_format(new_dataset)
-    assert new_new_dataset == repe_bias_dataset['train']
+    assert new_new_dataset == repe_bias_dataset["train"]

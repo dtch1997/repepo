@@ -6,7 +6,6 @@ from transformers import GenerationConfig
 from .types import Example, Model, Tokenizer
 from .prompt import AbstractPrompter, IdentityPrompter
 from .format import AbstractFormatter, InputOutputFormatter
-import torch
 
 
 @dataclass

@@ -1,12 +1,9 @@
 from repepo.core import Dataset, Pipeline
-from repepo.core.types import RepExample, Example
+from repepo.core.types import RepExample
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 from repepo.repe.rep_control_pipeline import RepControlPipeline
 
 from repepo.algorithms.base import BaseAlgorithm
-
-from repepo.core.prompt import IdentityPrompter
-from repepo.core.format import InstructionFormatter
 
 import torch
 from collections import defaultdict

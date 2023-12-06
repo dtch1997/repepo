@@ -59,12 +59,12 @@ def test_rep_readers_and_control(
         n_difference=n_difference,
         train_labels=train_data["labels"],
         direction_method=direction_method,
-        batch_size=2
+        batch_size=2,
     )
 
     assert rep_reader is not None
     assert rep_reader.directions is not None
-    assert math.isclose(rep_reader.directions[-3][0][0], 0.00074, abs_tol=1e-5)
+    assert math.isclose(rep_reader.directions[-3][0][0], 0.00072, abs_tol=1e-5)
 
     rep_control_pipeline = RepControlPipeline(
         model=model,
@@ -88,9 +88,7 @@ def test_rep_readers_and_control(
         )
 
     assert activations[-3].shape == torch.Size([1, 512])
-    assert math.isclose(
-        float(activations[-3][0][0]), 7.410049147438258e-05, abs_tol=1e-6
-    )
+    assert math.isclose(float(activations[-3][0][0]), 7.1799e-05, abs_tol=1e-6)
 
     inputs = "12345"
     control_outputs = rep_control_pipeline(
@@ -108,6 +106,7 @@ def test_rep_readers_and_control(
 
     # TODO: remove this
     from functools import partial
+
     model_wrapper = partial(
         rep_control_pipeline,
         activations=activations,
@@ -115,7 +114,3 @@ def test_rep_readers_and_control(
         max_new_tokens=max_new_tokens,
         do_sample=False,
     )
-
-    breakpoint()
-
-

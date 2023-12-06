@@ -8,43 +8,11 @@ from repepo.core.types import Tokenizer, RepExample
 from repepo.repe.repe_dataset import bias_dataset
 
 
-_model: GPTNeoXForCausalLM | None = None
-_larger_model: GPTNeoXForCausalLM | None = None
-
-
-def _load_model() -> GPTNeoXForCausalLM:
-    global _model
-
-    if _model is None:
-        _pretrained_model = GPTNeoXForCausalLM.from_pretrained(
-            "EleutherAI/pythia-70m",
-            torch_dtype=torch.float64,
-            token=True,
-        )
-        assert type(_pretrained_model) == GPTNeoXForCausalLM
-        device: Any = "cuda" if torch.cuda.is_available() else "cpu"
-        _model = _pretrained_model.to(device).eval()
-    return _model
-
-
-def _load_larger_model() -> GPTNeoXForCausalLM:
-    global _larger_model
-
-    if _larger_model is None:
-        _pretrained_model = GPTNeoXForCausalLM.from_pretrained(
-            "EleutherAI/pythia-160m",
-            token=True,
-        )
-        assert type(_pretrained_model) == GPTNeoXForCausalLM
-        device: Any = "cuda" if torch.cuda.is_available() else "cpu"
-        _larger_model = _pretrained_model.to(device).eval()
-    return _larger_model
+_device: Any = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 _tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m")
 _larger_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-160m")
-# _model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", torch_dtype=torch.bfloat16, device_map="auto", token=True, cache_dir = "/ext_usb").eval()
-# _tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-6.9b", cache_dir = "/ext_usb")
 
 _repe_toy_dataset = [
     RepExample(
@@ -80,7 +48,13 @@ _repe_toy_dataset = [
 
 @pytest.fixture
 def model() -> GPTNeoXForCausalLM:
-    return _load_model()
+    model = GPTNeoXForCausalLM.from_pretrained(
+        "EleutherAI/pythia-70m",
+        torch_dtype=torch.float64,
+        token=True,
+    )
+    assert type(model) == GPTNeoXForCausalLM
+    return model.to(_device).eval()
 
 
 @pytest.fixture
@@ -89,12 +63,12 @@ def tokenizer() -> Tokenizer:
 
 
 @pytest.fixture
-def repe_toy_dataset():
+def repe_toy_dataset() -> list[RepExample]:
     return _repe_toy_dataset
 
 
 @pytest.fixture
-def repe_bias_dataset():
+def repe_bias_dataset() -> dict[str, Any]:
     default_user_tag = "[INST]"
     assistant_tag = "[/INST]"
     return bias_dataset(user_tag=default_user_tag, assistant_tag=assistant_tag)
@@ -102,7 +76,12 @@ def repe_bias_dataset():
 
 @pytest.fixture
 def larger_model() -> GPTNeoXForCausalLM:
-    return _load_larger_model()
+    model = GPTNeoXForCausalLM.from_pretrained(
+        "EleutherAI/pythia-160m",
+        token=True,
+    )
+    assert type(model) == GPTNeoXForCausalLM
+    return model.to(_device).eval()
 
 
 @pytest.fixture
