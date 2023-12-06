@@ -6,7 +6,7 @@ from overrides import override
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import List
+from typing import List, Optional
 
 import torch
 import pprint
@@ -77,7 +77,7 @@ class SupervisedFineTuning(Algorithm):
         self.config = config
 
     def run(
-        self, pipeline: Pipeline, dataset: Dataset, logger: WandbLogger
+        self, pipeline: Pipeline, dataset: Dataset, logger: Optional[WandbLogger] = None
     ) -> Pipeline:
         """Modifies the base model weights"""
 
@@ -143,7 +143,8 @@ class SupervisedFineTuning(Algorithm):
                 optimizer.step()
                 scheduler.step()
                 print(f"epoch : {epoch} | step: {step} | loss: {loss}")
-                logger.log({"train/loss": loss}, step=global_step)
+                if logger is not None:
+                    logger.log({"train/loss": loss}, step=global_step)
 
             # TODO: Evaluation callback?
 

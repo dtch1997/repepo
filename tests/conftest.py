@@ -4,6 +4,7 @@ import torch
 
 from transformers import GPTNeoXForCausalLM, AutoTokenizer
 
+from repepo.variables import Environ
 from repepo.core.types import Tokenizer
 
 
@@ -17,7 +18,8 @@ def _load_model() -> GPTNeoXForCausalLM:
     if _model is None:
         _pretrained_model = GPTNeoXForCausalLM.from_pretrained(
             "EleutherAI/pythia-70m",
-            torch_dtype=torch.float64,
+            cache_dir=Environ.HuggingfaceCacheDir,
+            torch_dtype=torch.float32,
             token=True,
         )
         assert type(_pretrained_model) == GPTNeoXForCausalLM
@@ -32,6 +34,7 @@ def _load_larger_model() -> GPTNeoXForCausalLM:
     if _larger_model is None:
         _pretrained_model = GPTNeoXForCausalLM.from_pretrained(
             "EleutherAI/pythia-160m",
+            cache_dir=Environ.HuggingfaceCacheDir,
             token=True,
         )
         assert type(_pretrained_model) == GPTNeoXForCausalLM
@@ -40,8 +43,20 @@ def _load_larger_model() -> GPTNeoXForCausalLM:
     return _larger_model
 
 
-_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-70m")
-_larger_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-160m")
+_tokenizer = AutoTokenizer.from_pretrained(
+    "EleutherAI/pythia-70m",
+    cache_dir=Environ.HuggingfaceCacheDir,
+    model_max_length=128,
+    padding_side="right",
+    use_fast=True,
+)
+_larger_tokenizer = AutoTokenizer.from_pretrained(
+    "EleutherAI/pythia-160m",
+    cache_dir=Environ.HuggingfaceCacheDir,
+    model_max_length=128,
+    padding_side="right",
+    use_fast=True,
+)
 # _model = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-6.9b", torch_dtype=torch.bfloat16, device_map="auto", token=True, cache_dir = "/ext_usb").eval()
 # _tokenizer = AutoTokenizer.from_pretrained("EleutherAI/pythia-6.9b", cache_dir = "/ext_usb")
 
