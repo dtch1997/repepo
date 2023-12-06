@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 
 from transformers import GenerationConfig
 
-from repepo.algorithms.base import BaseAlgorithm
+from repepo.algorithms.base import Algorithm
 from repepo.core.evaluate import EvalPrediction, EvalResult, Evaluator
 from repepo.core.format import AbstractFormatter, InputOutputFormatter
 from repepo.core.pipeline import Pipeline
@@ -24,7 +24,7 @@ class Benchmark:
 def train_and_evaluate_benchmark(
     model: Model,
     tokenizer: Tokenizer,
-    algorithms: Sequence[BaseAlgorithm],
+    algorithms: Sequence[Algorithm],
     benchmark: Benchmark,
     formatter: Optional[AbstractFormatter] = None,
     generation_config: Optional[GenerationConfig] = None,
