@@ -33,6 +33,7 @@ Activate the virtual environment with:
 ``` bash
 source .venv/bin/activate
 ```
+This will enable the pre-commit hooks to run on commit.
 
 Branching follows [Github workflow](https://githubflow.github.io/)
 
