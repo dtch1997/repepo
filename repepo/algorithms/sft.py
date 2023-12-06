@@ -10,10 +10,8 @@ from typing import List
 import torch
 import pprint
 from torch.utils.data import DataLoader
-from transformers import AdamW
-
-# Load pre-trained model and tokenizer from Huggingface
-from transformers import get_linear_schedule_with_warmup
+from transformers.optimization import AdamW
+from transformers.optimization import get_linear_schedule_with_warmup
 from repepo.core.types import Completion
 
 from repepo.data import make_dataset, DatasetSpec
@@ -147,10 +145,13 @@ class SupervisedFineTuning(BaseAlgorithm):
 
             # TODO: Evaluation callback?
 
+        return pipeline
+
 
 if __name__ == "__main__":
     import pyrallis
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+    from transformers.models.auto.tokenization_auto import AutoTokenizer
 
     @dataclass
     class TrainSFTConfig:
