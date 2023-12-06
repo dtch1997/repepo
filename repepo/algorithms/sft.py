@@ -18,10 +18,9 @@ from repepo.core.types import Completion
 from repepo.data import make_dataset, DatasetSpec
 from repepo.data import utils
 from repepo.data.dataset import sft
-from repepo.utils.metrics import Metrics
+from repepo.utils.metrics import Metrics, AverageMeter
 from repepo.variables import Environ
 from repepo.variables import Model
-from repepo.algorithms.utils import AverageMeter
 
 
 @dataclass

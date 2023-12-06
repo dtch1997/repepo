@@ -1,3 +1,4 @@
+import torch
 from transformers import GPTNeoXForCausalLM
 from repepo.algorithms.sft import SupervisedFineTuning, SupervisedFineTuningConfig
 from repepo.core.pipeline import Pipeline
@@ -8,6 +9,7 @@ from repepo.core.types import Example, Tokenizer
 def test_SupervisedFineTuning_run(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
+    model = model.to(torch.float32)
     pipeline = Pipeline(model, tokenizer)
     config = SupervisedFineTuningConfig
     config.batch_size = 4

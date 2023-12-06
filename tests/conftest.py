@@ -19,7 +19,7 @@ def _load_model() -> GPTNeoXForCausalLM:
         _pretrained_model = GPTNeoXForCausalLM.from_pretrained(
             "EleutherAI/pythia-70m",
             cache_dir=Environ.HuggingfaceCacheDir,
-            torch_dtype=torch.float32,
+            torch_dtype=torch.float64,
             token=True,
         )
         assert type(_pretrained_model) == GPTNeoXForCausalLM
