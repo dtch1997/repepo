@@ -4,35 +4,35 @@ IMAGE_TAG ?= latest
 default: help
 
 update-deps: # update dependency lock files
-	python -m pip install --upgrade pip-tools pip wheel
-	python -m piptools compile --upgrade --resolver backtracking -o requirements/main.txt requirements/main.in pyproject.toml
-	python -m piptools compile --upgrade --resolver backtracking -o requirements/dev.txt requirements/dev.in
+	pdm run python -m pip install --upgrade pip-tools pip wheel
+	pdm run python -m piptools compile --upgrade --resolver backtracking -o requirements/main.txt requirements/main.in pyproject.toml
+	pdm run python -m piptools compile --upgrade --resolver backtracking -o requirements/dev.txt requirements/dev.in
 
 init: # initialize project in a virtualenv
 	rm -rf .tox
-	python -m pip install --upgrade pip wheel
-	python -m pip install --upgrade -r requirements/main.txt -r requirements/dev.txt -e .
-	python -m pip check
+	pdm run python -m pip install --upgrade pip wheel
+	pdm run python -m pip install --upgrade -r requirements/main.txt -r requirements/dev.txt -e .
+	pdm run python -m pip check
 
 update: update-deps init # update dependencies and reinitialize project
 
 .PHONY: update-deps init update
 
 style: # check code style
-	ruff .
-	black --check --diff .
+	pdm run ruff .
+	pdm run black --check --diff .
 
 fmt: # run code formatter
-	black .
-	ruff --fix .
+	pdm run black .
+	pdm run ruff --fix .
 
 typecheck: # run pyright
-	pyright
+	pdm run pyright
 
 test: # run tests
-	pytest
+	pdm run pytest
 
-.PHONY: style fmt test
+.PHONY: style fmt test typecheck
 
 .PHONY: build-docker
 build-docker: # build docker container
