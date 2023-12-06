@@ -13,7 +13,8 @@ def test_basic_Pipeline_generate(
 ) -> None:
     pipeline = Pipeline(model, tokenizer)
     res = pipeline.generate(
-        Example(instruction="Respond", input="A B C D", output="E"), config=None
+        Example(instruction="Respond", input="A B C D", output="E"),
+        generation_config=None,
     )
     # pythia-70m generates nonsense, so just verify we get something
     assert isinstance(res, str)

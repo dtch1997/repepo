@@ -15,4 +15,6 @@ def test_few_shot_prompter():
     examples = [Completion(prompt="Example 1", response="Response 1")]
     prompter = FewShotPrompter(examples)
     output = prompter.apply(completion)
-    assert output.prompt == examples[0].prompt + "\n" + examples[0].response + "\nHello"
+    assert (
+        output.prompt == examples[0].prompt + " " + examples[0].response + "\n\nHello"
+    )
