@@ -16,7 +16,7 @@ from transformers import AdamW
 from transformers import get_linear_schedule_with_warmup
 from repepo.core.types import Completion
 
-from repepo.data import get_dataset
+from repepo.data import make_dataset, DatasetSpec
 from repepo.data import utils
 from repepo.data.dataset import sft
 from repepo.utils.metrics import Metrics
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     @dataclass
     class TrainSFTConfig:
         sft: SupervisedFineTuningConfig = SupervisedFineTuningConfig()
-        dataset: str = "truthfulqa"
+        dataset: DatasetSpec = DatasetSpec(name="truthfulqa")
         wandb: WandbConfig = WandbConfig()
 
         model_name_or_path: str = Model.Pythia70m
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     )
 
     pipeline = Pipeline(model, tokenizer)
-    dataset = get_dataset(config.dataset)
+    dataset = make_dataset(config.dataset)
 
     with WandbLogger(config.wandb) as logger:
         algorithm.run(pipeline, dataset, logger)

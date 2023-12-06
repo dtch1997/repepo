@@ -1,9 +1,10 @@
 import functools
 import pathlib
-from typing import List
+from typing import List, Any, NewType
 
 from repepo.variables import Environ
 from repepo.core.types import Example
+from dataclasses import dataclass
 
 from .io import jdump
 from .io import jload
@@ -27,6 +28,45 @@ def list_datasets() -> tuple[str, ...]:
     return tuple(_DATASETS.keys())
 
 
+DELIMITER = "___"
+
+
+@dataclass
+class DatasetSpec:
+    name: str
+    split: str = ":100%"
+
+    @classmethod
+    def from_string(cls, string: str):
+        name, split = string.split(DELIMITER, 1)
+        return DatasetSpec(name, split)
+
+    def to_string(self):
+        return DELIMITER.join([self.name, self.split])
+
+
+def parse_split(split_string, start_index, end_index) -> Any:
+    # Check if the split string starts with a colon and ends with a percentage sign
+    if split_string.startswith(":") and split_string.endswith("%"):
+        try:
+            # Remove the colon and percentage sign
+            split_value = float(split_string[1:-1])
+            # Calculate the start and end index of the split
+            split_start = start_index
+            split_end = start_index + int(
+                (end_index - start_index + 1) * (split_value / 100)
+            )
+            return slice(split_start, split_end)
+
+        except ValueError as e:
+            # TODO: Write a nice error message
+            raise ValueError(e)
+
+    else:
+        # Invalid format, return None
+        raise NotImplementedError
+
+
 @functools.lru_cache(1)
 def get_dataset(name: str):
     if name not in _DATASETS:
@@ -37,3 +77,9 @@ def get_dataset(name: str):
     for example_dict in example_dict_list:
         dataset.append(Example.from_dict(example_dict))
     return dataset
+
+
+def make_dataset(spec: DatasetSpec):
+    dataset = get_dataset(spec.name)
+    split = parse_split(spec.split, 0, len(dataset))
+    return dataset[split]
