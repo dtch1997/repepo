@@ -75,7 +75,7 @@ def get_dataset(name: str):
     example_dict_list = jload(_DATASETS[name])
     dataset = []
     for example_dict in example_dict_list:
-        dataset.append(Example.from_dict(example_dict))
+        dataset.append(Example(**example_dict))
     return dataset
 
 
