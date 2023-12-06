@@ -1,5 +1,6 @@
 import functools
 import pathlib
+import random
 from typing import List, Any, NewType
 
 from repepo.variables import Environ
@@ -32,6 +33,7 @@ def list_datasets() -> tuple[str, ...]:
 class DatasetSpec:
     name: str
     split: str = ":100%"
+    seed: int = 0  # unused atm
 
 
 def parse_split(split_string, start_index, end_index) -> Any:
@@ -70,5 +72,6 @@ def get_dataset(name: str):
 
 def make_dataset(spec: DatasetSpec):
     dataset = get_dataset(spec.name)
+    random.Random(spec.seed).shuffle(dataset)  # in-place shuffle
     split = parse_split(spec.split, 0, len(dataset))
     return dataset[split]
