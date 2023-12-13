@@ -3,7 +3,7 @@ import torch
 from transformers import GPTNeoXForCausalLM
 from repepo.core.types import Tokenizer
 
-from repepo.utils.ModelPatcher import GptNeoxLayerConfig, LayerType, ModelPatcher
+from repepo.utils.model_patcher import GptNeoxLayerConfig, LayerType, ModelPatcher
 from tests._original_repe.rep_control_reading_vec import WrappedReadingVecModel
 
 
