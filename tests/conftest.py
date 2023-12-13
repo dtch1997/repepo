@@ -23,7 +23,11 @@ def model() -> GPTNeoXForCausalLM:
 
 @pytest.fixture
 def tokenizer() -> Tokenizer:
-    return AutoTokenizer.from_pretrained("EleutherAI/pythia-70m")
+    return AutoTokenizer.from_pretrained(
+        "EleutherAI/pythia-70m",
+        model_max_length=128,  # Required to avoid overflow error in SFT
+        padding_side="right",
+    )
 
 
 @pytest.fixture
