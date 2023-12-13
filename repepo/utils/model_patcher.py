@@ -91,9 +91,16 @@ class ModelPatcher:
         layer_type: LayerType = "decoder_block",
         operator: PatchOperatorName | PatchOperator = "addition",
     ) -> None:
+        """
+        Patch the model to add in the given activations to the given layers
+
+        Args:
+            layer_activations: a dictionary mapping layer numbers to the activations to add
+            layer_type: the type of layer to patch
+            operator: the operator to use to combine the activations with the original activations, default addition
+        """
         if isinstance(operator, str):
             operator = _NAMED_OPERATORS[operator]
-        """Patch the model to add in the given activations to the given layers"""
         if layer_type not in self.config:
             raise ValueError(f"layer_type {layer_type} not provided in layer config")
         matcher = self.config[layer_type]
