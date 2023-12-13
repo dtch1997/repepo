@@ -1,7 +1,8 @@
 from collections import defaultdict
-from typing import Any, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 import torch
+from torch import Tensor
 from torch.utils.hooks import RemovableHandle
 from repepo.core.types import Model
 from repepo.utils.layer_matching import (
@@ -15,6 +16,37 @@ from repepo.utils.torch_utils import get_module, untuple_tensor
 LayerType = Literal[
     "decoder_block", "self_attn", "mlp", "input_layernorm", "post_attention_layernorm"
 ]
+
+PatchOperator = Callable[[Tensor, Tensor], Tensor]
+
+PatchOperatorName = Literal["addition", "piecewise_addition", "projection_subtraction"]
+
+
+def addition_operator(original_tensor: Tensor, patch_activation: Tensor) -> Tensor:
+    return original_tensor + patch_activation
+
+
+def piecewise_addition_operator(
+    original_tensor: Tensor, patch_activation: Tensor
+) -> Tensor:
+    sign = torch.sign((original_tensor * patch_activation).sum(-1, keepdim=True))
+    return original_tensor + sign * patch_activation
+
+
+def projection_subtraction_operator(
+    original_tensor: Tensor, patch_activation: Tensor
+) -> Tensor:
+    proj = (original_tensor * patch_activation).sum(-1, keepdim=True) * patch_activation
+    patch_norm = patch_activation.norm()
+    return original_tensor - proj / (patch_norm**2)
+
+
+_NAMED_OPERATORS: dict[PatchOperatorName, PatchOperator] = {
+    "addition": addition_operator,
+    "piecewise_addition": piecewise_addition_operator,
+    "projection_subtraction": projection_subtraction_operator,
+}
+
 
 ModelLayerConfig = dict[LayerType, LayerMatcher]
 
@@ -53,11 +85,14 @@ class ModelPatcher:
         ):
             self.config["decoder_block"] = decoder_block_matcher
 
-    def patch_activations_additive(
+    def patch_activations(
         self,
         layer_activations: dict[int, torch.Tensor],
         layer_type: LayerType = "decoder_block",
+        operator: PatchOperatorName | PatchOperator = "addition",
     ) -> None:
+        if isinstance(operator, str):
+            operator = _NAMED_OPERATORS[operator]
         """Patch the model to add in the given activations to the given layers"""
         if layer_type not in self.config:
             raise ValueError(f"layer_type {layer_type} not provided in layer config")
@@ -74,7 +109,7 @@ class ModelPatcher:
             module = get_module(self.model, layer_name)
             handle = module.register_forward_hook(
                 # create the hook via function call since python only creates new scopes on functions
-                _create_additive_hook(target_activation)
+                _create_additive_hook(target_activation, operator)
             )
             self.registered_hooks[layer_name].append(handle)
 
@@ -86,12 +121,14 @@ class ModelPatcher:
         self.registered_hooks = defaultdict(list)
 
 
-def _create_additive_hook(target_activation: torch.Tensor) -> Any:
+def _create_additive_hook(
+    target_activation: torch.Tensor, operator: PatchOperator
+) -> Any:
     """Create a hook function that adds the given target_activation to the model output"""
 
     def hook_fn(_m: Any, _inputs: Any, outputs: Any) -> Any:
         original_tensor = untuple_tensor(outputs)
-        original_tensor += target_activation
+        original_tensor[None] = operator(original_tensor, target_activation)
         return outputs
 
     return hook_fn
