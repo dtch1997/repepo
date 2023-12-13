@@ -1,6 +1,8 @@
-from typing import List, NamedTuple
+from typing import List
 
-from transformers import PreTrainedTokenizerBase, PreTrainedModel
+from dataclasses import dataclass
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+from transformers.modeling_utils import PreTrainedModel
 
 # Placeholder type definitions
 Model = PreTrainedModel
@@ -8,13 +10,15 @@ Tokenizer = PreTrainedTokenizerBase
 
 
 # Base types
-class Example(NamedTuple):
+@dataclass
+class Example:
     instruction: str
     input: str
     output: str
 
 
-class Completion(NamedTuple):
+@dataclass
+class Completion:
     prompt: str
     response: str
 

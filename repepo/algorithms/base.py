@@ -1,11 +1,14 @@
 import abc
 
 from repepo.core import Dataset, Pipeline
+from typing import Dict, Any
 
 
-class BaseAlgorithm(abc.ABC):
+class Algorithm(abc.ABC):
     @abc.abstractmethod
-    def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
+    def run(
+        self, pipeline: Pipeline, dataset: Dataset, **kwargs: Dict[str, Any]
+    ) -> Pipeline:
         raise NotImplementedError()
 
 

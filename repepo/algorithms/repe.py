@@ -4,7 +4,7 @@ from repepo.core import Pipeline
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 from repepo.repe.rep_control_pipeline import RepControlPipeline
 
-from repepo.algorithms.base import BaseAlgorithm
+from repepo.algorithms.base import Algorithm
 
 from repepo.core.prompt import IdentityPrompter
 from repepo.core.format import InstructionFormatter
@@ -12,7 +12,7 @@ from repepo.core.format import InstructionFormatter
 import torch
 
 
-class Repe(BaseAlgorithm):
+class Repe(Algorithm):
     # TODO: linting
 
     def __init__(self):

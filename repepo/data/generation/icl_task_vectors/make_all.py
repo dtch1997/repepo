@@ -1,7 +1,6 @@
 import pathlib
-from typing import Dict, List
+from typing import Dict, List, Any
 
-from repepo.core.types import Example
 from repepo.data import get_dataset_dir
 from repepo.data import jdump
 from repepo.data import jload
@@ -16,10 +15,10 @@ from repepo.data.generation.icl_task_vectors.make_translation_data import (
 )
 
 
-def make_dataset_from_mapping(mapping: Dict[str, str]) -> List[Example]:
+def make_dataset_from_mapping(mapping: Dict[str, str]) -> List[Dict[str, Any]]:
     examples = []
     for key, value in mapping.items():
-        examples.append(Example(instruction="", input=key, output=value)._asdict())
+        examples.append(dict(instruction="", input=key, output=value))
     return examples
 
 
@@ -35,5 +34,5 @@ if __name__ in "__main__":
     dataset_paths = get_all_json_filepaths(get_dataset_dir() / "icl_task_vectors")
     for path in dataset_paths:
         mapping = jload(path, "r")
-        dataset: List[Example] = make_dataset_from_mapping(mapping)
+        dataset = make_dataset_from_mapping(mapping)
         jdump(dataset, path, "w")

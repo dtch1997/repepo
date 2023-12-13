@@ -1,35 +1,3 @@
-from typing import Dict, List
-
-import evaluate
-
-from evaluate import EvaluationModule
-
-
-class Metrics:
-    bleu: EvaluationModule
-    bleurt: EvaluationModule
-    rouge: EvaluationModule
-
-    def __init__(self):
-        self.bleu = evaluate.load("bleu")
-        self.rouge = evaluate.load("rouge")
-
-    def compute_metrics(
-        self, predictions: List[str], references: List[str]
-    ) -> Dict[str, float]:
-        bleu_results = self.bleu.compute(predictions=predictions, references=references)
-        rouge_results = self.rouge.compute(
-            predictions=predictions, references=references
-        )
-        # keep pyright happy
-        assert bleu_results is not None
-        assert rouge_results is not None
-        return {
-            "bleu": bleu_results["bleu"],
-            "rouge1": rouge_results["rouge1"],
-        }
-
-
 class AverageMeter:
     def __init__(self):
         self.metrics = {}

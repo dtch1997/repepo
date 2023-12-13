@@ -15,7 +15,9 @@ def _get_project_dir() -> pathlib.Path:
 class Environ:
     # Directories
     HuggingfaceCacheDir = str(
-        os.environ.get("HUGGINGFACE_CACHE_DIR", _get_home_dir() / ".huggingface")
+        os.environ.get(
+            "HUGGINGFACE_HUB_CACHE", _get_home_dir() / ".cache/huggingface/hub"
+        )
     )
     OutputDir = str(os.environ.get("OUTPUT_DIR", _get_project_dir() / "output"))
     DatasetDir = str(os.environ.get("DATASET_DIR", _get_project_dir() / "datasets"))
@@ -23,7 +25,8 @@ class Environ:
 
     # WandB
     WandbProject = os.environ.get("WANDB_PROJECT", "Rep-Eng")
-    WandbEntity = os.environ.get("WANDB_GROUP", os.environ.get("USERNAME"))
+    WandbEntity = os.environ.get("WANDB_ENTITY", "unknown")
+    WandbGroup = os.environ.get("WANDB_GROUP", os.environ.get("USER", "default"))
 
 
 # Model names
