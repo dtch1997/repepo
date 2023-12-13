@@ -21,6 +21,7 @@ from repepo.data.dataset import sft
 from repepo.utils.metrics import Metrics, AverageMeter
 from repepo.variables import Environ
 from repepo.variables import Model
+from repepo.utils import logging
 
 
 @dataclass
@@ -35,48 +36,16 @@ class SupervisedFineTuningConfig:
     device: str = "cuda"
 
 
-@dataclass
-class WandbConfig:
-    project: str = field(default=Environ.WandbProject)
-    entity: str = field(default=Environ.WandbEntity)
-    name: str = field(default="sft-simple")
-    track: bool = field(default=False)
-
-
-class WandbLogger:
-    def __init__(self, config: WandbConfig):
-        self.config = config
-        if self.config.track:
-            import wandb
-
-            self.wandb = wandb
-
-    def __enter__(self):
-        if self.config.track:
-            self.wandb.init(
-                project=self.config.project,
-                entity=self.config.entity,
-                name=self.config.name,
-            )
-        return self
-
-    def log(self, *args, **kwargs):
-        if self.config.track:
-            self.wandb.log(*args, **kwargs)
-        # Else no-op
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.config.track:
-            self.wandb.finish()
-
-
 class SupervisedFineTuning(Algorithm):
     @override
     def __init__(self, config: SupervisedFineTuningConfig):
         self.config = config
 
     def run(
-        self, pipeline: Pipeline, dataset: Dataset, logger: Optional[WandbLogger] = None
+        self,
+        pipeline: Pipeline,
+        dataset: Dataset,
+        logger: Optional[logging.Logger] = None,
     ) -> Pipeline:
         """Modifies the base model weights"""
 
@@ -154,6 +123,7 @@ if __name__ == "__main__":
     import pyrallis
     from transformers.models.auto.modeling_auto import AutoModelForCausalLM
     from transformers.models.auto.tokenization_auto import AutoTokenizer
+    from repepo.utils.logging import WandbConfig, WandbLogger
 
     @dataclass
     class TrainSFTConfig:
