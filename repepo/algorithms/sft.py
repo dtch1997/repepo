@@ -4,7 +4,7 @@ from repepo.core import Pipeline
 from repepo.algorithms.base import Algorithm
 from overrides import override
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from dataclasses import field
 from typing import List, Optional
 
@@ -23,6 +23,7 @@ from repepo.utils.metrics import Metrics, AverageMeter
 from repepo.variables import Environ
 from repepo.variables import Model
 from repepo.utils import logging
+from repepo.core.benchmark import Benchmark
 
 from accelerate import Accelerator
 
@@ -52,6 +53,7 @@ class SupervisedFineTuning(Algorithm):
         pipeline: Pipeline,
         dataset: Dataset,
         logger: Optional[logging.Logger] = None,
+        eval_benchmark: Optional[Benchmark] = None,
     ) -> Pipeline:
         """Modifies the base model weights"""
 
@@ -69,10 +71,11 @@ class SupervisedFineTuning(Algorithm):
             model=model,
         )
 
+        data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+
         # Make train dataloader
         completions: List[Completion] = pipeline.formatter.apply_list(dataset)
         _ds = sft.SupervisedDataset(completions, tokenizer=tokenizer)
-        data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
         train_dataloader = DataLoader(
             _ds,
             batch_size=self.config.batch_size,
@@ -80,9 +83,19 @@ class SupervisedFineTuning(Algorithm):
             collate_fn=data_collator,
         )
 
-        # # Set device
-        # device = self.config.device if torch.cuda.is_available() else "cpu"
-        # model.to(device)  # type: ignore
+        # Make val dataloader
+        eval_enabled = False
+        if eval_benchmark is not None:
+            eval_enabled = True
+            val_dataset = eval_benchmark.test_dataset
+            completions: List[Completion] = pipeline.formatter.apply_list(val_dataset)
+            _ds = sft.SupervisedDataset(completions, tokenizer = tokenizer)
+            val_dataloader = DataLoader(
+                _ds,
+                batch_size=self.config.batch_size,
+                shuffle=self.config.shuffle,
+                collate_fn=data_collator,
+            )
 
         # Set up optimizer and scheduler
         num_training_steps = self.config.num_train_epochs * len(train_dataloader)
@@ -100,10 +113,8 @@ class SupervisedFineTuning(Algorithm):
         model, optimizer, train_dataloader, scheduler = accelerator.prepare(
             model, optimizer, train_dataloader, scheduler
         )
-
-        # TODO: set up metrics, meters once using eval callbacks
-        # metric_fns = Metrics()
-        # meter = AverageMeter()
+        if eval_enabled:
+            val_dataloader = accelerator.prepare_data_loader(val_dataloader)
 
         # Training loop
         global_step = 0
@@ -131,9 +142,27 @@ class SupervisedFineTuning(Algorithm):
                         logger.log({"train/loss": loss.item()}, step=global_step)
 
                     del outputs
+                    del batch
 
             # TODO: Evaluation callback?
+            if eval_enabled:
+                model.eval()
+                with torch.no_grad():
+                    val_iterator = val_dataloader
+                    for step, batch in enumerate(val_iterator):
+                        outputs = model(
+                            input_ids=batch["input_ids"],
+                            labels=batch["labels"],
+                            attention_mask=batch["attention_mask"],
+                        )
+                        loss = outputs.loss
+                        if logger is not None:
+                            logger.log({"eval/loss": loss.item()}, step=global_step)
 
+                        del outputs
+                        del batch
+
+                model.train()
         return pipeline
 
 
@@ -146,7 +175,8 @@ if __name__ == "__main__":
     @dataclass
     class TrainSFTConfig:
         sft: SupervisedFineTuningConfig = SupervisedFineTuningConfig()
-        dataset: DatasetSpec = DatasetSpec(name="truthfulqa")
+        dataset: DatasetSpec = DatasetSpec(name="truthfulqa", split = ":80%")
+        val_dataset: DatasetSpec = DatasetSpec(name = "truthfulqa", split = "80:100%")
         wandb: WandbConfig = WandbConfig()
 
         model_name_or_path: str = "EleutherAI/pythia-1.4b"
@@ -179,8 +209,13 @@ if __name__ == "__main__":
     )
 
     pipeline = Pipeline(model, tokenizer)
-    dataset = make_dataset(config.dataset)
+    eval_benchmark = Benchmark(
+        'truthfulqa',
+        make_dataset(config.dataset),
+        make_dataset(config.val_dataset),
+        []
+    )
 
-    with WandbLogger(config.wandb) as logger:
+    with WandbLogger(config.wandb, extra_config=asdict(config)) as logger:
         algorithm = SupervisedFineTuning(config.sft)
-        algorithm.run(pipeline, dataset, logger=logger)
+        algorithm.run(pipeline, eval_benchmark.train_dataset, logger=logger, eval_benchmark=eval_benchmark)

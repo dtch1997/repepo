@@ -16,11 +16,11 @@ class Logger:
 
 
 class WandbLogger(Logger):
-    def __init__(self, config: WandbConfig):
+    def __init__(self, config: WandbConfig, extra_config: Dict[str, Any]):
         self.config = config
+        self.extra_config = extra_config
         if self.config.track:
             import wandb
-
             self.wandb = wandb
 
     def __enter__(self):
@@ -29,6 +29,7 @@ class WandbLogger(Logger):
                 project=self.config.project,
                 entity=self.config.entity,
                 name=self.config.name,
+                config = self.extra_config
             )
         return self
 

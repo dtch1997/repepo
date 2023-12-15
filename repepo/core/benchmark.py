@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from transformers import GenerationConfig
+from transformers.generation import GenerationConfig # keep pyright happy
 
 from repepo.algorithms.base import Algorithm
 from repepo.core.evaluate import EvalPrediction, EvalResult, Evaluator
@@ -19,8 +19,7 @@ class Benchmark:
     train_dataset: Dataset
     test_dataset: Dataset
     evaluators: list[Evaluator]
-
-
+    
 def train_and_evaluate_benchmark(
     model: Model,
     tokenizer: Tokenizer,
