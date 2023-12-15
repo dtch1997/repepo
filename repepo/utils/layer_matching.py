@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from typing import Callable, Iterable, Union
+from typing import Callable, Iterable, Optional, Union
 
 from torch import nn
 
@@ -68,16 +68,59 @@ def guess_decoder_block_matcher(model: nn.Module) -> str | None:
     """
     Guess the hidden layer matcher for a given model. This is a best guess and may not always be correct.
     """
-    return _guess_decoder_block_matcher_from_layers(dict(model.named_modules()).keys())
+    return _guess_block_matcher_from_layers(dict(model.named_modules()).keys())
+
+
+def guess_mlp_matcher(model: nn.Module) -> str | None:
+    """
+    Guess the mlp layer matcher for a given model. This is a best guess and may not always be correct.
+    """
+    return _guess_block_matcher_from_layers(
+        dict(model.named_modules()).keys(), filter=lambda guess: "mlp" in guess
+    )
+
+
+def guess_self_attn_matcher(model: nn.Module) -> str | None:
+    """
+    Guess the self attention layer matcher for a given model. This is a best guess and may not always be correct.
+    """
+    return _guess_block_matcher_from_layers(
+        dict(model.named_modules()).keys(),
+        filter=lambda guess: "attn" in guess or "attention" in guess,
+    )
+
+
+def guess_input_layernorm_matcher(model: nn.Module) -> str | None:
+    """
+    Guess the input layernorm layer matcher for a given model. This is a best guess and may not always be correct.
+    """
+    return _guess_block_matcher_from_layers(
+        dict(model.named_modules()).keys(),
+        filter=lambda guess: "ln_1" in guess or "input_layernorm" in guess,
+    )
+
+
+def guess_post_attention_layernorm_matcher(model: nn.Module) -> str | None:
+    """
+    Guess the post-attention layernorm layer matcher for a given model. This is a best guess and may not always be correct.
+    """
+    return _guess_block_matcher_from_layers(
+        dict(model.named_modules()).keys(),
+        filter=lambda guess: "ln_2" in guess or "post_attention_layernorm" in guess,
+    )
 
 
 # broken into a separate function for easier testing
-def _guess_decoder_block_matcher_from_layers(layers: Iterable[str]) -> str | None:
+def _guess_block_matcher_from_layers(
+    layers: Iterable[str], filter: Optional[Callable[[str], bool]] = None
+) -> str | None:
     counts_by_guess: dict[str, int] = defaultdict(int)
+
     for layer in layers:
         if re.match(LAYER_GUESS_RE, layer):
             guess = re.sub(LAYER_GUESS_RE, r"\1.{num}\3", layer)
-            counts_by_guess[guess] += 1
+            if filter is None or filter(guess):
+                counts_by_guess[guess] += 1
     if len(counts_by_guess) == 0:
         return None
 

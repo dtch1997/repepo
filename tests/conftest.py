@@ -2,8 +2,13 @@ from typing import Any
 import pytest
 import torch
 
-from transformers import GPTNeoXForCausalLM, AutoTokenizer
-
+from transformers import (
+    GPTNeoXForCausalLM,
+    AutoTokenizer,
+    GPT2LMHeadModel,
+    LlamaForCausalLM,
+    LlamaConfig,
+)
 from repepo.core.types import Tokenizer
 
 
@@ -43,3 +48,25 @@ def larger_model() -> GPTNeoXForCausalLM:
 @pytest.fixture
 def larger_tokenizer() -> Tokenizer:
     return AutoTokenizer.from_pretrained("EleutherAI/pythia-160m")
+
+
+@pytest.fixture
+def gpt2_model() -> GPT2LMHeadModel:
+    model = GPT2LMHeadModel.from_pretrained("gpt2")
+    assert type(model) == GPT2LMHeadModel
+    return model.to(_device).eval()
+
+
+@pytest.fixture
+def gpt2_tokenizer() -> Tokenizer:
+    return AutoTokenizer.from_pretrained("gpt2")
+
+
+@pytest.fixture
+def empty_llama_model() -> LlamaForCausalLM:
+    config = LlamaConfig(
+        num_hidden_layers=3,
+        hidden_size=1024,
+        intermediate_size=2752,
+    )
+    return LlamaForCausalLM(config)
