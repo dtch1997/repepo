@@ -19,7 +19,20 @@ class Benchmark:
     train_dataset: Dataset
     test_dataset: Dataset
     evaluators: list[Evaluator]
-    
+
+    def evaluate(self, pipeline: Pipeline, generation_config: Optional[GenerationConfig] = None,) -> EvalResult:
+        predictions: list[EvalPrediction] = []
+        # TODO: support batching
+        for example in self.test_dataset:
+            completion = pipeline.formatter.apply(example)
+            completion = pipeline.prompter.apply(completion)
+            output = pipeline.generate(example, generation_config=generation_config)
+            predictions.append(EvalPrediction(example, completion, output))
+        metrics: dict[str, float] = {}
+        for evaluator in self.evaluators:
+            metrics.update(evaluator(predictions))
+        return EvalResult(predictions, metrics)
+
 def train_and_evaluate_benchmark(
     model: Model,
     tokenizer: Tokenizer,
@@ -35,13 +48,4 @@ def train_and_evaluate_benchmark(
     for algorithm in algorithms:
         pipeline = algorithm.run(pipeline, benchmark.train_dataset)
 
-    # evaluate
-    predictions: list[EvalPrediction] = []
-    # TODO: support batching
-    for example in benchmark.test_dataset:
-        output = pipeline.generate(example, generation_config=generation_config)
-        predictions.append(EvalPrediction(example, output))
-    metrics: dict[str, float] = {}
-    for evaluator in benchmark.evaluators:
-        metrics.update(evaluator(predictions))
-    return EvalResult(predictions, metrics)
+    return benchmark.evaluate(pipeline, generation_config=generation_config)

@@ -1,5 +1,6 @@
 from repepo.variables import Environ
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -16,7 +17,7 @@ class Logger:
 
 
 class WandbLogger(Logger):
-    def __init__(self, config: WandbConfig, extra_config: Dict[str, Any]):
+    def __init__(self, config: WandbConfig, extra_config: dict[str, Any]):
         self.config = config
         self.extra_config = extra_config
         if self.config.track:

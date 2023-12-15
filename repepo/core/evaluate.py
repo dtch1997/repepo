@@ -3,21 +3,22 @@
 
 from dataclasses import dataclass
 from statistics import mean
-from typing import Callable, Sequence
-from repepo.core.types import Example
+from typing import Callable, Sequence, Any
+from repepo.core.types import Example, Completion
 import evaluate
+import numpy as np
 from evaluate import EvaluationModule
 
 @dataclass
 class EvalPrediction:
     example: Example
+    completion: Completion
     output: str
-
 
 @dataclass
 class EvalResult:
     predictions: list[EvalPrediction]
-    metrics: dict[str, float]
+    metrics: dict[str, float] # TODO: allow float arrays, one per prediction
 
 
 Evaluator = Callable[[Sequence[EvalPrediction]], dict[str, float]]

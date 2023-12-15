@@ -34,7 +34,7 @@ class SupervisedFineTuningConfig:
     batch_size: int = 256  # Training batch size
     shuffle: bool = True  # Whether to shuffle the dataset
     num_train_epochs: int = 10
-    learning_rate: float = 1e-6
+    learning_rate: float = 5e-5
 
     # Experiment config
     device: str = "cuda"
@@ -133,8 +133,8 @@ class SupervisedFineTuning(Algorithm):
                     loss = outputs.loss
                     optimizer.zero_grad()
                     accelerator.backward(loss)
-                    # # Gradient clipping
-                    # torch.nn.utils.clip_grad.clip_grad_norm_(model.parameters(), 1.0)
+                    # Gradient clipping
+                    torch.nn.utils.clip_grad.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
                     scheduler.step()
                     print(f"epoch : {epoch} | step: {step} | loss: {loss}")
@@ -171,6 +171,7 @@ if __name__ == "__main__":
     from transformers.models.auto.modeling_auto import AutoModelForCausalLM
     from transformers.models.auto.tokenization_auto import AutoTokenizer
     from repepo.utils.logging import WandbConfig, WandbLogger
+    from repepo.core.evaluate import BleuEvaluator, Rouge1Evaluator
 
     @dataclass
     class TrainSFTConfig:
@@ -199,7 +200,6 @@ if __name__ == "__main__":
         token=True,
     )
 
-    # TODO: figure out typing for this
     tokenizer = AutoTokenizer.from_pretrained(
         config.model_name_or_path,
         cache_dir=config.cache_dir,
@@ -219,3 +219,27 @@ if __name__ == "__main__":
     with WandbLogger(config.wandb, extra_config=asdict(config)) as logger:
         algorithm = SupervisedFineTuning(config.sft)
         algorithm.run(pipeline, eval_benchmark.train_dataset, logger=logger, eval_benchmark=eval_benchmark)
+
+        eval_result = eval_benchmark.evaluate(pipeline)
+
+        
+
+        # Log table of results
+        # TODO(dtch1997): Additionally log per-sample metrics
+        # TODO(dtch1997): refactor wandb dependency into logger
+        import pandas as pd 
+        import wandb 
+        rows = []
+        for prediction in eval_result.predictions:
+            rows.append(dict(
+                input = prediction.completion.prompt, 
+                predicted_output = prediction.output,
+                reference_output = prediction.completion.response
+            ))
+        eval_result_df = pd.DataFrame.from_records(rows)
+        logger.log({"final_predictions": wandb.Table(dataframe = eval_result_df)})
+
+        # Log metrics
+        metrics = eval_result.metrics 
+        metrics = {f"final_metrics/{k}": v for k, v in metrics.items()}
+        logger.log(metrics)
