@@ -220,7 +220,15 @@ if __name__ == "__main__":
         algorithm = SupervisedFineTuning(config.sft)
         algorithm.run(pipeline, eval_benchmark.train_dataset, logger=logger, eval_benchmark=eval_benchmark)
 
-        eval_result = eval_benchmark.evaluate(pipeline)
+        from repepo.core.benchmark import GenerationConfig
+        eval_result = eval_benchmark.evaluate(
+            pipeline, 
+            generation_config = GenerationConfig(
+                max_length = config.model_max_length,
+                pad_token_id = tokenizer.pad_token_id,
+                eos_token_id = tokenizer.eos_token_id,
+            )
+        )
 
         
 

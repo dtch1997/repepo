@@ -1,4 +1,5 @@
 model_name_or_path: "EleutherAI/pythia-70m"
 sft:
   num_train_epochs: 10
-
+  gradient_checkpointing: False
+  mixed_precision: 'no'
