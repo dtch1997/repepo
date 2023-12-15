@@ -11,7 +11,8 @@ from typing import List, Optional
 import torch
 import pprint
 from torch.utils.data import DataLoader
-from transformers.optimization import AdamW
+from torch.optim import SGD
+from transformers.optimization import Adafactor, AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
 from repepo.core.types import Completion
 
@@ -23,6 +24,8 @@ from repepo.variables import Environ
 from repepo.variables import Model
 from repepo.utils import logging
 
+from accelerate import Accelerator
+
 
 @dataclass
 class SupervisedFineTuningConfig:
@@ -30,10 +33,13 @@ class SupervisedFineTuningConfig:
     batch_size: int = 256  # Training batch size
     shuffle: bool = True  # Whether to shuffle the dataset
     num_train_epochs: int = 10
-    learning_rate: float = 5e-5
+    learning_rate: float = 1e-6
 
     # Experiment config
     device: str = "cuda"
+    gradient_accumulation_steps: int = 1
+    gradient_checkpointing: bool = True
+    mixed_precision: str = 'bf16'
 
 
 class SupervisedFineTuning(Algorithm):
@@ -74,45 +80,57 @@ class SupervisedFineTuning(Algorithm):
             collate_fn=data_collator,
         )
 
-        # Set device
-        device = self.config.device if torch.cuda.is_available() else "cpu"
-        model.to(device)  # type: ignore
+        # # Set device
+        # device = self.config.device if torch.cuda.is_available() else "cpu"
+        # model.to(device)  # type: ignore
 
         # Set up optimizer and scheduler
         num_training_steps = self.config.num_train_epochs * len(train_dataloader)
-        optimizer = AdamW(model.parameters(), lr=self.config.learning_rate)
+        optimizer = SGD(model.parameters(), lr=self.config.learning_rate)
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
         )
 
-        # Set up metrics, meters
-        metric_fns = Metrics()
-        meter = AverageMeter()
+        if self.config.gradient_checkpointing:
+            model.gradient_checkpointing_enable()
+        accelerator = Accelerator(
+            mixed_precision = self.config.mixed_precision,
+            gradient_accumulation_steps= self.config.gradient_accumulation_steps
+        )
+        model, optimizer, train_dataloader, scheduler = accelerator.prepare(
+            model, optimizer, train_dataloader, scheduler
+        )
+
+        # TODO: set up metrics, meters once using eval callbacks
+        # metric_fns = Metrics()
+        # meter = AverageMeter()
 
         # Training loop
         global_step = 0
         model.train()
         for epoch in range(int(self.config.num_train_epochs)):
             # epoch_iterator = tqdm(train_dataloader, desc="Training")
-            epoch_iterator = train_dataloader
+            epoch_iterator = train_dataloader   
             for step, batch in enumerate(epoch_iterator):
-                global_step += self.config.batch_size
-                batch = {k: v.to(device) for k, v in batch.items()}
-                outputs = model(
-                    input_ids=batch["input_ids"],
-                    labels=batch["labels"],
-                    attention_mask=batch["attention_mask"],
-                )
-                loss = outputs.loss
-                optimizer.zero_grad()
-                loss.backward()
-                # Gradient clipping
-                torch.nn.utils.clip_grad.clip_grad_norm_(model.parameters(), 1.0)
-                optimizer.step()
-                scheduler.step()
-                print(f"epoch : {epoch} | step: {step} | loss: {loss}")
-                if logger is not None:
-                    logger.log({"train/loss": loss}, step=global_step)
+                with accelerator.accumulate(model):
+                    global_step += self.config.batch_size
+                    outputs = model(
+                        input_ids=batch["input_ids"],
+                        labels=batch["labels"],
+                        attention_mask=batch["attention_mask"],
+                    )
+                    loss = outputs.loss
+                    optimizer.zero_grad()
+                    accelerator.backward(loss)
+                    # # Gradient clipping
+                    # torch.nn.utils.clip_grad.clip_grad_norm_(model.parameters(), 1.0)
+                    optimizer.step()
+                    scheduler.step()
+                    print(f"epoch : {epoch} | step: {step} | loss: {loss}")
+                    if logger is not None:
+                        logger.log({"train/loss": loss.item()}, step=global_step)
+
+                    del outputs
 
             # TODO: Evaluation callback?
 
@@ -131,7 +149,7 @@ if __name__ == "__main__":
         dataset: DatasetSpec = DatasetSpec(name="truthfulqa")
         wandb: WandbConfig = WandbConfig()
 
-        model_name_or_path: str = Model.Pythia70m
+        model_name_or_path: str = "EleutherAI/pythia-1.4b"
         model_max_length: int = field(
             default=512,
             metadata={
@@ -147,6 +165,8 @@ if __name__ == "__main__":
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name_or_path,
         cache_dir=config.cache_dir,
+        torch_dtype=torch.bfloat16,
+        token=True,
     )
 
     # TODO: figure out typing for this
