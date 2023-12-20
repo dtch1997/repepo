@@ -1,7 +1,11 @@
 import torch
-from transformers import GPTNeoXForCausalLM
+from transformers import (
+    GPTNeoXForCausalLM,
+    TextGenerationPipeline,
+    GPTNeoXTokenizerFast,
+)
 
-from repepo.core.types import Tokenizer
+from repepo.core.types import Model, Tokenizer
 from repepo.repe.rep_control_pipeline import RepControlPipeline
 
 from tests._original_repe.rep_control_pipeline import (
@@ -55,3 +59,31 @@ def test_our_hacked_RepControlPipeline_matches_original_behavior(
         do_sample=False,
     )
     assert our_outputs == original_outputs
+
+
+def test_RepControlPipeline_matches_base_huggingface_outputs_if_no_activations_are_patched(
+    model: Model, tokenizer: GPTNeoXTokenizerFast
+) -> None:
+    inputs = "12345"
+    hf_pipeline = TextGenerationPipeline(model=model, tokenizer=tokenizer)
+    hf_outputs = hf_pipeline(
+        inputs,
+        batch_size=4,
+        max_new_tokens=5,
+        do_sample=False,
+    )
+
+    our_pipeline = RepControlPipeline(
+        model=model,
+        tokenizer=tokenizer,
+        layers=[],
+        block_name="decoder_block",
+    )
+    our_outputs = our_pipeline(
+        inputs,
+        activations=None,
+        batch_size=4,
+        max_new_tokens=5,
+        do_sample=False,
+    )
+    assert our_outputs == hf_outputs
