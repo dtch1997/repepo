@@ -43,6 +43,20 @@ class SupervisedFineTuningConfig:
     mixed_precision: str = 'bf16'
 
 
+def inspect_batch(batch: dict[str, torch.Tensor], tokenizer):
+    
+    input_ids = batch['input_ids'][0]
+    labels = batch['labels'][0]
+    loss_active_idx = (labels != -100).nonzero()
+    loss_inactive_idx = (labels == -100).nonzero()
+    prompt_str = tokenizer.decode(input_ids[loss_inactive_idx].squeeze(-1), skip_special_tokens = True)
+    prediction_str = tokenizer.decode(input_ids[loss_active_idx].squeeze(-1), skip_special_tokens = True)
+    return {
+        'prompt_str': prompt_str,
+        'prediction_str': prediction_str
+    }
+
+    
 class SupervisedFineTuning(Algorithm):
     @override
     def __init__(self, config: SupervisedFineTuningConfig):
@@ -137,9 +151,18 @@ class SupervisedFineTuning(Algorithm):
                     torch.nn.utils.clip_grad.clip_grad_norm_(model.parameters(), 1.0)
                     optimizer.step()
                     scheduler.step()
-                    print(f"epoch : {epoch} | step: {step} | loss: {loss}")
+
                     if logger is not None:
                         logger.log({"train/loss": loss.item()}, step=global_step)
+
+                        # Log the gradients for debugging
+                        grads = [
+                                param.grad.detach().flatten()
+                                for param in model.parameters()
+                                if param.grad is not None
+                            ]
+                        norm = torch.cat(grads).norm()
+                        logger.log({"train/grad_norm": norm.item()}, step = global_step)
 
                     del outputs
                     del batch
@@ -176,7 +199,7 @@ if __name__ == "__main__":
     @dataclass
     class TrainSFTConfig:
         sft: SupervisedFineTuningConfig = SupervisedFineTuningConfig()
-        dataset: DatasetSpec = DatasetSpec(name="truthfulqa", split = ":80%")
+        dataset: DatasetSpec = DatasetSpec(name="truthfulqa", split = ":1%")
         val_dataset: DatasetSpec = DatasetSpec(name = "truthfulqa", split = "80:100%")
         wandb: WandbConfig = WandbConfig()
 
