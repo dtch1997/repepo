@@ -1,9 +1,12 @@
 """ Utilities for reading, writing datasets to disk """
 # Taken from: https://github.com/tatsu-lab/stanford_alpaca/blob/main/utils.py
 
+from dataclasses import asdict, is_dataclass
 import io
 import json
 import os
+
+from pyparsing import Any
 
 
 def _make_w_io_base(f, mode: str):
@@ -21,7 +24,16 @@ def _make_r_io_base(f, mode: str):
     return f
 
 
-def jdump(obj, f, mode="w", indent=4, default=str):
+class DataclassEncoder(json.JSONEncoder):
+    """JSON encoder which can properly handle dataclasses."""
+
+    def default(self, obj: Any) -> Any:
+        if is_dataclass(obj):
+            return asdict(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
+def jdump(obj, f, mode="w", indent=4):
     """Dump a str or dictionary to a file in json format.
 
     Args:
@@ -33,7 +45,7 @@ def jdump(obj, f, mode="w", indent=4, default=str):
     """
     f = _make_w_io_base(f, mode)
     if isinstance(obj, (dict, list)):
-        json.dump(obj, f, indent=indent, default=default)
+        json.dump(obj, f, indent=indent, cls=DataclassEncoder)
     elif isinstance(obj, str):
         f.write(obj)
     else:
