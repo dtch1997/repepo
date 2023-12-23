@@ -2,7 +2,9 @@ from typing import cast
 import pytest
 import torch
 from torch import nn
-from transformers import GPTNeoXForCausalLM, GPT2LMHeadModel, LlamaForCausalLM
+from transformers.models.gpt_neox import GPTNeoXForCausalLM
+from transformers.models.gpt2 import GPT2LMHeadModel
+from transformers.models.llama import LlamaForCausalLM
 from repepo.core.types import Model, Tokenizer
 
 from repepo.utils.model_patcher import (
@@ -31,12 +33,11 @@ def test_ModelPatcher_patch_activations_matches_WrappedReadingVecModel_set_contr
     device: str,
 ) -> None:
     # load the same model twice so we can verify that each techniques does identical things
-    model1 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True).to(
-        device
-    )
-    model2 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True).to(
-        device
-    )
+    model1 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model1 = model1.to(device)  # type: ignore
+
+    model2 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model2 = model2.to(device)  # type: ignore
 
     assert isinstance(model1, GPTNeoXForCausalLM)  # keep pyright happy
     assert isinstance(model2, GPTNeoXForCausalLM)  # keep pyright happy
@@ -78,12 +79,11 @@ def test_ModelPatcher_patch_activations_piecewise_addition_matches_WrappedReadin
     device: str,
 ) -> None:
     # load the same model twice so we can verify that each techniques does identical things
-    model1 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True).to(
-        device
-    )
-    model2 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True).to(
-        device
-    )
+    model1 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model1 = model1.to(device)  # type: ignore
+
+    model2 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model2 = model2.to(device)  # type: ignore
 
     assert isinstance(model1, GPTNeoXForCausalLM)  # keep pyright happy
     assert isinstance(model2, GPTNeoXForCausalLM)  # keep pyright happy
