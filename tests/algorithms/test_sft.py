@@ -1,5 +1,5 @@
 import torch
-from transformers import GPTNeoXForCausalLM
+from transformers.models.gpt_neox import GPTNeoXForCausalLM
 from repepo.algorithms.sft import SupervisedFineTuning, SupervisedFineTuningConfig
 from repepo.core.pipeline import Pipeline
 
