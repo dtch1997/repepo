@@ -1,4 +1,3 @@
-from typing import Any
 import pytest
 import torch
 
@@ -12,7 +11,12 @@ from transformers import (
 from repepo.core.types import Tokenizer
 
 
-_device: Any = "cuda" if torch.cuda.is_available() else "cpu"
+_device: str = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+@pytest.fixture
+def device() -> str:
+    return _device
 
 
 @pytest.fixture

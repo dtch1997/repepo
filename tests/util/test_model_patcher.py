@@ -2,7 +2,9 @@ from typing import cast
 import pytest
 import torch
 from torch import nn
-from transformers import GPTNeoXForCausalLM, GPT2LMHeadModel, LlamaForCausalLM
+from transformers.models.gpt_neox import GPTNeoXForCausalLM
+from transformers.models.gpt2 import GPT2LMHeadModel
+from transformers.models.llama import LlamaForCausalLM
 from repepo.core.types import Model, Tokenizer
 
 from repepo.utils.model_patcher import (
@@ -28,10 +30,14 @@ from tests._original_repe.rep_control_reading_vec import WrappedReadingVecModel
 def test_ModelPatcher_patch_activations_matches_WrappedReadingVecModel_set_controller(
     tokenizer: Tokenizer,
     layer_type: LayerType,
+    device: str,
 ) -> None:
     # load the same model twice so we can verify that each techniques does identical things
     model1 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model1 = model1.to(device)  # type: ignore
+
     model2 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model2 = model2.to(device)  # type: ignore
 
     assert isinstance(model1, GPTNeoXForCausalLM)  # keep pyright happy
     assert isinstance(model2, GPTNeoXForCausalLM)  # keep pyright happy
@@ -50,7 +56,7 @@ def test_ModelPatcher_patch_activations_matches_WrappedReadingVecModel_set_contr
     reading_vec_wrapper.set_controller(layers, activations, block_name=layer_type)
     model_patcher.patch_activations(activations, layer_type=layer_type)
 
-    inputs = tokenizer("Hello, world", return_tensors="pt")
+    inputs = tokenizer("Hello, world", return_tensors="pt").to(device)
     with torch.no_grad():
         model1_outputs = model1(**inputs, output_hidden_states=False)
         model2_outputs = model2(**inputs, output_hidden_states=False)
@@ -70,10 +76,14 @@ def test_ModelPatcher_patch_activations_matches_WrappedReadingVecModel_set_contr
 def test_ModelPatcher_patch_activations_piecewise_addition_matches_WrappedReadingVecModel_set_controller(
     tokenizer: Tokenizer,
     layer_type: LayerType,
+    device: str,
 ) -> None:
     # load the same model twice so we can verify that each techniques does identical things
     model1 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model1 = model1.to(device)  # type: ignore
+
     model2 = GPTNeoXForCausalLM.from_pretrained("EleutherAI/pythia-70m", token=True)
+    model2 = model2.to(device)  # type: ignore
 
     assert isinstance(model1, GPTNeoXForCausalLM)  # keep pyright happy
     assert isinstance(model2, GPTNeoXForCausalLM)  # keep pyright happy
@@ -96,7 +106,7 @@ def test_ModelPatcher_patch_activations_piecewise_addition_matches_WrappedReadin
         activations, layer_type=layer_type, operator="piecewise_addition"
     )
 
-    inputs = tokenizer("Hello, world", return_tensors="pt")
+    inputs = tokenizer("Hello, world", return_tensors="pt").to(device)
     with torch.no_grad():
         model1_outputs = model1(**inputs, output_hidden_states=False)
         model2_outputs = model2(**inputs, output_hidden_states=False)
@@ -107,16 +117,17 @@ def test_ModelPatcher_patch_activations_piecewise_addition_matches_WrappedReadin
 
 @torch.no_grad()
 def test_ModelPatcher_patch_activations_with_projection_subtraction(
-    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+    model: GPTNeoXForCausalLM,
+    tokenizer: Tokenizer,
+    device: str,
 ) -> None:
     # This isn't implemented in the original paper code, despite being in the paper,
     # so we can't test against the original implementation
 
-    inputs = tokenizer("Hello, world", return_tensors="pt")
-    inputs = inputs.to(model.device)
+    inputs = tokenizer("Hello, world", return_tensors="pt").to(device)
     original_hidden_states = model(**inputs, output_hidden_states=True).hidden_states
     model_patcher = ModelPatcher(model)
-    patch = torch.randn(1, 512).to(model.device)
+    patch = torch.randn(1, 512).to(device)
     model_patcher.patch_activations({1: patch}, operator="projection_subtraction")
     patched_hidden_states = model(**inputs, output_hidden_states=True).hidden_states
 
@@ -135,10 +146,11 @@ def test_ModelPatcher_patch_activations_with_projection_subtraction(
 
 @torch.no_grad()
 def test_ModelPatcher_remove_patches_reverts_model_changes(
-    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+    model: GPTNeoXForCausalLM,
+    tokenizer: Tokenizer,
+    device: str,
 ) -> None:
-    inputs = tokenizer("Hello, world", return_tensors="pt")
-    inputs = inputs.to(model.device)
+    inputs = tokenizer("Hello, world", return_tensors="pt").to(device)
     original_logits = model(**inputs, output_hidden_states=False).logits
     model_patcher = ModelPatcher(model, GptNeoxLayerConfig)
     model_patcher.patch_activations(
