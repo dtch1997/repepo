@@ -9,11 +9,14 @@ from repepo.core.types import Example, Tokenizer
 def test_SupervisedFineTuning_run(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
-    model = model.to(torch.float32)
+    
+    NUM_TRAIN_EPOCHS = 100
+
     pipeline = Pipeline(model, tokenizer)
-    config = SupervisedFineTuningConfig
-    config.batch_size = 4
-    config.num_train_epochs = 1
+    config = SupervisedFineTuningConfig(
+        num_train_epochs=NUM_TRAIN_EPOCHS,        
+        report_to=[],
+    )
     algorithm = SupervisedFineTuning(config)
     dataset = [
         Example(instruction="", input="Paris is in", output="France"),
@@ -21,8 +24,9 @@ def test_SupervisedFineTuning_run(
         Example(instruction="", input="Berlin is in", output="Germany"),
     ]
 
-    new_pipeline = algorithm.run(pipeline, dataset=dataset)
+    metrics = algorithm.run(pipeline, dataset=dataset)
+    train_state_log_history = metrics['train_state_log_history']
+    final_train_state = train_state_log_history[-1]
 
-    # Skip testing outputs as they will be gibberish
-    # TODO: assert final train loss lower than starting train loss?
-    # How to expose this cleanly?
+    assert int(final_train_state['epoch'] == NUM_TRAIN_EPOCHS)
+    assert final_train_state['train_loss'] < 0.1
