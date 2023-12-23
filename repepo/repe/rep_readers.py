@@ -1,23 +1,32 @@
-from abc import ABC
-from abc import abstractmethod
-from itertools import islice
-
-import numpy as np
+from abc import ABC, abstractmethod
 from sklearn.decomposition import PCA
+import numpy as np
+from itertools import islice
+import torch
 
 
-### Util Functions ###
 def project_onto_direction(H, direction):
     """Project matrix H (n, d_1) onto direction vector (d_2,)"""
-    # TODO: should we require direction vectors to be unit vectors? then return H.dot(direction)
-    mag = np.linalg.norm(direction)
-    assert not np.isinf(mag)
-    return H.dot(direction) / mag
+    # Calculate the magnitude of the direction vector
+    # Ensure H and direction are on the same device (CPU or GPU)
+    if type(direction) != torch.Tensor:
+        H = torch.Tensor(H)
+    if type(direction) != torch.Tensor:
+        direction = torch.Tensor(direction)
+        direction = direction.to(H.device)
+    mag = torch.norm(direction)
+    assert not torch.isinf(mag).any()
+    # Calculate the projection
+    projection = H.matmul(direction) / mag
+    return projection
 
 
 def recenter(x, mean=None):
+    x = torch.Tensor(x)
     if mean is None:
-        mean = x.mean(axis=0, keepdims=True)
+        mean = torch.mean(x, axis=0, keepdims=True)
+    else:
+        mean = torch.Tensor(mean)
     return x - mean
 
 
@@ -126,7 +135,6 @@ class RepReader(ABC):
         """
 
         assert component_index < self.n_components
-
         transformed_hidden_states = {}
         for layer in hidden_layers:
             layer_hidden_states = hidden_states[layer]
@@ -140,8 +148,7 @@ class RepReader(ABC):
             H_transformed = project_onto_direction(
                 layer_hidden_states, self.directions[layer][component_index]
             )
-            transformed_hidden_states[layer] = H_transformed
-
+            transformed_hidden_states[layer] = H_transformed.cpu().numpy()
         return transformed_hidden_states
 
 
@@ -162,12 +169,11 @@ class PCARepReader(RepReader):
         directions = {}
 
         for layer in hidden_layers:
-            H_train = np.array(hidden_states[layer])
-
+            H_train = hidden_states[layer]
             H_train_mean = H_train.mean(axis=0, keepdims=True)
             self.H_train_means[layer] = H_train_mean
-            H_train = recenter(H_train, mean=H_train_mean)
-
+            H_train = recenter(H_train, mean=H_train_mean).cpu()
+            H_train = np.vstack(H_train)
             pca_model = PCA(n_components=self.n_components, whiten=False).fit(H_train)
 
             directions[
@@ -196,7 +202,7 @@ class PCARepReader(RepReader):
             for component_index in range(self.n_components):
                 transformed_hidden_states = project_onto_direction(
                     layer_hidden_states, self.directions[layer][component_index]
-                )
+                ).cpu()
 
                 pca_outputs_comp = [
                     list(

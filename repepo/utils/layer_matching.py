@@ -1,8 +1,10 @@
 import re
 from collections import defaultdict
-from typing import Callable, Iterable, Optional, Union
+from typing import Callable, Iterable, Literal, Optional, Union
 
 from torch import nn
+
+from repepo.core.types import Model
 
 LayerMatcher = Union[str, Callable[[nn.Module, int], str]]
 
@@ -25,6 +27,11 @@ def collect_matching_layers(model: nn.Module, layer_matcher: LayerMatcher) -> li
         else:
             break
     return matching_layers
+
+
+def get_num_matching_layers(model: nn.Module, layer_matcher: LayerMatcher) -> int:
+    """Returns the number of layers in the model that match the layer_matcher"""
+    return len(collect_matching_layers(model, layer_matcher))
 
 
 def get_layer_name(
@@ -129,3 +136,85 @@ def _guess_block_matcher_from_layers(
         (guess, count + 1 / len(guess)) for guess, count in counts_by_guess.items()
     ]
     return max(guess_scores, key=lambda x: x[1])[0]
+
+
+LayerType = Literal[
+    "decoder_block", "self_attn", "mlp", "input_layernorm", "post_attention_layernorm"
+]
+
+ModelLayerConfig = dict[LayerType, LayerMatcher]
+
+GptNeoxLayerConfig: ModelLayerConfig = {
+    "decoder_block": "gpt_neox.layers.{num}",
+    "self_attn": "gpt_neox.layers.{num}.attention",
+    "mlp": "gpt_neox.layers.{num}.mlp",
+    "input_layernorm": "gpt_neox.layers.{num}.input_layernorm",
+    "post_attention_layernorm": "gpt_neox.layers.{num}.post_attention_layernorm",
+}
+
+LlamaLayerConfig: ModelLayerConfig = {
+    "decoder_block": "model.layers.{num}",
+    "self_attn": "model.layers.{num}.self_attn",
+    "mlp": "model.layers.{num}.mlp",
+    "input_layernorm": "model.layers.{num}.input_layernorm",
+    "post_attention_layernorm": "model.layers.{num}.post_attention_layernorm",
+}
+
+Gpt2LayerConfig: ModelLayerConfig = {
+    "decoder_block": "transformer.h.{num}",
+    "self_attn": "transformer.h.{num}.attn",
+    "mlp": "transformer.h.{num}.mlp",
+    "input_layernorm": "transformer.h.{num}.ln_1",
+    "post_attention_layernorm": "transformer.h.{num}.ln_2",
+}
+
+
+def check_predefined_layer_configs(model: Model) -> ModelLayerConfig | None:
+    """Returns one of the above pre-defined layer configs if they match the model, else None"""
+    for layer_config in [GptNeoxLayerConfig, LlamaLayerConfig, Gpt2LayerConfig]:
+        everything_matches = True
+        for layer_matcher in layer_config.values():
+            if len(collect_matching_layers(model, layer_matcher)) == 0:
+                everything_matches = False
+                break
+        if everything_matches:
+            return layer_config
+    return None
+
+
+def enhance_model_config_matchers(
+    model: Model, config: ModelLayerConfig
+) -> ModelLayerConfig:
+    """Returns a new layer config, attempting to fill-in missing layer matchers"""
+    enhanced_config: ModelLayerConfig = {**config}
+    if "decoder_block" not in config and (
+        decoder_block_matcher := guess_decoder_block_matcher(model)
+    ):
+        enhanced_config["decoder_block"] = decoder_block_matcher
+    if "mlp" not in config and (mlp_matcher := guess_mlp_matcher(model)):
+        enhanced_config["mlp"] = mlp_matcher
+    if "self_attn" not in config and (
+        self_attn_matcher := guess_self_attn_matcher(model)
+    ):
+        enhanced_config["self_attn"] = self_attn_matcher
+    if "input_layernorm" not in config and (
+        input_layernorm_matcher := guess_input_layernorm_matcher(model)
+    ):
+        enhanced_config["input_layernorm"] = input_layernorm_matcher
+    if "post_attention_layernorm" not in config and (
+        post_attention_layernorm_matcher := guess_post_attention_layernorm_matcher(
+            model
+        )
+    ):
+        enhanced_config["post_attention_layernorm"] = post_attention_layernorm_matcher
+    return enhanced_config
+
+
+def guess_and_enhance_layer_config(
+    model: Model, layer_config: Optional[ModelLayerConfig] = None
+) -> ModelLayerConfig:
+    """Try to guess any missing parts of the layer config, after checking against predefined configs"""
+    if not layer_config:
+        layer_config = check_predefined_layer_configs(model)
+    layer_config = enhance_model_config_matchers(model, layer_config or {})
+    return layer_config
