@@ -71,8 +71,6 @@ class SupervisedDataset(Dataset):
         return dict(
             input_ids=self.input_ids[i],
             labels=self.labels[i],
-            prompt_ids=self.prompt_ids[i],
-            reference_ids=self.reference_ids[i],
         )
 
 
