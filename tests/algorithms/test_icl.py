@@ -15,10 +15,10 @@ def test_InContextLearning_run(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) 
         Example(instruction="", input="Berlin is in", output="Germany"),
     ]
 
-    new_pipeline = algorithm.run(pipeline, dataset=dataset)
+    algorithm.run(pipeline, dataset=dataset)
 
-    assert isinstance(new_pipeline.prompter, FewShotPrompter)
-    assert new_pipeline.prompter.few_shot_completions == [
+    assert isinstance(pipeline.prompter, FewShotPrompter)
+    assert pipeline.prompter.few_shot_completions == [
         Completion(prompt="Input:  Paris is in \nOutput: ", response="France"),
         Completion(prompt="Input:  London is in \nOutput: ", response="England"),
         Completion(prompt="Input:  Berlin is in \nOutput: ", response="Germany"),
