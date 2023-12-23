@@ -113,9 +113,10 @@ def test_ModelPatcher_patch_activations_with_projection_subtraction(
     # so we can't test against the original implementation
 
     inputs = tokenizer("Hello, world", return_tensors="pt")
+    inputs = inputs.to(model.device)
     original_hidden_states = model(**inputs, output_hidden_states=True).hidden_states
     model_patcher = ModelPatcher(model)
-    patch = torch.randn(1, 512)
+    patch = torch.randn(1, 512).to(model.device)
     model_patcher.patch_activations({1: patch}, operator="projection_subtraction")
     patched_hidden_states = model(**inputs, output_hidden_states=True).hidden_states
 
@@ -137,6 +138,7 @@ def test_ModelPatcher_remove_patches_reverts_model_changes(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
     inputs = tokenizer("Hello, world", return_tensors="pt")
+    inputs = inputs.to(model.device)
     original_logits = model(**inputs, output_hidden_states=False).logits
     model_patcher = ModelPatcher(model, GptNeoxLayerConfig)
     model_patcher.patch_activations(
