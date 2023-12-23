@@ -8,33 +8,31 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import List, Optional
 
-import torch
 import os
 import pprint
-from torch.utils.data import DataLoader
-from transformers.trainer import Trainer, TrainerState
-from transformers.optimization import AdamW
-from transformers.optimization import get_linear_schedule_with_warmup
+import pyrallis
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+from transformers.models.auto.tokenization_auto import AutoTokenizer
+from repepo.utils.logging import WandbConfig, WandbLogger
+from transformers.trainer import Trainer
 from transformers.training_args import TrainingArguments as HfTrainingArguments
 
 from repepo.core.types import Completion
 
 from repepo.data import make_dataset, DatasetSpec
-from repepo.data import utils
 from repepo.data.dataset import sft
-from repepo.utils.metrics import Metrics, AverageMeter
 from repepo.variables import Environ
 from repepo.variables import Model
-from repepo.utils import logging
-from repepo.utils.logging import WandbLogger, WandbConfig
 
 from typing import Any
+
 
 @dataclass
 class SupervisedFineTuningConfig(HfTrainingArguments):
     output_dir: Optional[str] = field(default=Environ.OutputDir)
     optim: str = field(default="adamw_torch")
     report_to: List[str] = field(default_factory=lambda: ["wandb"])
+
 
 class SupervisedFineTuning(Algorithm):
     @override
@@ -47,8 +45,8 @@ class SupervisedFineTuning(Algorithm):
         dataset: Dataset,
     ) -> dict[str, Any]:
         """Modifies the base model weights
-        
-        Returns a dict of metrics """
+
+        Returns a dict of metrics"""
 
         # Set padding token if necessary
         tokenizer = pipeline.tokenizer
@@ -61,28 +59,24 @@ class SupervisedFineTuning(Algorithm):
         data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
         trainer = Trainer(
-            model = pipeline.model, 
-            tokenizer = pipeline.tokenizer,
-            args = self.config,
-            train_dataset = train_dataset,
-            data_collator = data_collator,
+            model=pipeline.model,
+            tokenizer=pipeline.tokenizer,
+            args=self.config,
+            train_dataset=train_dataset,
+            data_collator=data_collator,
         )
         trainer.train()
 
         train_state_log_history: List[dict[str, float]] = trainer.state.log_history
         return {
-            'train_state_log_history': train_state_log_history,
+            "train_state_log_history": train_state_log_history,
         }
-    
-import pyrallis
-from transformers.models.auto.modeling_auto import AutoModelForCausalLM
-from transformers.models.auto.tokenization_auto import AutoTokenizer
-from repepo.utils.logging import WandbConfig, WandbLogger
+
 
 @dataclass
 class TrainSFTConfig:
     sft: SupervisedFineTuningConfig = SupervisedFineTuningConfig()
-    dataset: DatasetSpec = DatasetSpec(name="stereoset", split=":80%", seed = 0)
+    dataset: DatasetSpec = DatasetSpec(name="stereoset", split=":80%", seed=0)
     wandb: WandbConfig = WandbConfig()
 
     model_name_or_path: str = Model.Pythia70m
@@ -94,10 +88,12 @@ class TrainSFTConfig:
     )
     cache_dir: str = Environ.HuggingfaceCacheDir
 
+
 def setup_wandb_env_variables(config: TrainSFTConfig):
     # if not config.wandb.track:
     #     os.environ["WANDB_DISABLED"] = "true"
     os.environ["WANDB_WATCH"] = "all"
+
 
 def train_sft(config: TrainSFTConfig):
     model = AutoModelForCausalLM.from_pretrained(

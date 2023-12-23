@@ -1,4 +1,3 @@
-import torch
 from transformers.models.gpt_neox import GPTNeoXForCausalLM
 from repepo.algorithms.sft import SupervisedFineTuning, SupervisedFineTuningConfig
 from repepo.core.pipeline import Pipeline
@@ -9,12 +8,11 @@ from repepo.core.types import Example, Tokenizer
 def test_SupervisedFineTuning_run(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
-    
     NUM_TRAIN_EPOCHS = 100
 
     pipeline = Pipeline(model, tokenizer)
     config = SupervisedFineTuningConfig(
-        num_train_epochs=NUM_TRAIN_EPOCHS,        
+        num_train_epochs=NUM_TRAIN_EPOCHS,
         report_to=[],
     )
     algorithm = SupervisedFineTuning(config)
@@ -25,8 +23,12 @@ def test_SupervisedFineTuning_run(
     ]
 
     metrics = algorithm.run(pipeline, dataset=dataset)
-    train_state_log_history = metrics['train_state_log_history']
+    train_state_log_history = metrics["train_state_log_history"]
+    initial_train_state = train_state_log_history[0]
     final_train_state = train_state_log_history[-1]
 
-    assert int(final_train_state['epoch'] == NUM_TRAIN_EPOCHS)
-    assert final_train_state['train_loss'] < 0.1
+    assert int(initial_train_state["epoch"] == 0)
+    assert initial_train_state["train_loss"] > 1.0
+
+    assert int(final_train_state["epoch"] == NUM_TRAIN_EPOCHS)
+    assert final_train_state["train_loss"] < 0.1
