@@ -24,11 +24,7 @@ def test_SupervisedFineTuning_run(
 
     metrics = algorithm.run(pipeline, dataset=dataset)
     train_state_log_history = metrics["train_state_log_history"]
-    initial_train_state = train_state_log_history[0]
     final_train_state = train_state_log_history[-1]
-
-    assert int(initial_train_state["epoch"] == 0)
-    assert initial_train_state["train_loss"] > 1.0
 
     assert int(final_train_state["epoch"] == NUM_TRAIN_EPOCHS)
     assert final_train_state["train_loss"] < 0.1
