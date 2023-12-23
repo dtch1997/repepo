@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from transformers import GenerationConfig
+from transformers.generation import GenerationConfig
 
 from repepo.algorithms.base import Algorithm
 from repepo.core.evaluate import EvalPrediction, EvalResult, Evaluator
@@ -29,17 +29,18 @@ def train_and_evaluate_benchmark(
     formatter: Optional[AbstractFormatter] = None,
     generation_config: Optional[GenerationConfig] = None,
 ) -> EvalResult:
-    # set up pipeline
     pipeline = Pipeline(model, tokenizer, formatter=formatter or InputOutputFormatter())
 
     # train pipeline
     for algorithm in algorithms:
-        pipeline = algorithm.run(pipeline, benchmark.train_dataset)
+        # Re-initialize pipeline, which gets destructively modified
+        output = algorithm.run(pipeline, benchmark.train_dataset)
 
     # evaluate
     predictions: list[EvalPrediction] = []
     # TODO: support batching
     for example in benchmark.test_dataset:
+        assert isinstance(pipeline, Pipeline)
         output = pipeline.generate(example, generation_config=generation_config)
         predictions.append(EvalPrediction(example, output))
     metrics: dict[str, float] = {}
