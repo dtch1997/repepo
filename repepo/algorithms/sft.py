@@ -75,7 +75,9 @@ class SupervisedFineTuning(Algorithm):
 
 @dataclass
 class TrainSFTConfig:
-    sft: SupervisedFineTuningConfig = SupervisedFineTuningConfig()
+    sft: SupervisedFineTuningConfig = field(
+        default_factory=lambda: SupervisedFineTuningConfig()
+    )
     dataset: DatasetSpec = DatasetSpec(name="stereoset", split=":80%", seed=0)
     wandb: WandbConfig = WandbConfig()
 
