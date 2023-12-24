@@ -5,7 +5,7 @@ from repepo.algorithms.base import Algorithm
 from overrides import override
 
 from dataclasses import dataclass
-from dataclasses import field
+from pyrallis import field
 from typing import List, Optional
 
 import os
@@ -76,10 +76,12 @@ class SupervisedFineTuning(Algorithm):
 @dataclass
 class TrainSFTConfig:
     sft: SupervisedFineTuningConfig = field(
-        default_factory=lambda: SupervisedFineTuningConfig()
+        default=SupervisedFineTuningConfig(), is_mutable=True
     )
-    dataset: DatasetSpec = DatasetSpec(name="stereoset", split=":80%", seed=0)
-    wandb: WandbConfig = WandbConfig()
+    dataset: DatasetSpec = field(
+        default=DatasetSpec(name="stereoset", split=":80%", seed=0), is_mutable=True
+    )
+    wandb: WandbConfig = field(default=WandbConfig(), is_mutable=True)
 
     model_name_or_path: str = Model.Pythia70m
     model_max_length: int = field(
