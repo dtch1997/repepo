@@ -3,7 +3,7 @@ from repepo.core.format import InputOutputFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
 from repepo.core.pipeline import Pipeline
 from syrupy import SnapshotAssertion
-from transformers import GPTNeoXForCausalLM
+from transformers.models.gpt_neox import GPTNeoXForCausalLM
 
 
 def test_RepeReadingControl_build_repe_training_data_and_labels(
