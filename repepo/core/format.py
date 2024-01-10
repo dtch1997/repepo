@@ -6,7 +6,7 @@ from repepo.core.types import Completion
 from repepo.core.types import Example
 
 
-class AbstractFormatter(abc.ABC):
+class Formatter(abc.ABC):
     """Describes how to format examples as completions"""
 
     @abc.abstractmethod
@@ -21,7 +21,7 @@ class AbstractFormatter(abc.ABC):
         return completions
 
 
-class InputOutputFormatter(AbstractFormatter):
+class InputOutputFormatter(Formatter):
     """Format as a simple input-output pair."""
 
     PROMPT_TEMPLATE = "Input: {instruction} {input} \n" "Output: "
@@ -37,7 +37,7 @@ class InputOutputFormatter(AbstractFormatter):
         )
 
 
-class InstructionFormatter(AbstractFormatter):
+class InstructionFormatter(Formatter):
     """Instruction formatter used for fine-tuning Alpaca."""
 
     PROMPT_INPUT: str = (

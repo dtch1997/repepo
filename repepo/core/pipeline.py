@@ -4,8 +4,8 @@ from typing import Any, Optional
 from transformers import GenerationConfig
 
 from .types import Example, Model, Tokenizer
-from .prompt import AbstractPrompter, IdentityPrompter
-from .format import AbstractFormatter, InputOutputFormatter
+from .prompt import Prompter, IdentityPrompter
+from .format import Formatter, InputOutputFormatter
 
 
 @dataclass
@@ -14,8 +14,8 @@ class Pipeline:
 
     model: Model
     tokenizer: Tokenizer
-    prompter: AbstractPrompter = field(default_factory=IdentityPrompter)
-    formatter: AbstractFormatter = field(default_factory=InputOutputFormatter)
+    prompter: Prompter = field(default_factory=IdentityPrompter)
+    formatter: Formatter = field(default_factory=InputOutputFormatter)
 
     def build_generation_prompt(self, example: Example) -> str:
         """Build a prompt for generation"""

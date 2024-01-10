@@ -9,7 +9,7 @@ authors = [
   { name = "Daniel C.H. Tan", email = "dtch1997@users.noreply.github.com" },
 ]
 classifiers = ["Private :: Do Not Upload"]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 dependencies = [
     "pyrallis>=0.3.1",
     "wandb>=0.16.0",
@@ -26,7 +26,7 @@ dependencies = [
 
 [tool.black]
 line-length = 88
-target-version = ['py39', 'py310']
+target-version = ['py310']
 include = '\.pyi?$'
 exclude = '''
 /(

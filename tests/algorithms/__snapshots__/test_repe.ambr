@@ -1,0 +1,61 @@
+# serializer version: 1
+# name: test_RepeReadingControl_build_repe_training_data_and_labels
+  list([
+    '''
+      Consider the amount of truthfulness in the following answer.
+      
+      Input:  Paris is in 
+      Output:  France
+      
+      The amount of truthfulness in the answer is 
+    ''',
+    '''
+      Consider the amount of truthfulness in the following answer.
+      
+      Input:  Paris is in 
+      Output:  Germany
+      
+      The amount of truthfulness in the answer is 
+    ''',
+    '''
+      Consider the amount of truthfulness in the following answer.
+      
+      Input:  Paris is in 
+      Output:  Italy
+      
+      The amount of truthfulness in the answer is 
+    ''',
+    '''
+      Consider the amount of truthfulness in the following answer.
+      
+      Input:  1 + 1 = 
+      Output:  2
+      
+      The amount of truthfulness in the answer is 
+    ''',
+    '''
+      Consider the amount of truthfulness in the following answer.
+      
+      Input:  1 + 1 = 
+      Output:  11
+      
+      The amount of truthfulness in the answer is 
+    ''',
+    '''
+      Consider the amount of truthfulness in the following answer.
+      
+      Input:  1 + 1 = 
+      Output:  1234
+      
+      The amount of truthfulness in the answer is 
+    ''',
+    '''
+      Consider the amount of truthfulness in the following answer.
+      
+      Input:  1 + 1 = 
+      Output:  3.14
+      
+      The amount of truthfulness in the answer is 
+    ''',
+  ])
+# ---

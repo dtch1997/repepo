@@ -1,20 +1,12 @@
-from typing import cast
 import pytest
 import torch
-from torch import nn
 from transformers.models.gpt_neox import GPTNeoXForCausalLM
-from transformers.models.gpt2 import GPT2LMHeadModel
-from transformers.models.llama import LlamaForCausalLM
-from repepo.core.types import Model, Tokenizer
+from repepo.core.types import Tokenizer
+from repepo.utils.layer_matching import GptNeoxLayerConfig
 
 from repepo.utils.model_patcher import (
-    Gpt2LayerConfig,
-    GptNeoxLayerConfig,
     LayerType,
-    LlamaLayerConfig,
     ModelPatcher,
-    check_predefined_layer_configs,
-    enhance_model_config_matchers,
 )
 from tests._original_repe.rep_control_reading_vec import WrappedReadingVecModel
 
@@ -165,46 +157,3 @@ def test_ModelPatcher_remove_patches_reverts_model_changes(
 
     assert not torch.equal(original_logits, patched_logits)
     assert torch.equal(original_logits, unpatched_logits)
-
-
-def test_check_predefined_layer_configs_matches_gpt2(
-    gpt2_model: GPT2LMHeadModel,
-) -> None:
-    assert check_predefined_layer_configs(gpt2_model) == Gpt2LayerConfig
-
-
-def test_check_predefined_layer_configs_matches_pythia(
-    model: GPTNeoXForCausalLM,
-) -> None:
-    assert check_predefined_layer_configs(model) == GptNeoxLayerConfig
-
-
-def test_check_predefined_layer_configs_matches_llama(
-    empty_llama_model: LlamaForCausalLM,
-) -> None:
-    assert check_predefined_layer_configs(empty_llama_model) == LlamaLayerConfig
-
-
-def test_check_predefined_layer_configs_returns_None_on_no_match() -> None:
-    class UnknownModel(nn.Module):
-        pass
-
-    unknown_model = cast(Model, UnknownModel())
-    assert check_predefined_layer_configs(unknown_model) is None
-
-
-def test_enhance_model_config_matchers_guesses_fields_if_not_provided(
-    model: GPTNeoXForCausalLM,
-) -> None:
-    enhanced_config = enhance_model_config_matchers(model, {})
-    # it should correctly guess every field, resulting in the correct GptNeoxLayerConfig
-    assert enhanced_config == GptNeoxLayerConfig
-
-
-def test_enhance_model_config_matchers_leaves_provided_fields_as_is(
-    model: GPTNeoXForCausalLM,
-) -> None:
-    enhanced_config = enhance_model_config_matchers(
-        model, {"decoder_block": "my.{num}.matcher"}
-    )
-    assert enhanced_config["decoder_block"] == "my.{num}.matcher"
