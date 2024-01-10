@@ -62,10 +62,12 @@ def test_our_hacked_RepControlPipeline_matches_original_behavior(
 
 
 def test_RepControlPipeline_matches_base_huggingface_outputs_if_no_activations_are_patched(
-    model: Model, tokenizer: GPTNeoXTokenizerFast
+    model: Model, tokenizer: GPTNeoXTokenizerFast, device: str
 ) -> None:
     inputs = "12345"
-    hf_pipeline = TextGenerationPipeline(model=model, tokenizer=tokenizer)
+    hf_pipeline = TextGenerationPipeline(
+        model=model, tokenizer=tokenizer, device=device
+    )
     hf_outputs = hf_pipeline(
         inputs,
         batch_size=4,
@@ -78,6 +80,7 @@ def test_RepControlPipeline_matches_base_huggingface_outputs_if_no_activations_a
         tokenizer=tokenizer,
         layers=[],
         block_name="decoder_block",
+        device=device,
     )
     our_outputs = our_pipeline(
         inputs,
