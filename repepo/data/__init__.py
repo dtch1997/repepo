@@ -71,6 +71,9 @@ def get_dataset(name: str):
 
 def make_dataset(spec: DatasetSpec):
     dataset = get_dataset(spec.name)
-    random.Random(spec.seed).shuffle(dataset)  # in-place shuffle
+    state = random.getstate()
+    random.seed(spec.seed)
+    random.shuffle(dataset)  # in-place shuffle
+    random.setstate(state)
     split = parse_split(spec.split, 0, len(dataset))
     return dataset[split]
