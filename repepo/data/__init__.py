@@ -1,6 +1,7 @@
 import functools
 import pathlib
 import random
+import re
 from typing import List, Any, NewType
 
 from repepo.variables import Environ
@@ -37,22 +38,20 @@ class DatasetSpec:
 
 
 def parse_split(split_string, start_index, end_index) -> Any:
-    # Check if the split string starts with a colon and ends with a percentage sign
-    if split_string.startswith(":") and split_string.endswith("%"):
-        try:
-            # Remove the colon and percentage sign
-            split_value = float(split_string[1:-1])
-            # Calculate the start and end index of the split
-            split_start = start_index
-            split_end = start_index + int(
-                (end_index - start_index + 1) * (split_value / 100)
-            )
-            return slice(split_start, split_end)
+    # Define the regular expression pattern
+    pattern = r"^(\d*):(\d*)%$"
 
-        except ValueError as e:
-            # TODO: Write a nice error message
-            raise ValueError(e)
+    # Use regular expression to match and extract values
+    match = re.match(pattern, split_string)
 
+    # If there's a match, extract the start and end values
+    if match:
+        start_frac = int(match.group(1)) if match.group(1) else 0
+        end_frac = int(match.group(2)) if match.group(2) else 100
+
+        split_start = start_index + start_frac * (end_index - start_index) // 100
+        split_end = start_index + end_frac * (end_index - start_index) // 100
+        return slice(split_start, split_end)
     else:
         # Invalid format, return None
         raise ValueError(f"Parse string {split_string} not recognized")
