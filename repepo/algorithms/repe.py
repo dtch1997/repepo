@@ -147,7 +147,11 @@ class RepeReadingControl(Algorithm):
             ),
         )
         return RepeDirections(
-            activations=rep_reader.directions,
+            activations={
+                # rep reader retuns np.ndarray values, not tensors, so need to convert
+                key: torch.FloatTensor(val)
+                for key, val in rep_reader.directions.items()
+            },
             signs=rep_reader.direction_signs,
         )
 
