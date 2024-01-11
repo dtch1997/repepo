@@ -41,11 +41,6 @@ class RepeTrainingData(NamedTuple):
     labels: list[list[int]]
 
 
-class RepeDirections(NamedTuple):
-    activations: dict[int, torch.Tensor]
-    signs: dict[int, int]
-
-
 class RepeReadingControl(Algorithm):
     direction_method: DirectionMethod
     layer_type: LayerType
@@ -120,7 +115,9 @@ class RepeReadingControl(Algorithm):
         num_layers = get_num_matching_layers(model, layer_matcher)
         return list(range(-1, -num_layers, -1))
 
-    def _get_directions(self, pipeline: Pipeline, dataset: Dataset) -> RepeDirections:
+    def _get_directions(
+        self, pipeline: Pipeline, dataset: Dataset
+    ) -> dict[int, torch.Tensor]:
         layers = self._get_layers_with_default(pipeline.model)
         repe_training_data = self._build_repe_training_data_and_labels(
             dataset, pipeline.formatter
@@ -146,24 +143,18 @@ class RepeReadingControl(Algorithm):
                 padding="longest",
             ),
         )
-        return RepeDirections(
-            activations={
-                # rep reader retuns np.ndarray values, not tensors, so need to convert
-                key: torch.FloatTensor(val)
-                for key, val in rep_reader.directions.items()
-            },
-            signs={key: val.item() for key, val in rep_reader.direction_signs.items()},
-        )
+        directions = {}
+        for layer, direction in rep_reader.directions.items():
+            sign = rep_reader.direction_signs[layer].item()
+            directions[layer] = sign * torch.FloatTensor(direction)
+        return directions
 
     @override
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
         directions = self._get_directions(pipeline, dataset)
         model_patcher = ModelPatcher(pipeline.model, self.layer_config)
         # this will modify the model in place
-        model_patcher.patch_activations(
-            directions.activations,
-            layer_type=self.layer_type,
-        )
+        model_patcher.patch_activations(directions, layer_type=self.layer_type)
         return pipeline
 
     def _convert_example_to_repe_format(
