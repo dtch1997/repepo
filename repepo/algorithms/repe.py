@@ -1,12 +1,12 @@
 from dataclasses import replace
 from typing import Any, Literal, NamedTuple, Optional, cast
 from typing_extensions import override
-import numpy as np
+import random
 
 import torch
 from repepo.core import Pipeline
 from repepo.core.format import Formatter
-from repepo.core.types import Dataset, Model
+from repepo.core.types import Dataset, Example, Model
 from repepo.repe.rep_reading_pipeline import RepReadingPipeline
 from repepo.algorithms.base import Algorithm
 from repepo.utils.layer_matching import (
@@ -18,6 +18,7 @@ from repepo.utils.layer_matching import (
 from repepo.utils.model_patcher import LayerType, ModelPatcher
 
 DirectionMethod = Literal["pca", "cluster_mean", "random"]
+MultiAnswerMethod = Literal["first_incorrect", "random_incorrect", "repeat_correct"]
 
 DEFAULT_READING_TEMPLATE = "Consider the amount of truthfulness in the following answer.\n\n{question} {answer}\n\nThe amount of truthfulness in the answer is "
 
@@ -42,13 +43,13 @@ class RepeTrainingData(NamedTuple):
 
 class RepeDirections(NamedTuple):
     activations: dict[int, torch.Tensor]
-    # why is this a dict of np arrays instead of a dict of torch tensors? mystery
-    signs: dict[int, np.ndarray]
+    signs: dict[int, int]
 
 
 class RepeReadingControl(Algorithm):
     direction_method: DirectionMethod
     layer_type: LayerType
+    multi_answer_method: MultiAnswerMethod
     reading_template: str
     layers: list[int] | None
     n_difference: int
@@ -56,22 +57,27 @@ class RepeReadingControl(Algorithm):
     max_length: int
     layer_config: ModelLayerConfig | None
     direction_finder_kwargs: dict[str, Any]
+    seed: int
 
     def __init__(
         self,
         reading_template: str = DEFAULT_READING_TEMPLATE,
         direction_method: DirectionMethod = "pca",
         layer_type: LayerType = "decoder_block",
+        multi_answer_method: MultiAnswerMethod = "first_incorrect",
         n_difference: int = 1,  # TODO: what does this do?
         batch_size: int = 8,
         max_length: int = 2048,
+        seed: int = 0,
         layers: Optional[list[int]] = None,
         layer_config: Optional[ModelLayerConfig] = None,
         # TODO: remove this when refactoring repe reading pipeline
         direction_finder_kwargs: Optional[dict[str, Any]] = None,
     ):
         self.direction_method = direction_method
+        self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
+        self.seed = seed
         _validate_reading_template(reading_template)
         self.reading_template = reading_template
         self.layers = layers
@@ -86,24 +92,16 @@ class RepeReadingControl(Algorithm):
     ) -> RepeTrainingData:
         prompts: list[str] = []
         grouped_labels: list[list[int]] = []
-        for example in dataset:
-            if example.incorrect_outputs is None:
-                raise ValueError(
-                    "RepEngReadingControl requires incorrect_outputs to be set"
-                )
-            incorrect_examples = [
-                replace(example, output=output) for output in example.incorrect_outputs
-            ]
-            label_group = [1, *([0] * len(incorrect_examples))]
-            grouped_labels.append(label_group)
-            group_examples = [example, *incorrect_examples]
-            for group_example in group_examples:
-                completion = formatter.apply(group_example)
-                prompts.append(
-                    self.reading_template.format(
-                        question=completion.prompt, answer=completion.response
-                    )
-                )
+        for i, example in enumerate(dataset):
+            example_prompts, example_labels = self._convert_example_to_repe_format(
+                example,
+                formatter,
+                # repe doesn't reflect differences across the origin, so we need to ensure
+                # an even balance of reversed and non-reversed examples
+                reverse_order=i % 2 == 0,
+            )
+            prompts.extend(example_prompts)
+            grouped_labels.append(example_labels)
         return RepeTrainingData(prompts=prompts, labels=grouped_labels)
 
     def _get_layer_matcher_for_model(self, model: Model) -> LayerMatcher:
@@ -154,7 +152,7 @@ class RepeReadingControl(Algorithm):
                 key: torch.FloatTensor(val)
                 for key, val in rep_reader.directions.items()
             },
-            signs=rep_reader.direction_signs,
+            signs={key: val.item() for key, val in rep_reader.direction_signs.items()},
         )
 
     @override
@@ -167,3 +165,43 @@ class RepeReadingControl(Algorithm):
             layer_type=self.layer_type,
         )
         return pipeline
+
+    def _convert_example_to_repe_format(
+        self, example: Example, formatter: Formatter, reverse_order: bool
+    ) -> tuple[list[str], list[int]]:
+        """Converts an example to the format expected by repe"""
+        if example.incorrect_outputs is None:
+            raise ValueError(
+                "RepEngReadingControl requires incorrect_outputs to be set"
+            )
+        incorrect_examples = [
+            replace(example, output=output) for output in example.incorrect_outputs
+        ]
+        correct_examples = [example]
+        if self.multi_answer_method == "repeat_correct":
+            correct_examples = [example] * len(example.incorrect_outputs)
+        elif self.multi_answer_method == "first_incorrect":
+            incorrect_examples = [incorrect_examples[0]]
+        elif self.multi_answer_method == "random_incorrect":
+            rand_gen = random.Random(f"{self.seed}-{example.input}")
+            incorrect_examples = [rand_gen.choice(incorrect_examples)]
+        else:
+            raise ValueError(f"Unknown multi_answer_method {self.multi_answer_method}")
+        assert len(incorrect_examples) == len(correct_examples)
+        # repe (undocumentedly) expects interleaved positive and negative examples
+        if reverse_order:
+            labels = [0, 1] * len(correct_examples)
+            paired_examples = zip(incorrect_examples, correct_examples)
+        else:
+            labels = [1, 0] * len(correct_examples)
+            paired_examples = zip(correct_examples, incorrect_examples)
+        # interleaved pos, neg, pos neg, ...
+        examples = [ex for pair in paired_examples for ex in pair]
+        completions = [formatter.apply(ex) for ex in examples]
+        prompts = [
+            self.reading_template.format(
+                question=completion.prompt, answer=completion.response
+            )
+            for completion in completions
+        ]
+        return prompts, labels
