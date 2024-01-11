@@ -107,7 +107,8 @@ def _create_additive_hook(
 
     def hook_fn(_m: Any, _inputs: Any, outputs: Any) -> Any:
         original_tensor = untuple_tensor(outputs)
-        original_tensor[None] = operator(original_tensor, target_activation)
+        act = target_activation.to(original_tensor.device)
+        original_tensor[None] = operator(original_tensor, act)
         return outputs
 
     return hook_fn

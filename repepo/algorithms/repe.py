@@ -128,7 +128,9 @@ class RepeReadingControl(Algorithm):
             dataset, pipeline.formatter
         )
         repe_reading_pipeline = RepReadingPipeline(
-            model=pipeline.model, tokenizer=pipeline.tokenizer
+            model=pipeline.model,
+            tokenizer=pipeline.tokenizer,
+            device=pipeline.model.device,
         )
 
         rep_reader = cast(
