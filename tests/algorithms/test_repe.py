@@ -125,12 +125,9 @@ def test_RepeReadingControl_get_directions(
     ]
     algorithm = RepeReadingControl(multi_answer_method="repeat_correct")
     directions = algorithm._get_directions(pipeline, dataset)
-    assert list(directions.activations.keys()) == [-1, -2, -3, -4, -5]
-    assert list(directions.signs.keys()) == [-1, -2, -3, -4, -5]
-    for act in directions.activations.values():
+    assert list(directions.keys()) == [-1, -2, -3, -4, -5]
+    for act in directions.values():
         assert act.shape == (1, 512)
-    for sign in directions.signs.values():
-        assert sign in [-1, 1]
 
 
 def test_RepeReadingControl_run(
