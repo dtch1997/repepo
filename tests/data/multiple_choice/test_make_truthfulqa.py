@@ -1,5 +1,10 @@
+from syrupy import SnapshotAssertion
+
 from repepo.core.types import Example
-from repepo.data.multiple_choice.make_truthfulqa import convert_hf_truthfulqa_dataset
+from repepo.data.multiple_choice.make_truthfulqa import (
+    convert_hf_truthfulqa_dataset,
+    load_truthfulqa_primer_dataset,
+)
 
 
 def test_convert_hf_truthfulqa_dataset() -> None:
@@ -25,3 +30,8 @@ def test_convert_hf_truthfulqa_dataset() -> None:
             incorrect_outputs=["d"],
         ),
     ]
+
+
+def test_load_truthfulqa_primer_dataset(snapshot: SnapshotAssertion) -> None:
+    dataset = load_truthfulqa_primer_dataset()
+    assert dataset == snapshot
