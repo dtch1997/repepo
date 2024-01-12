@@ -50,6 +50,7 @@ class RepeReadingControl(Algorithm):
     n_difference: int
     batch_size: int
     max_length: int
+    direction_multiplier: float
     layer_config: ModelLayerConfig | None
     direction_finder_kwargs: dict[str, Any]
     seed: int
@@ -66,6 +67,7 @@ class RepeReadingControl(Algorithm):
         seed: int = 0,
         layers: Optional[list[int]] = None,
         layer_config: Optional[ModelLayerConfig] = None,
+        direction_multiplier: float = 1.0,
         # TODO: remove this when refactoring repe reading pipeline
         direction_finder_kwargs: Optional[dict[str, Any]] = None,
     ):
@@ -78,6 +80,7 @@ class RepeReadingControl(Algorithm):
         self.layers = layers
         self.layer_config = layer_config
         self.n_difference = n_difference
+        self.direction_multiplier = direction_multiplier
         self.batch_size = batch_size
         self.max_length = max_length
         self.direction_finder_kwargs = direction_finder_kwargs or {}
@@ -146,7 +149,9 @@ class RepeReadingControl(Algorithm):
         directions = {}
         for layer, direction in rep_reader.directions.items():
             sign = rep_reader.direction_signs[layer].item()
-            directions[layer] = sign * torch.FloatTensor(direction)
+            directions[layer] = (
+                self.direction_multiplier * sign * torch.FloatTensor(direction)
+            )
         return directions
 
     @override
