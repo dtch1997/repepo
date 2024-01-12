@@ -1,3 +1,4 @@
+import pytest
 from repepo.algorithms.repe import RepeReadingControl
 from repepo.core.format import InputOutputFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
@@ -128,6 +129,28 @@ def test_RepeReadingControl_get_directions(
     assert list(directions.keys()) == [-1, -2, -3, -4, -5]
     for act in directions.values():
         assert act.shape == (1, 512)
+        assert act.norm() == pytest.approx(1.0)
+
+
+def test_RepeReadingControl_get_directions_with_direction_multiplier(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    tokenizer.pad_token_id = model.config.eos_token_id
+    pipeline = Pipeline(model, tokenizer)
+    dataset: Dataset = [
+        Example(
+            instruction="",
+            input="Paris is in",
+            output="France",
+            incorrect_outputs=["Germany", "Italy"],
+        ),
+    ]
+    algorithm = RepeReadingControl(
+        multi_answer_method="repeat_correct", direction_multiplier=3.7
+    )
+    directions = algorithm._get_directions(pipeline, dataset)
+    for act in directions.values():
+        assert act.norm() == pytest.approx(3.7)
 
 
 def test_RepeReadingControl_run(
