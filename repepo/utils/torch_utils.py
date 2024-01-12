@@ -14,3 +14,10 @@ def get_module(model: nn.Module, name: str) -> nn.Module:
         if n == name:
             return m
     raise LookupError(name)
+
+
+def clear_all_forward_hooks(model: nn.Module) -> None:
+    """Clear all forward hooks from the given model"""
+    model._forward_hooks.clear()
+    for _name, submodule in model.named_modules():
+        submodule._forward_hooks.clear()

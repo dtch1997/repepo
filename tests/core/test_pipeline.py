@@ -47,3 +47,21 @@ def test_icl_Pipeline_build_generation_prompt(
         Example(instruction="", input="Beijing is in", output="China"),
     )
     assert res == snapshot
+
+
+def test_basic_pipeline_calculate_output_logprobs(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    pipeline = Pipeline(model, tokenizer)
+    res = pipeline.calculate_output_logprobs(
+        Example(instruction="Select the best answer.", input="A B C D", output="D")
+    )
+    assert res.sum_logprobs < 0
+    assert res.text == "Input: Select the best answer. A B C D \nOutput: D"
+    assert (
+        "".join([tok.text for tok in res.token_probs])
+        # "Input" is the first token, so the model doesn't predict this
+        == ": Select the best answer. A B C D \nOutput: D"
+    )
+    for tok in res.token_probs:
+        assert tok.logprob < 0

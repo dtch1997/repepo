@@ -18,6 +18,7 @@ def get_all_json_filepaths(root_dir: pathlib.Path) -> List[pathlib.Path]:
     return list(root_dir.rglob("*.json"))
 
 
+# Intentionally don't cache anything here, otherwise datasets don't be available after downloading
 def _get_datasets() -> dict[str, pathlib.Path]:
     datasets: dict[str, pathlib.Path] = {}
     for path in get_all_json_filepaths(get_dataset_dir()):
@@ -33,7 +34,7 @@ def list_datasets() -> tuple[str, ...]:
 class DatasetSpec:
     name: str
     split: str = ":100%"
-    seed: int = 0  # unused atm
+    seed: int = 0
 
 
 def _parse_split(split_string: str, length: int) -> slice:
