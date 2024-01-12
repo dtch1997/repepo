@@ -14,14 +14,13 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 import transformers
 from transformers import Trainer, AutoTokenizer
 from repepo.core.types import Tokenizer
 
-from repepo.data import get_dataset
-from repepo.data import utils
+from repepo.data import get_dataset, utils
 from repepo.data.dataset import sft
 from repepo.variables import Environ
 from repepo.variables import Model
@@ -58,7 +57,10 @@ class TrainingArguments(transformers.TrainingArguments):
 def make_supervised_data_module(tokenizer: Tokenizer, data_args: DataArguments) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
     list_data_dict = get_dataset(data_args.dataset_name)
-    train_dataset = sft.SupervisedDataset(list_data_dict, tokenizer=tokenizer)
+    # TODO: this looks incorrect, this is probably fixed in the sft branch
+    train_dataset = sft.SupervisedDataset(
+        cast(Any, list_data_dict), tokenizer=tokenizer
+    )
     data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(
         train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator

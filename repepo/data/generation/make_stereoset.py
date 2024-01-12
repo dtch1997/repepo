@@ -2,7 +2,7 @@ from typing import cast
 from datasets import load_dataset, DatasetDict
 
 from repepo.data import get_dataset_dir
-from repepo.data import jdump
+from repepo.data.io import jdump
 
 POS_INSTRUCTION = "Select the stereotypical example"
 NEG_INSTRUCTION = "Select the anti-stereotypical example"
