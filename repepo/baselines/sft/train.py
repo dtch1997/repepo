@@ -14,16 +14,21 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Dict, Optional, cast
+from typing import Any, Optional
 
-import transformers
-from transformers import Trainer, AutoTokenizer
+from transformers.trainer import Trainer
+from transformers.models.auto.tokenization_auto import AutoTokenizer
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+from transformers.training_args import TrainingArguments as HfTrainingArguments
+from transformers.hf_argparser import HfArgumentParser
 from repepo.core.types import Tokenizer
 
-from repepo.data import get_dataset, utils
+from repepo.data import get_dataset
 from repepo.data.dataset import sft
 from repepo.variables import Environ
 from repepo.variables import Model
+from repepo.core.types import Completion, Example
+from repepo.core.format import InstructionFormatter
 
 
 @dataclass
@@ -34,7 +39,7 @@ class ModelArguments:
 @dataclass
 class DataArguments:
     dataset_name: str = field(
-        default="truthfulqa",
+        default="stereoset",
         metadata={
             "help": "Name of training dataset. See repepo.data.list_datasets() for details"
         },
@@ -42,7 +47,7 @@ class DataArguments:
 
 
 @dataclass
-class TrainingArguments(transformers.TrainingArguments):
+class TrainingArguments(HfTrainingArguments):
     cache_dir: Optional[str] = field(default=Environ.HuggingfaceCacheDir)
     output_dir: Optional[str] = field(default=Environ.OutputDir)
     optim: str = field(default="adamw_torch")
@@ -54,17 +59,15 @@ class TrainingArguments(transformers.TrainingArguments):
     )
 
 
-def make_supervised_data_module(tokenizer: Tokenizer, data_args: DataArguments) -> Dict:
+def make_supervised_data_module(
+    tokenizer: Tokenizer, data_args: DataArguments
+) -> tuple[sft.SupervisedDataset, sft.DataCollatorForSupervisedDataset]:
     """Make dataset and collator for supervised fine-tuning."""
-    list_data_dict = get_dataset(data_args.dataset_name)
-    # TODO: this looks incorrect, this is probably fixed in the sft branch
-    train_dataset = sft.SupervisedDataset(
-        cast(Any, list_data_dict), tokenizer=tokenizer
-    )
+    examples: list[Example] = get_dataset(data_args.dataset_name)
+    completions: list[Completion] = InstructionFormatter().apply_list(examples)
+    train_dataset = sft.SupervisedDataset(completions, tokenizer=tokenizer)
     data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
-    return dict(
-        train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator
-    )
+    return train_dataset, data_collator
 
 
 def train():
@@ -73,11 +76,12 @@ def train():
     # for logger in loggers:
     #     logger.setLevel(logging.INFO)
     # TODO: figure out typing for this
+    # TODO: Are there off-by-one errors in SFT dataset?
     parser_args: Any = (ModelArguments, DataArguments, TrainingArguments)
-    parser = transformers.HfArgumentParser(parser_args)
+    parser = HfArgumentParser(parser_args)
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    model = transformers.AutoModelForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
@@ -91,18 +95,27 @@ def train():
         use_fast=True,
     )
 
-    special_tokens_dict = utils.get_pad_token(tokenizer)
-    special_tokens_dict.update(utils.get_special_tokens(tokenizer))
-    utils.smart_tokenizer_and_embedding_resize(
-        special_tokens_dict=special_tokens_dict,
-        tokenizer=tokenizer,
-        model=model,
+    # special_tokens_dict = utils.get_pad_token(tokenizer)
+    # special_tokens_dict.update(utils.get_special_tokens(tokenizer))
+    # utils.smart_tokenizer_and_embedding_resize(
+    #     special_tokens_dict=special_tokens_dict,
+    #     tokenizer=tokenizer,
+    #     model=model,
+    # )
+
+    # TODO: Is it principled to set the pad token to the eos token?
+    tokenizer.pad_token = tokenizer.eos_token
+    train_dataset, data_collator = make_supervised_data_module(
+        tokenizer=tokenizer, data_args=data_args
     )
-    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
 
     # Train
     trainer = Trainer(
-        model=model, tokenizer=tokenizer, args=training_args, **data_module
+        model=model,
+        tokenizer=tokenizer,
+        args=training_args,
+        train_dataset=train_dataset,
+        data_collator=data_collator,
     )
     trainer.train()
     trainer.save_state()

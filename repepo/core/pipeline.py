@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from transformers import GenerationConfig
+from transformers.generation import GenerationConfig
 import torch
 
 from .types import Example, Model, Tokenizer

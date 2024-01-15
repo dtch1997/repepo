@@ -1,9 +1,7 @@
 import torch
-from transformers import (
-    GPTNeoXForCausalLM,
-    TextGenerationPipeline,
-    GPTNeoXTokenizerFast,
-)
+from transformers.models.gpt_neox import GPTNeoXForCausalLM
+from transformers.models.gpt_neox.tokenization_gpt_neox_fast import GPTNeoXTokenizerFast
+from transformers.pipelines import TextGenerationPipeline
 
 from repepo.core.types import Model, Tokenizer
 from repepo.repe.rep_control_pipeline import RepControlPipeline
