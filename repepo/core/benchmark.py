@@ -34,7 +34,8 @@ def train_and_evaluate_benchmark(
     # train pipeline
     for algorithm in algorithms:
         # Re-initialize pipeline, which gets destructively modified
-        output = algorithm.run(pipeline, benchmark.train_dataset)
+        # TODO: do something with outputs?
+        _ = algorithm.run(pipeline, benchmark.train_dataset)
 
     # evaluate
     predictions: list[EvalPrediction] = []
