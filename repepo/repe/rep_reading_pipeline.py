@@ -1,11 +1,8 @@
-from typing import List, Optional, Sequence, Union
-
-import numpy as np
-import torch
+from typing import List, Sequence, Union, Optional
 from transformers import Pipeline
-
-from .rep_readers import DIRECTION_FINDERS
-from .rep_readers import RepReader
+import torch
+import numpy as np
+from .rep_readers import DIRECTION_FINDERS, RepReader
 
 
 class RepReadingPipeline(Pipeline):
@@ -28,9 +25,8 @@ class RepReadingPipeline(Pipeline):
         for layer in hidden_layers:
             hidden_states = outputs["hidden_states"][layer]
             hidden_states = hidden_states[:, rep_token, :]
-            hidden_states_layers[layer] = (
-                hidden_states.cpu().to(dtype=torch.float32).detach().numpy()
-            )
+            # hidden_states_layers[layer] = hidden_states.cpu().to(dtype=torch.float32).detach().numpy()
+            hidden_states_layers[layer] = hidden_states.detach()
 
         return hidden_states_layers
 
@@ -131,7 +127,7 @@ class RepReadingPipeline(Pipeline):
         for hidden_states_batch in hidden_states_outputs:
             for layer in hidden_states_batch:
                 hidden_states[layer].extend(hidden_states_batch[layer])
-        return {k: np.array(v) for k, v in hidden_states.items()}
+        return {k: np.vstack(v) for k, v in hidden_states.items()}
 
     def _validate_params(self, n_difference, direction_method):
         # validate params for get_directions
@@ -145,12 +141,12 @@ class RepReadingPipeline(Pipeline):
         hidden_layers: Union[str, int, Sequence[Union[str, int]]] = -1,
         n_difference: int = 1,
         batch_size: int = 8,
-        train_labels: List[int] = None,
+        train_labels: List[int] | List[List[int]] = None,
         direction_method: str = "pca",
         direction_finder_kwargs: dict = {},
         which_hidden_states: Optional[str] = None,
         **tokenizer_args,
-    ):
+    ) -> RepReader:
         """Train a RepReader on the training data.
         Args:
             batch_size: batch size to use when getting hidden states

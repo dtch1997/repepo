@@ -9,7 +9,7 @@ def completion_to_str(completion: Completion) -> str:
     return completion.prompt.rstrip() + " " + completion.response.lstrip() + "\n"
 
 
-class AbstractPrompter(abc.ABC):
+class Prompter(abc.ABC):
     """Interface for modifying completions"""
 
     @abc.abstractmethod
@@ -20,7 +20,7 @@ class AbstractPrompter(abc.ABC):
         return [self.apply(completion) for completion in completions]
 
 
-class IdentityPrompter(AbstractPrompter):
+class IdentityPrompter(Prompter):
     """Return the prompt as-is"""
 
     @override
@@ -28,7 +28,7 @@ class IdentityPrompter(AbstractPrompter):
         return completion
 
 
-class FewShotPrompter(AbstractPrompter):
+class FewShotPrompter(Prompter):
     """Compose examples few-shot"""
 
     # TODO: should these be randomized?

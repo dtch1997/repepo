@@ -53,7 +53,7 @@ def jdump(obj, f, mode="w", indent=4):
     f.close()
 
 
-def jload(f, mode="r"):
+def jload(f, mode="r") -> Any:
     """Load a .json file into a dictionary."""
     f = _make_r_io_base(f, mode)
     jdict = json.load(f)

@@ -23,3 +23,23 @@ def test_InContextLearning_run(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) 
         Completion(prompt="Input:  London is in \nOutput: ", response="England"),
         Completion(prompt="Input:  Berlin is in \nOutput: ", response="Germany"),
     ]
+
+
+def test_InContextLearning_run_with_max_icl_examples(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    pipeline = Pipeline(model, tokenizer)
+    algorithm = InContextLearning(max_icl_examples=2)
+    dataset = [
+        Example(instruction="", input="Paris is in", output="France"),
+        Example(instruction="", input="London is in", output="England"),
+        Example(instruction="", input="Berlin is in", output="Germany"),
+    ]
+
+    new_pipeline = algorithm.run(pipeline, dataset=dataset)
+
+    assert isinstance(new_pipeline.prompter, FewShotPrompter)
+    assert new_pipeline.prompter.few_shot_completions == [
+        Completion(prompt="Input:  Paris is in \nOutput: ", response="France"),
+        Completion(prompt="Input:  London is in \nOutput: ", response="England"),
+    ]
