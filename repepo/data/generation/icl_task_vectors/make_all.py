@@ -1,9 +1,8 @@
 import pathlib
 from typing import Dict, List, Any
 
-from repepo.data import get_dataset_dir
-from repepo.data import jdump
-from repepo.data import jload
+from repepo.data.make_dataset import get_dataset_dir
+from repepo.data.io import jdump, jload
 from repepo.data.generation.icl_task_vectors.make_knowledge_data import (
     prepare_knowledge_data,
 )

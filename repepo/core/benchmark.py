@@ -1,6 +1,6 @@
 # pyright: strict, reportMissingTypeStubs=false
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional, Sequence
 
 from transformers import GenerationConfig
@@ -38,10 +38,34 @@ def train_and_evaluate_benchmark(
 
     # evaluate
     predictions: list[EvalPrediction] = []
+    requires_generation = any([e.requires_generation for e in benchmark.evaluators])
+    requires_probs = any([e.requires_probs for e in benchmark.evaluators])
     # TODO: support batching
     for example in benchmark.test_dataset:
-        output = pipeline.generate(example, generation_config=generation_config)
-        predictions.append(EvalPrediction(example, output))
+        generated_output = None
+        correct_output_probs = None
+        incorrect_outputs_probs = None
+        if requires_generation:
+            generated_output = pipeline.generate(
+                example, generation_config=generation_config
+            )
+        if requires_probs:
+            correct_output_probs = pipeline.calculate_output_logprobs(example)
+            if example.incorrect_outputs is not None:
+                incorrect_outputs_probs = [
+                    pipeline.calculate_output_logprobs(
+                        replace(example, output=incorrect_output)
+                    )
+                    for incorrect_output in example.incorrect_outputs
+                ]
+        predictions.append(
+            EvalPrediction(
+                example=example,
+                generated_output=generated_output,
+                correct_output_probs=correct_output_probs,
+                incorrect_outputs_probs=incorrect_outputs_probs,
+            )
+        )
     metrics: dict[str, float] = {}
     for evaluator in benchmark.evaluators:
         metrics.update(evaluator(predictions))
