@@ -132,4 +132,3 @@ if __name__ == "__main__":
     config = pyrallis.parse(TrainSFTConfig)
     pprint.pprint(config)
     metrics = train_sft(config)
-    breakpoint()
