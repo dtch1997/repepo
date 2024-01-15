@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from transformers.trainer import Trainer
 from transformers.models.auto.tokenization_auto import AutoTokenizer
@@ -39,7 +39,7 @@ class ModelArguments:
 @dataclass
 class DataArguments:
     dataset_name: str = field(
-        default="truthfulqa",
+        default="stereoset",
         metadata={
             "help": "Name of training dataset. See repepo.data.list_datasets() for details"
         },
@@ -59,15 +59,15 @@ class TrainingArguments(HfTrainingArguments):
     )
 
 
-def make_supervised_data_module(tokenizer: Tokenizer, data_args: DataArguments) -> Dict:
+def make_supervised_data_module(
+    tokenizer: Tokenizer, data_args: DataArguments
+) -> tuple[sft.SupervisedDataset, sft.DataCollatorForSupervisedDataset]:
     """Make dataset and collator for supervised fine-tuning."""
     examples: list[Example] = get_dataset(data_args.dataset_name)
     completions: list[Completion] = InstructionFormatter().apply_list(examples)
     train_dataset = sft.SupervisedDataset(completions, tokenizer=tokenizer)
     data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
-    return dict(
-        train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator
-    )
+    return train_dataset, data_collator
 
 
 def train():
@@ -105,11 +105,17 @@ def train():
 
     # TODO: Is it principled to set the pad token to the eos token?
     tokenizer.pad_token = tokenizer.eos_token
-    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+    train_dataset, data_collator = make_supervised_data_module(
+        tokenizer=tokenizer, data_args=data_args
+    )
 
     # Train
     trainer = Trainer(
-        model=model, tokenizer=tokenizer, args=training_args, **data_module
+        model=model,
+        tokenizer=tokenizer,
+        args=training_args,
+        train_dataset=train_dataset,
+        data_collator=data_collator,
     )
     trainer.train()
     trainer.save_state()
