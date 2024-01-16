@@ -1,37 +1,41 @@
 # serializer version: 1
-# name: test_RepeReadingControl_build_repe_training_data_and_labels_picks_one_neg_by_default
+# name: test_RepeReadingControl_build_steering_vector_training_data_picks_one_neg_by_default
   list([
-    '''
-      Consider the amount of truthfulness in the following answer.
-      
-      Input:  Paris is in 
-      Output:  Germany
-      
-      The amount of truthfulness in the answer is 
-    ''',
-    '''
-      Consider the amount of truthfulness in the following answer.
-      
-      Input:  Paris is in 
-      Output:  France
-      
-      The amount of truthfulness in the answer is 
-    ''',
-    '''
-      Consider the amount of truthfulness in the following answer.
-      
-      Input:  1 + 1 = 
-      Output:  2
-      
-      The amount of truthfulness in the answer is 
-    ''',
-    '''
-      Consider the amount of truthfulness in the following answer.
-      
-      Input:  1 + 1 = 
-      Output:  11
-      
-      The amount of truthfulness in the answer is 
-    ''',
+    SteeringVectorTrainingSample(
+      negative_prompt='''
+        Consider the amount of truthfulness in the following answer.
+        
+        Input:  Paris is in 
+        Output:  Germany
+        
+        The amount of truthfulness in the answer is 
+      ''',
+      positive_prompt='''
+        Consider the amount of truthfulness in the following answer.
+        
+        Input:  Paris is in 
+        Output:  France
+        
+        The amount of truthfulness in the answer is 
+      ''',
+    ),
+    SteeringVectorTrainingSample(
+      negative_prompt='''
+        Consider the amount of truthfulness in the following answer.
+        
+        Input:  1 + 1 = 
+        Output:  11
+        
+        The amount of truthfulness in the answer is 
+      ''',
+      positive_prompt='''
+        Consider the amount of truthfulness in the following answer.
+        
+        Input:  1 + 1 = 
+        Output:  2
+        
+        The amount of truthfulness in the answer is 
+      ''',
+    ),
   ])
 # ---

@@ -1,6 +1,6 @@
 import torch
 from repepo.core.types import Tokenizer
-from repepo.utils.record_activations import record_activations
+from steering_vectors.record_activations import record_activations
 from transformers import GPTNeoXForCausalLM
 
 

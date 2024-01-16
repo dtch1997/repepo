@@ -1,4 +1,3 @@
-import pytest
 from repepo.algorithms.repe import RepeReadingControl
 from repepo.core.format import InputOutputFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
@@ -7,7 +6,7 @@ from syrupy import SnapshotAssertion
 from transformers import GPTNeoXForCausalLM
 
 
-def test_RepeReadingControl_build_repe_training_data_and_labels_picks_one_neg_by_default(
+def test_RepeReadingControl_build_steering_vector_training_data_picks_one_neg_by_default(
     snapshot: SnapshotAssertion,
 ) -> None:
     dataset: Dataset = [
@@ -26,22 +25,17 @@ def test_RepeReadingControl_build_repe_training_data_and_labels_picks_one_neg_by
     ]
     formatter = InputOutputFormatter()
     algorithm = RepeReadingControl()
-    training_data, labels = algorithm._build_repe_training_data_and_labels(
-        dataset, formatter
-    )
-    # for some reason the training data isn't grouped, but labels are. This is how it is in the original code.
-    assert len(training_data) == 4
+    training_data = algorithm._build_steering_vector_training_data(dataset, formatter)
+    assert len(training_data) == 2
     # should pick the first incorrect output only by default
-    assert "Germany" in training_data[0]
-    assert "France" in training_data[1]
-    assert "2" in training_data[2]
-    assert "11" in training_data[3]
-    # should alternate between flipped and non-flipped labels
-    assert labels == [[0, 1], [1, 0]]
+    assert "France" in training_data[0].positive_prompt
+    assert "Germany" in training_data[0].negative_prompt
+    assert "2" in training_data[1].positive_prompt
+    assert "11" in training_data[1].negative_prompt
     assert training_data == snapshot
 
 
-def test_RepeReadingControl_build_repe_training_data_and_labels_with_random_incorrect() -> (
+def test_RepeReadingControl_build_steering_vector_training_data_with_random_incorrect() -> (
     None
 ):
     dataset: Dataset = [
@@ -60,19 +54,13 @@ def test_RepeReadingControl_build_repe_training_data_and_labels_with_random_inco
     ]
     formatter = InputOutputFormatter()
     algorithm = RepeReadingControl()
-    training_data, labels = algorithm._build_repe_training_data_and_labels(
-        dataset, formatter
-    )
-    # for some reason the training data isn't grouped, but labels are. This is how it is in the original code.
-    assert len(training_data) == 4
-    # should pick the a random incorrect output
-    assert "France" in training_data[1]
-    assert "2" in training_data[2]
-    # should alternate between flipped and non-flipped labels
-    assert labels == [[0, 1], [1, 0]]
+    training_data = algorithm._build_steering_vector_training_data(dataset, formatter)
+    assert len(training_data) == 2
+    assert "France" in training_data[0].positive_prompt
+    assert "2" in training_data[1].positive_prompt
 
 
-def test_RepeReadingControl_build_repe_training_data_and_labels_with_repeat_correct() -> (
+def test_RepeReadingControl_build_steering_vector_training_data_with_repeat_correct() -> (
     None
 ):
     dataset: Dataset = [
@@ -91,27 +79,22 @@ def test_RepeReadingControl_build_repe_training_data_and_labels_with_repeat_corr
     ]
     formatter = InputOutputFormatter()
     algorithm = RepeReadingControl(multi_answer_method="repeat_correct")
-    training_data, labels = algorithm._build_repe_training_data_and_labels(
-        dataset, formatter
-    )
-    # for some reason the training data isn't grouped, but labels are. This is how it is in the original code.
-    assert len(training_data) == 10
+    training_data = algorithm._build_steering_vector_training_data(dataset, formatter)
+    assert len(training_data) == 5
     # the positive example should be repeated once for each incorrect output
-    assert "Germany" in training_data[0]
-    assert "France" in training_data[1]
-    assert "Italy" in training_data[2]
-    assert "France" in training_data[3]
-    assert "2" in training_data[4]
-    assert "11" in training_data[5]
-    assert "2" in training_data[6]
-    assert "34" in training_data[7]
-    assert "2" in training_data[8]
-    assert "3.14" in training_data[9]
-    # should alternate between flipped and non-flipped labels
-    assert labels == [[0, 1, 0, 1], [1, 0, 1, 0, 1, 0]]
+    assert "Germany" in training_data[0].negative_prompt
+    assert "France" in training_data[0].positive_prompt
+    assert "Italy" in training_data[1].negative_prompt
+    assert "France" in training_data[1].positive_prompt
+    assert "2" in training_data[2].positive_prompt
+    assert "11" in training_data[2].negative_prompt
+    assert "2" in training_data[3].positive_prompt
+    assert "34" in training_data[3].negative_prompt
+    assert "2" in training_data[4].positive_prompt
+    assert "3.14" in training_data[4].negative_prompt
 
 
-def test_RepeReadingControl_get_directions(
+def test_RepeReadingControl_get_steering_vector(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
     tokenizer.pad_token_id = model.config.eos_token_id
@@ -125,32 +108,10 @@ def test_RepeReadingControl_get_directions(
         ),
     ]
     algorithm = RepeReadingControl(multi_answer_method="repeat_correct")
-    directions = algorithm._get_directions(pipeline, dataset)
-    assert list(directions.keys()) == [-1, -2, -3, -4, -5]
-    for act in directions.values():
-        assert act.shape == (1, 512)
-        assert act.norm() == pytest.approx(1.0)
-
-
-def test_RepeReadingControl_get_directions_with_direction_multiplier(
-    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
-) -> None:
-    tokenizer.pad_token_id = model.config.eos_token_id
-    pipeline = Pipeline(model, tokenizer)
-    dataset: Dataset = [
-        Example(
-            instruction="",
-            input="Paris is in",
-            output="France",
-            incorrect_outputs=["Germany", "Italy"],
-        ),
-    ]
-    algorithm = RepeReadingControl(
-        multi_answer_method="repeat_correct", direction_multiplier=3.7
-    )
-    directions = algorithm._get_directions(pipeline, dataset)
-    for act in directions.values():
-        assert act.norm() == pytest.approx(3.7)
+    steering_vector = algorithm._get_steering_vector(pipeline, dataset)
+    assert list(steering_vector.layer_activations.keys()) == [0, 1, 2, 3, 4, 5]
+    for act in steering_vector.layer_activations.values():
+        assert act.shape == (512,)
 
 
 def test_RepeReadingControl_run(

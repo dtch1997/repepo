@@ -4,22 +4,22 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Optional, Sequence, cast
 
+from torch import nn
 from torch import Tensor
 from torch.utils.hooks import RemovableHandle
 
-from repepo.core.types import Model
-from repepo.utils.layer_matching import (
+from .layer_matching import (
     LayerType,
     ModelLayerConfig,
     collect_matching_layers,
     guess_and_enhance_layer_config,
 )
-from repepo.utils.torch_utils import get_module, untuple_tensor
+from .torch_utils import get_module, untuple_tensor
 
 
 @contextmanager
 def record_activations(
-    model: Model,
+    model: nn.Module,
     layer_type: LayerType = "decoder_block",
     layer_config: Optional[ModelLayerConfig] = None,
     clone_activations: bool = True,
