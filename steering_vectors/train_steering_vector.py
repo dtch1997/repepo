@@ -79,6 +79,12 @@ def _extract_activations(
     ) as record:
         model(**input)
     for layer_num, activation in record.items():
+        # NOTE: This is hardcoded to extract the second-last token activtion only
+        # For (A/B) datasets, the second last token corresponds to 'A' or 'B'
+        # which is what the CAA paper extracts.
+        # Reference: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/generate_vectors.py#L102C13-L102C67
+
         # TODO: allow controlling which token(s) to extract
-        results[layer_num] = activation[-1][0, -1].detach()
+
+        results[layer_num] = activation[-1][0, -2].detach()
     return results
