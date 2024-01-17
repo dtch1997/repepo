@@ -121,6 +121,13 @@ class RepeReadingControl(Algorithm):
                 handle = steering_vector.patch_activations(
                     model=pipeline.model,
                     layer_config=self.layer_config,
+                    # NOTE: if the direction multiplier is changed,
+                    # subsequent generations will use the new value
+                    # because this is a reference to the outer scope.
+                    # This is probably counterintuitive
+                    # NOTE: Same goes for layer_config above,
+                    # but this is less critical because layer config is likely static
+                    # TODO: change at some point.
                     multiplier=self.direction_multiplier,
                     min_token_index=min_token_index,
                 )
