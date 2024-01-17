@@ -7,6 +7,7 @@ output
 # Direnv config
 .envrc
 .pdm-python
+*.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

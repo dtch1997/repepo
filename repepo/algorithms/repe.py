@@ -120,7 +120,7 @@ class RepeReadingControl(Algorithm):
 
         if self.override_vector is not None:
             steering_vector: SteeringVector = self.override_vector
-        elif self.skip_reading:
+        elif not self.skip_reading:
             steering_vector: SteeringVector = self._get_steering_vector(
                 pipeline, dataset
             )
