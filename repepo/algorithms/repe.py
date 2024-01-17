@@ -56,6 +56,9 @@ class RepeReadingControl(Algorithm):
         layer_config: Optional[ModelLayerConfig] = None,
         direction_multiplier: float = 1.0,
         patch_generation_tokens_only: bool = True,
+        skip_reading: bool = False,
+        override_vector: SteeringVector | None = None,
+        skip_control: bool = False,
     ):
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
@@ -66,6 +69,14 @@ class RepeReadingControl(Algorithm):
         self.layers = layers
         self.layer_config = layer_config
         self.direction_multiplier = direction_multiplier
+
+        self.skip_reading = skip_reading
+        self.override_vector = override_vector
+        self.skip_control = skip_control
+        if self.skip_reading and self.override_vector is None:
+            raise RuntimeError(
+                "Either reading or override vector must be provided for control"
+            )
 
     def _build_steering_vector_training_data(
         self, dataset: Dataset, formatter: Formatter
@@ -105,7 +116,17 @@ class RepeReadingControl(Algorithm):
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
         # Steering vector reading
         # NOTE: The hooks read from this steering vector.
-        steering_vector = self._get_steering_vector(pipeline, dataset)
+
+        if self.override_vector is not None:
+            steering_vector: SteeringVector = self.override_vector
+        elif self.skip_reading:
+            steering_vector: SteeringVector = self._get_steering_vector(
+                pipeline, dataset
+            )
+        else:
+            raise RuntimeError(
+                "Either reading or override vector must be provided for control"
+            )
 
         # Creating the hooks that will do steering vector control
         # NOTE: How this works is that we create a context manager that creates a hook
@@ -145,7 +166,9 @@ class RepeReadingControl(Algorithm):
                 if handle is not None:
                     handle.remove()
 
-        pipeline.hooks.append(steering_hook)
+        if not self.skip_control:
+            pipeline.hooks.append(steering_hook)
+
         return pipeline
 
     def _convert_example_to_training_samples(
