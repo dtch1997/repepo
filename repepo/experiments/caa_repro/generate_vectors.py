@@ -6,24 +6,17 @@ from repepo.core.pipeline import Pipeline
 from repepo.core.format import IdentityFormatter
 from repepo.data.make_dataset import make_dataset, DatasetSpec
 
-import pathlib
-from repepo.variables import Environ
 from repepo.experiments.caa_repro.utils.helpers import (
     make_tensor_save_suffix,
     get_model_name,
     get_model_and_tokenizer,
+    get_save_vectors_path,
 )
 from dataclasses import dataclass
 import pyrallis
 from pyrallis import field
 
-save_vectors_path = (
-    pathlib.Path(Environ.ProjectDir)
-    / "repepo"
-    / "experiments"
-    / "caa_repro"
-    / "vectors"
-)
+save_vectors_path = get_save_vectors_path()
 
 
 def generate_and_save_vectors(
