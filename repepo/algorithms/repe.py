@@ -17,7 +17,7 @@ from steering_vectors import (
 
 from repepo.core import Pipeline
 from repepo.core.format import Formatter
-from repepo.core.types import Dataset, Example, Model
+from repepo.core.types import Dataset, Example, Model, Tokenizer
 from repepo.algorithms.base import Algorithm
 
 MultiAnswerMethod = Literal["first_incorrect", "random_incorrect", "repeat_correct"]
@@ -112,8 +112,10 @@ class RepeReadingControl(Algorithm):
             try:
                 min_token_index = 0
                 if self.patch_generation_tokens_only:
-                    min_token_index = len(
-                        pipeline.tokenizer.encode(context.base_prompt)
+                    min_token_index = _find_generation_start_token_index(
+                        pipeline.tokenizer,
+                        context.base_prompt,
+                        context.full_prompt,
                     )
                 handle = steering_vector.patch_activations(
                     model=pipeline.model,
@@ -163,3 +165,21 @@ class RepeReadingControl(Algorithm):
             )
             for pos, neg in paired_completions
         ]
+
+
+def _find_generation_start_token_index(
+    tokenizer: Tokenizer, base_prompt: str, full_prompt: str
+) -> int:
+    """Finds the index of the first generation token in the prompt"""
+    base_toks = tokenizer.encode(base_prompt)
+    full_toks = tokenizer.encode(full_prompt)
+    prompt_len = len(base_toks)
+    # try to account for cases where the final prompt token is different
+    # from the first generation token, ususally weirdness with spaces / special chars
+    for i, (base_tok, full_tok) in enumerate(zip(base_toks, full_toks)):
+        if base_tok != full_tok:
+            prompt_len = i
+            break
+    # The output of the last prompt token is the first generation token
+    # so need to subtract 1 here
+    return prompt_len - 1

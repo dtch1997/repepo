@@ -1,4 +1,7 @@
-from repepo.algorithms.repe import RepeReadingControl
+from repepo.algorithms.repe import (
+    RepeReadingControl,
+    _find_generation_start_token_index,
+)
 from repepo.core.format import InputOutputFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
 from repepo.core.pipeline import Pipeline
@@ -144,3 +147,67 @@ def test_RepeReadingControl_run(
 
     # TODO: find a better assertion that ensures this is actually doing what it should
     assert original_outputs != new_outputs
+
+
+def test_RepeReadingControl_run_logprobs_with_patch_generation_tokens_only(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    tokenizer.pad_token_id = model.config.eos_token_id
+    pipeline = Pipeline(model, tokenizer)
+
+    test_example = Example(
+        instruction="",
+        input="Paris is in",
+        output="France",
+        incorrect_outputs=["Germany", "Italy"],
+    )
+    dataset: Dataset = [
+        test_example,
+        Example(
+            instruction="",
+            input="1 + 1 =",
+            output="2",
+            incorrect_outputs=["11", "34", "3.14"],
+        ),
+    ]
+
+    original_outputs = pipeline.calculate_output_logprobs(test_example)
+
+    algorithm = RepeReadingControl(patch_generation_tokens_only=True)
+    algorithm.run(pipeline, dataset)
+    new_outputs = pipeline.calculate_output_logprobs(test_example)
+
+    assert original_outputs.sum_logprobs != new_outputs.sum_logprobs
+    # only the final token should be patched and thus be different
+    for old, new in zip(
+        original_outputs.token_probs[:-1], new_outputs.token_probs[:-1]
+    ):
+        assert old.text == new.text
+        assert old.logprob == new.logprob
+    assert (
+        original_outputs.token_probs[-1].logprob != new_outputs.token_probs[-1].logprob
+    )
+
+
+def test_find_generation_start_token_index_with_trailing_space(
+    tokenizer: Tokenizer,
+) -> None:
+    base_prompt = "Paris is in: "
+    full_prompt = "Paris is in: France"
+    assert _find_generation_start_token_index(tokenizer, base_prompt, full_prompt) == 3
+
+
+def test_find_generation_start_token_index_with_trailing_special_chars(
+    tokenizer: Tokenizer,
+) -> None:
+    base_prompt = "<s> Paris is in: </s>"
+    full_prompt = "<s> Paris is in: France </s>"
+    assert _find_generation_start_token_index(tokenizer, base_prompt, full_prompt) == 6
+
+
+def test_find_generation_start_token_base(
+    tokenizer: Tokenizer,
+) -> None:
+    base_prompt = "<s> Paris is in:"
+    full_prompt = "<s> Paris is in: France"
+    assert _find_generation_start_token_index(tokenizer, base_prompt, full_prompt) == 6
