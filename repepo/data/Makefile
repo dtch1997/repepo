@@ -5,15 +5,21 @@ stereoset: # Make Stereoset
 	python generation/make_stereoset.py
 
 truthfulqa: # Make TruthfulQA
-	python generation/make_truthfulqa.py
+	python multiple_choice/make_truthfulqa.py
 
-ambigprompt: # Make Ambigprompt
-	python download/download_ambigprompt.py
+mwe: # Make Anthropic MWE datasets
+	python multiple_choice/make_mwe.py
+# ambigprompt: # Make Ambigprompt
+# 	python download/download_ambigprompt.py
+
+sycophancy: # Make Sycophancy
+	python multiple_choice/make_sycophancy.py
 
 datasets: # Make all datasets
 	make stereoset
 	make truthfulqa
-	make ambigprompt
+	make mwe
+	make sycophancy
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
