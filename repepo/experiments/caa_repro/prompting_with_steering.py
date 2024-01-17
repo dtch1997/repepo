@@ -1,6 +1,7 @@
 import torch
 import json
 import pyrallis
+import numpy as np
 
 from tqdm import tqdm
 from dataclasses import dataclass
@@ -28,6 +29,29 @@ from transformers.generation import GenerationConfig
 save_vectors_path = get_save_vectors_path()
 results_path = get_experiment_path() / "results"
 analysis_path = get_experiment_path() / "analysis"
+
+
+def evaluate_average_key_prob(predictions: List[EvalPrediction]) -> float:
+    """Evaluates the average probability of the correct answer"""
+
+    def get_a_b_prob(prediction: EvalPrediction):
+        assert prediction.correct_output_probs is not None
+        # TODO: Need to calculate normalized probabilities for A/B token
+        # See here: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/utils/helpers.py#L143C1-L148C26
+
+        logprob = prediction.correct_output_probs.token_probs[-1].logprob
+        return np.exp(logprob)
+
+    sum = 0
+    count = 0
+    for prediction in predictions:
+        if prediction.correct_output_probs is not None:
+            sum += get_a_b_prob(prediction)
+            count += 1
+        else:
+            raise RuntimeError("Predictions must have correct_output_probs")
+
+    return sum / count
 
 
 def evaluate_pipeline(
@@ -110,26 +134,19 @@ def test_steering(
             if settings.type == "in_distribution":
                 evaluator = MultipleChoiceAccuracyEvaluator()
                 mcq_accuracy = evaluator(predictions)["accuracy"]
+                average_key_prob = evaluate_average_key_prob(predictions)
                 results.append(
                     {
                         "layer_id": layer_id,
                         "multiplier": multiplier,
                         "mcq_accuracy": mcq_accuracy,
+                        "average_key_prob": average_key_prob,
                         "type": settings.type,
                     }
                 )
 
             elif settings.type == "out_of_distribution":
-                evaluator = MultipleChoiceAccuracyEvaluator()
-                mcq_accuracy = evaluator(predictions)["accuracy"]
-                results.append(
-                    {
-                        "layer_id": layer_id,
-                        "multiplier": multiplier,
-                        "mcq_accuracy": mcq_accuracy,
-                        "type": settings.type,
-                    }
-                )
+                raise NotImplementedError
 
             elif settings.type == "truthful_qa":
                 # NOTE: for truthfulQA, we need to calculate MCQ accuracies by category
