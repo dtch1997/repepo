@@ -23,6 +23,7 @@ dependencies = [
     "rouge-score>=0.1.2",
     "termcolor>=2.4.0",
     "bitsandbytes>=0.42.0",
+    "nbdime>=4.0.1",
 ]
 
 [tool.black]
