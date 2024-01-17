@@ -109,6 +109,7 @@ class RepeReadingControl(Algorithm):
         # which tokens to patch
         @contextmanager
         def steering_hook(context: PipelineContext):
+            handle = None
             try:
                 min_token_index = 0
                 if self.patch_generation_tokens_only:
@@ -125,7 +126,8 @@ class RepeReadingControl(Algorithm):
                 )
                 yield
             finally:
-                handle.remove()
+                if handle is not None:
+                    handle.remove()
 
         pipeline.hooks.append(steering_hook)
         return pipeline
