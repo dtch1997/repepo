@@ -7,11 +7,28 @@ from torch import nn, Tensor
 from .steering_vector import SteeringVector
 from .layer_matching import ModelLayerConfig, LayerType, guess_and_enhance_layer_config
 from .record_activations import record_activations
+from typing import Any
 
 
 class SteeringVectorTrainingSample(NamedTuple):
     positive_prompt: str
     negative_prompt: str
+
+
+class Observer:
+    """A simple utility class to record data."""
+
+    def __init__(self):
+        self.datas = []
+
+    def write(self, data: dict[str, Any]):
+        self.datas.append(data)
+
+    def read(self, i: int | None = None) -> dict[str, Any] | list[dict[str, Any]]:
+        if i is None:
+            return self.datas
+        else:
+            return self.datas[i]
 
 
 @torch.no_grad()
