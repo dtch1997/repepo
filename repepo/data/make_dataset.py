@@ -36,7 +36,7 @@ def list_datasets() -> tuple[str, ...]:
 
 @dataclass
 class DatasetSpec:
-    name: str
+    name: str = "sycophancy"
     split: str = ":100%"
     seed: int = 0
 
