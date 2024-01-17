@@ -19,6 +19,7 @@ class Environ:
             "HUGGINGFACE_HUB_CACHE", _get_home_dir() / ".cache/huggingface/hub"
         )
     )
+    ProjectDir = str(_get_project_dir())
     OutputDir = str(os.environ.get("OUTPUT_DIR", _get_project_dir() / "output"))
     DatasetDir = str(os.environ.get("DATASET_DIR", _get_project_dir() / "datasets"))
     LogDir = str(os.environ.get("LOG_DIR", _get_project_dir() / "logs"))
