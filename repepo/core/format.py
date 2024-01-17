@@ -37,6 +37,22 @@ class InputOutputFormatter(Formatter):
         )
 
 
+class IdentityFormatter(Formatter):
+    """Format by just concatenating the instruction and input."""
+
+    PROMPT_TEMPLATE = "{instruction} {input}\n"
+
+    @override
+    def apply(self, example: Example, **kwargs):
+        del kwargs
+        return Completion(
+            prompt=self.PROMPT_TEMPLATE.format(
+                instruction=example.instruction, input=example.input
+            ),
+            response=example.output,
+        )
+
+
 class InstructionFormatter(Formatter):
     """Instruction formatter used for fine-tuning Alpaca."""
 

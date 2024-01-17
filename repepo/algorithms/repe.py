@@ -99,6 +99,7 @@ class RepeReadingControl(Algorithm):
             layers=self.layers,
             layer_type=self.layer_type,
             layer_config=self.layer_config,
+            move_to_cpu=True,
         )
 
     @override
