@@ -103,7 +103,16 @@ class RepeReadingControl(Algorithm):
 
     @override
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
+        # Steering vector reading
+        # NOTE: The hooks read from this steering vector.
         steering_vector = self._get_steering_vector(pipeline, dataset)
+
+        # Creating the hooks that will do steering vector control
+        # NOTE: How this works is that we create a context manager that creates a hook
+        # whenever we are in a `PipelineContext`'s scope.
+        # After exiting the context, the hook is deleted.
+
+        # The PipelineContext is created in both `pipeline.generate` or `pipeline.calculate_output_logprobs`
 
         # need to use a hook so we can inspect the current thing being generated to know
         # which tokens to patch
