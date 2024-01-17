@@ -10,6 +10,10 @@ from dataclasses import dataclass
 from .io import jload
 
 
+def get_raw_dataset_dir() -> pathlib.Path:
+    return pathlib.Path(Environ.ProjectDir) / "raw_datasets"
+
+
 def get_dataset_dir() -> pathlib.Path:
     return pathlib.Path(Environ.DatasetDir)
 
