@@ -35,6 +35,37 @@ def test_SteeringVector_patch_activations(
 
 
 @torch.no_grad()
+def test_SteeringVector_patch_activations_with_min_token_index(
+    model: GPTNeoXForCausalLM,
+    tokenizer: Tokenizer,
+    device: str,
+) -> None:
+    inputs = tokenizer(
+        "What is cheesier than cheese? Nothing is cheesier than cheese",
+        return_tensors="pt",
+    ).to(device)
+    original_hidden_states = model(**inputs, output_hidden_states=True).hidden_states
+    patch = torch.randn(512).to(device)
+    steering_vector = SteeringVector(
+        layer_activations={1: patch},
+        layer_type="decoder_block",
+    )
+    steering_vector.patch_activations(model, min_token_index=5)
+    patched_hidden_states = model(**inputs, output_hidden_states=True).hidden_states
+
+    # The first 5 tokens should not be patched, due to min_token_index
+    assert torch.equal(
+        original_hidden_states[2][0, :5], patched_hidden_states[2][0, :5]
+    )
+    assert not torch.equal(
+        original_hidden_states[2][0, 5:], patched_hidden_states[2][0, 5:]
+    )
+
+    expected_hidden_state = original_hidden_states[2][0, 5:] + patch
+    assert torch.equal(expected_hidden_state, patched_hidden_states[2][0, 5:])
+
+
+@torch.no_grad()
 def test_SteeringVector_handle_reverts_model_changes(
     model: GPTNeoXForCausalLM,
     tokenizer: Tokenizer,

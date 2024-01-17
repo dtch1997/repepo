@@ -9,7 +9,7 @@ from .steering_vector import (
     SteeringVector,
     SteeringPatchHandle,
     PatchOperator,
-    addition_operator,
+    identity_operator,
 )
 from .record_activations import record_activations
 from .train_steering_vector import train_steering_vector, SteeringVectorTrainingSample
@@ -21,7 +21,7 @@ __all__ = [
     "get_num_matching_layers",
     "guess_and_enhance_layer_config",
     "PatchOperator",
-    "addition_operator",
+    "identity_operator",
     "record_activations",
     "SteeringVector",
     "SteeringPatchHandle",

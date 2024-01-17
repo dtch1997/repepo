@@ -1,7 +1,9 @@
+from contextlib import contextmanager
 from dataclasses import replace
 from typing import Literal, Optional
 from typing_extensions import override
 import random
+from repepo.core.pipeline import PipelineContext
 
 from steering_vectors import (
     LayerType,
@@ -41,6 +43,7 @@ class RepeReadingControl(Algorithm):
     layers: list[int] | None
     direction_multiplier: float
     layer_config: ModelLayerConfig | None
+    patch_generation_tokens_only: bool
     seed: int
 
     def __init__(
@@ -52,10 +55,12 @@ class RepeReadingControl(Algorithm):
         layers: Optional[list[int]] = None,
         layer_config: Optional[ModelLayerConfig] = None,
         direction_multiplier: float = 1.0,
+        patch_generation_tokens_only: bool = True,
     ):
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
         self.seed = seed
+        self.patch_generation_tokens_only = patch_generation_tokens_only
         _validate_reading_template(reading_template)
         self.reading_template = reading_template
         self.layers = layers
@@ -99,12 +104,28 @@ class RepeReadingControl(Algorithm):
     @override
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
         steering_vector = self._get_steering_vector(pipeline, dataset)
-        # this will modify the model in place
-        steering_vector.patch_activations(
-            model=pipeline.model,
-            layer_config=self.layer_config,
-            multiplier=self.direction_multiplier,
-        )
+
+        # need to use a hook so we can inspect the current thing being generated to know
+        # which tokens to patch
+        @contextmanager
+        def steering_hook(context: PipelineContext):
+            try:
+                min_token_index = 0
+                if self.patch_generation_tokens_only:
+                    min_token_index = len(
+                        pipeline.tokenizer.encode(context.base_prompt)
+                    )
+                handle = steering_vector.patch_activations(
+                    model=pipeline.model,
+                    layer_config=self.layer_config,
+                    multiplier=self.direction_multiplier,
+                    min_token_index=min_token_index,
+                )
+                yield
+            finally:
+                handle.remove()
+
+        pipeline.hooks.append(steering_hook)
         return pipeline
 
     def _convert_example_to_training_samples(

@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional
 
 from torch import nn
 from torch import Tensor
+import torch
 from torch.utils.hooks import RemovableHandle
 
 from .layer_matching import (
@@ -18,8 +19,8 @@ from .torch_utils import get_module, untuple_tensor
 PatchOperator = Callable[[Tensor, Tensor], Tensor]
 
 
-def addition_operator(original_tensor: Tensor, patch_activation: Tensor) -> Tensor:
-    return original_tensor + patch_activation
+def identity_operator(_original_tensor: Tensor, patch_activation: Tensor) -> Tensor:
+    return patch_activation
 
 
 @dataclass
@@ -41,8 +42,9 @@ class SteeringVector:
         self,
         model: nn.Module,
         layer_config: Optional[ModelLayerConfig] = None,
-        operator: PatchOperator = addition_operator,
+        operator: PatchOperator = identity_operator,
         multiplier: float = 1.0,
+        min_token_index: int = 0,
     ) -> SteeringPatchHandle:
         """
         Patch the activations of the given model with this steering vector.
@@ -56,6 +58,7 @@ class SteeringVector:
             operator: A function that takes the original activation and the target activation
                 and returns the new activation. Default is addition.
             multiplier: A multiplier to scale the patch activations. Default is 1.0.
+            min_token_index: The minimum token index to apply the patch to. Default is 0.
         Example:
             >>> model = AutoModelForCausalLM.from_pretrained("gpt2-xl")
             >>> steering_vector = SteeringVector(...)
@@ -77,13 +80,13 @@ class SteeringVector:
             layer_name = matching_layers[layer_num]
 
             target_activation = multiplier * self.layer_activations[layer_num]
-            if len(target_activation.shape) == 1:
-                target_activation = target_activation.reshape(1, 1, -1)
 
             module = get_module(model, layer_name)
             handle = module.register_forward_hook(
                 # create the hook via function call since python only creates new scopes on functions
-                _create_patch_hook(target_activation, operator)
+                _create_additive_hook(
+                    target_activation.reshape(1, 1, -1), min_token_index, operator
+                )
             )
             hooks.append(handle)
         return SteeringPatchHandle(hooks)
@@ -93,8 +96,9 @@ class SteeringVector:
         self,
         model: nn.Module,
         layer_config: Optional[ModelLayerConfig] = None,
-        operator: PatchOperator = addition_operator,
+        operator: PatchOperator = identity_operator,
         multiplier: float = 1.0,
+        min_token_index: int = 0,
     ):
         """
         Apply this steering vector to the given model.
@@ -106,6 +110,7 @@ class SteeringVector:
             operator: A function that takes the original activation and the target activation
                 and returns the new activation. Default is addition.
             multiplier: A multiplier to scale the patch activations. Default is 1.0.
+            min_token_index: The minimum token index to apply the patch to. Default is 0.
         Example:
             >>> model = AutoModelForCausalLM.from_pretrained("gpt2-xl")
             >>> steering_vector = SteeringVector(...)
@@ -118,19 +123,29 @@ class SteeringVector:
                 layer_config=layer_config,
                 operator=operator,
                 multiplier=multiplier,
+                min_token_index=min_token_index,
             )
             yield
         finally:
             handle.remove()
 
 
-def _create_patch_hook(target_activation: Tensor, operator: PatchOperator) -> Any:
+def _create_additive_hook(
+    target_activation: Tensor,
+    min_token_index: int,
+    operator: PatchOperator,
+) -> Any:
     """Create a hook function that adds the given target_activation to the model output"""
 
     def hook_fn(_m: Any, _inputs: Any, outputs: Any) -> Any:
         original_tensor = untuple_tensor(outputs)
         act = target_activation.to(original_tensor.device)
-        original_tensor[None] = operator(original_tensor, act)
+        delta = operator(original_tensor, act)
+        mask = torch.ones(original_tensor.shape[1])
+        mask[:min_token_index] = 0
+        mask = mask.reshape(1, -1, 1)
+        mask = mask.to(original_tensor.device)
+        original_tensor[None] = original_tensor + (mask * delta)
         return outputs
 
     return hook_fn

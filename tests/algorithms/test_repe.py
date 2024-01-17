@@ -138,7 +138,7 @@ def test_RepeReadingControl_run(
 
     original_outputs = pipeline.generate(test_example)
 
-    algorithm = RepeReadingControl()
+    algorithm = RepeReadingControl(patch_generation_tokens_only=False)
     algorithm.run(pipeline, dataset)
     new_outputs = pipeline.generate(test_example)
 
