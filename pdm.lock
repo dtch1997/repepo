@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:69579c98ff4f80b230b120f588ff0f81dcf7182210e3af167bbec1f754aa78a8"
+content_hash = "sha256:e9c216e17310d4b7b43a4f45fa05f0c874c7f5209f8008dcffe8133845a4fbe0"
 
 [[package]]
 name = "absl-py"
@@ -19,7 +19,7 @@ files = [
 
 [[package]]
 name = "accelerate"
-version = "0.25.0"
+version = "0.26.1"
 requires_python = ">=3.8.0"
 summary = "Accelerate"
 dependencies = [
@@ -32,8 +32,8 @@ dependencies = [
     "torch>=1.10.0",
 ]
 files = [
-    {file = "accelerate-0.25.0-py3-none-any.whl", hash = "sha256:c7bb817eb974bba0ff3ea1ba0f24d55afb86d50e3d4fe98d6922dc69cf2ccff1"},
-    {file = "accelerate-0.25.0.tar.gz", hash = "sha256:ecf55b0ab278a1dac8539dde0d276977aff04683f07ede73eaf02478538576a1"},
+    {file = "accelerate-0.26.1-py3-none-any.whl", hash = "sha256:04df826b84ac7bad8a0a8ab90e6aeacdecb1ea5a2d744d7e94f6735c29183227"},
+    {file = "accelerate-0.26.1.tar.gz", hash = "sha256:bf63716b6bd9460d87da970cf4d833abb824ca0aa633be36b741e63a1b504f89"},
 ]
 
 [[package]]
@@ -270,6 +270,18 @@ dependencies = [
 files = [
     {file = "beautifulsoup4-4.12.2-py3-none-any.whl", hash = "sha256:bd2520ca0d9d7d12694a53d44ac482d181b4ec1888909b035a3dbf40d0f57d4a"},
     {file = "beautifulsoup4-4.12.2.tar.gz", hash = "sha256:492bbc69dca35d12daac71c4db1bfff0c876c00ef4a2ffacce226d4638eb72da"},
+]
+
+[[package]]
+name = "bitsandbytes"
+version = "0.42.0"
+summary = "k-bit optimizers and matrix multiplication routines."
+dependencies = [
+    "scipy",
+]
+files = [
+    {file = "bitsandbytes-0.42.0-py3-none-any.whl", hash = "sha256:63798680912cc63bb77b535a2d0860af024e290a52e157f777ad2a52e2585967"},
+    {file = "bitsandbytes-0.42.0.tar.gz", hash = "sha256:fc1505f184f0d275766f2a6c663f1a43b734c1409b5c5a406f3a6073d9f329fd"},
 ]
 
 [[package]]
@@ -1211,6 +1223,19 @@ files = [
 ]
 
 [[package]]
+name = "jupyter-server-mathjax"
+version = "0.2.6"
+requires_python = ">=3.7"
+summary = "MathJax resources as a Jupyter Server Extension."
+dependencies = [
+    "jupyter-server>=1.1",
+]
+files = [
+    {file = "jupyter_server_mathjax-0.2.6-py3-none-any.whl", hash = "sha256:416389dde2010df46d5fbbb7adb087a5607111070af65a1445391040f2babb5e"},
+    {file = "jupyter_server_mathjax-0.2.6.tar.gz", hash = "sha256:bb1e6b6dc0686c1fe386a22b5886163db548893a99c2810c36399e9c4ca23943"},
+]
+
+[[package]]
 name = "jupyter-server-terminals"
 version = "0.5.0"
 requires_python = ">=3.8"
@@ -1582,6 +1607,27 @@ dependencies = [
 files = [
     {file = "nbconvert-7.13.1-py3-none-any.whl", hash = "sha256:3c50eb2d326478cc90b8759cf2ab9dde3d892c6537cd6a5bc0991db8ef734bcc"},
     {file = "nbconvert-7.13.1.tar.gz", hash = "sha256:2dc8267dbdfeedce2dcd34c9e3f1b51af18f43cb105549d1c5a18189ec23ba85"},
+]
+
+[[package]]
+name = "nbdime"
+version = "4.0.1"
+requires_python = ">=3.6"
+summary = "Diff and merge of Jupyter Notebooks"
+dependencies = [
+    "colorama",
+    "gitpython!=2.1.4,!=2.1.5,!=2.1.6",
+    "jinja2>=2.9",
+    "jupyter-server",
+    "jupyter-server-mathjax>=0.2.2",
+    "nbformat",
+    "pygments",
+    "requests",
+    "tornado",
+]
+files = [
+    {file = "nbdime-4.0.1-py3-none-any.whl", hash = "sha256:82538e2b52e0834e9c07607e2dea27aceaaf7e8cf2269a4607c67ea9aa625404"},
+    {file = "nbdime-4.0.1.tar.gz", hash = "sha256:f1a760c0b00c1ba9b4945c16ce92577f393fb51d184f351b7685ba6e8502098e"},
 ]
 
 [[package]]

@@ -56,6 +56,9 @@ class RepeReadingControl(Algorithm):
         layer_config: Optional[ModelLayerConfig] = None,
         direction_multiplier: float = 1.0,
         patch_generation_tokens_only: bool = True,
+        skip_reading: bool = False,
+        override_vector: Optional[SteeringVector] = None,
+        skip_control: bool = False,
     ):
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
@@ -66,6 +69,14 @@ class RepeReadingControl(Algorithm):
         self.layers = layers
         self.layer_config = layer_config
         self.direction_multiplier = direction_multiplier
+
+        self.skip_reading = skip_reading
+        self.override_vector = override_vector
+        self.skip_control = skip_control
+        if self.skip_reading and self.override_vector is None:
+            raise RuntimeError(
+                "Either reading or override vector must be provided for control"
+            )
 
     def _build_steering_vector_training_data(
         self, dataset: Dataset, formatter: Formatter
@@ -103,7 +114,26 @@ class RepeReadingControl(Algorithm):
 
     @override
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
-        steering_vector = self._get_steering_vector(pipeline, dataset)
+        # Steering vector reading
+        # NOTE: The hooks read from this steering vector.
+
+        if self.override_vector is not None:
+            steering_vector: SteeringVector = self.override_vector
+        elif not self.skip_reading:
+            steering_vector: SteeringVector = self._get_steering_vector(
+                pipeline, dataset
+            )
+        else:
+            raise RuntimeError(
+                "Either reading or override vector must be provided for control"
+            )
+
+        # Creating the hooks that will do steering vector control
+        # NOTE: How this works is that we create a context manager that creates a hook
+        # whenever we are in a `PipelineContext`'s scope.
+        # After exiting the context, the hook is deleted.
+
+        # The PipelineContext is created in both `pipeline.generate` or `pipeline.calculate_output_logprobs`
 
         # need to use a hook so we can inspect the current thing being generated to know
         # which tokens to patch
@@ -121,6 +151,13 @@ class RepeReadingControl(Algorithm):
                 handle = steering_vector.patch_activations(
                     model=pipeline.model,
                     layer_config=self.layer_config,
+                    # NOTE: if the direction multiplier is changed,
+                    # subsequent generations will use the new value
+                    # because this is a reference to the outer scope.
+                    # This is probably counterintuitive
+                    # NOTE: Same goes for layer_config above,
+                    # but this is less critical because layer config is likely static
+                    # TODO: change at some point.
                     multiplier=self.direction_multiplier,
                     min_token_index=min_token_index,
                 )
@@ -129,7 +166,9 @@ class RepeReadingControl(Algorithm):
                 if handle is not None:
                     handle.remove()
 
-        pipeline.hooks.append(steering_hook)
+        if not self.skip_control:
+            pipeline.hooks.append(steering_hook)
+
         return pipeline
 
     def _convert_example_to_training_samples(
