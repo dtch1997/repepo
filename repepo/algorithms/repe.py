@@ -57,7 +57,7 @@ class RepeReadingControl(Algorithm):
         direction_multiplier: float = 1.0,
         patch_generation_tokens_only: bool = True,
         skip_reading: bool = False,
-        override_vector: SteeringVector | None = None,
+        override_vector: Optional[SteeringVector] = None,
         skip_control: bool = False,
     ):
         self.multi_answer_method = multi_answer_method
@@ -119,7 +119,7 @@ class RepeReadingControl(Algorithm):
 
         if self.override_vector is not None:
             steering_vector: SteeringVector = self.override_vector
-        elif self.skip_reading:
+        elif not self.skip_reading:
             steering_vector: SteeringVector = self._get_steering_vector(
                 pipeline, dataset
             )
