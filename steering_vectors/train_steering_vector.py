@@ -23,6 +23,7 @@ def train_steering_vector(
     layer_type: LayerType = "decoder_block",
     layer_config: Optional[ModelLayerConfig] = None,
     move_to_cpu: bool = False,
+    read_token_index: int = -1,
     # TODO: add more options to control training
 ) -> SteeringVector:
     layer_config = guess_and_enhance_layer_config(model, layer_config, layer_type)
@@ -37,6 +38,7 @@ def train_steering_vector(
             layer_type=layer_type,
             layer_config=layer_config,
             layers=layers,
+            read_token_index=read_token_index,
         )
         neg_acts = _extract_activations(
             model,
@@ -45,6 +47,7 @@ def train_steering_vector(
             layer_type=layer_type,
             layer_config=layer_config,
             layers=layers,
+            read_token_index=read_token_index,
         )
         for layer_num, pos_act in pos_acts.items():
             if move_to_cpu:
@@ -71,6 +74,7 @@ def _extract_activations(
     layer_type: LayerType,
     layer_config: ModelLayerConfig,
     layers: list[int] | None,
+    read_token_index: int,
 ) -> dict[int, Tensor]:
     input = tokenizer(prompt, return_tensors="pt").to(model.device)
     results = {}
@@ -79,12 +83,5 @@ def _extract_activations(
     ) as record:
         model(**input)
     for layer_num, activation in record.items():
-        # NOTE: This is hardcoded to extract the second-last token activtion only
-        # For (A/B) datasets, the second last token corresponds to 'A' or 'B'
-        # which is what the CAA paper extracts.
-        # Reference: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/generate_vectors.py#L102C13-L102C67
-
-        # TODO: allow controlling which token(s) to extract
-
-        results[layer_num] = activation[-1][0, -2].detach()
+        results[layer_num] = activation[-1][0, read_token_index].detach()
     return results

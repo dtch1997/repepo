@@ -36,6 +36,7 @@ class PipelineContext:
     base_prompt: str
     full_prompt: str
     inputs: Any
+    pipeline: "Pipeline"
 
 
 PipelineHook = Callable[[PipelineContext], AbstractContextManager]
@@ -72,6 +73,7 @@ class Pipeline:
             base_prompt=base_prompt,
             full_prompt=base_prompt,
             inputs=inputs,
+            pipeline=self,
         )
         with ExitStack() as stack:
             for hook in self.hooks:
@@ -97,6 +99,7 @@ class Pipeline:
             base_prompt=base_prompt,
             full_prompt=full_prompt,
             inputs=inputs,
+            pipeline=self,
         )
         with ExitStack() as stack:
             for hook in self.hooks:
