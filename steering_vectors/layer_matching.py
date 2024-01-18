@@ -4,8 +4,6 @@ from typing import Callable, Iterable, Literal, Optional, Union
 
 from torch import nn
 
-from repepo.core.types import Model
-
 LayerMatcher = Union[str, Callable[[nn.Module, int], str]]
 
 
@@ -169,7 +167,7 @@ Gpt2LayerConfig: ModelLayerConfig = {
 }
 
 
-def check_predefined_layer_configs(model: Model) -> ModelLayerConfig | None:
+def check_predefined_layer_configs(model: nn.Module) -> ModelLayerConfig | None:
     """Returns one of the above pre-defined layer configs if they match the model, else None"""
     for layer_config in [GptNeoxLayerConfig, LlamaLayerConfig, Gpt2LayerConfig]:
         everything_matches = True
@@ -182,39 +180,41 @@ def check_predefined_layer_configs(model: Model) -> ModelLayerConfig | None:
     return None
 
 
+_LAYER_TYPE_TO_GUESSER: dict[LayerType, Callable[[nn.Module], str | None]] = {
+    "decoder_block": guess_decoder_block_matcher,
+    "self_attn": guess_self_attn_matcher,
+    "mlp": guess_mlp_matcher,
+    "input_layernorm": guess_input_layernorm_matcher,
+    "post_attention_layernorm": guess_post_attention_layernorm_matcher,
+}
+
+
 def enhance_model_config_matchers(
-    model: Model, config: ModelLayerConfig
+    model: nn.Module, config: ModelLayerConfig, layer_type: Optional[LayerType] = None
 ) -> ModelLayerConfig:
     """Returns a new layer config, attempting to fill-in missing layer matchers"""
     enhanced_config: ModelLayerConfig = {**config}
-    if "decoder_block" not in config and (
-        decoder_block_matcher := guess_decoder_block_matcher(model)
-    ):
-        enhanced_config["decoder_block"] = decoder_block_matcher
-    if "mlp" not in config and (mlp_matcher := guess_mlp_matcher(model)):
-        enhanced_config["mlp"] = mlp_matcher
-    if "self_attn" not in config and (
-        self_attn_matcher := guess_self_attn_matcher(model)
-    ):
-        enhanced_config["self_attn"] = self_attn_matcher
-    if "input_layernorm" not in config and (
-        input_layernorm_matcher := guess_input_layernorm_matcher(model)
-    ):
-        enhanced_config["input_layernorm"] = input_layernorm_matcher
-    if "post_attention_layernorm" not in config and (
-        post_attention_layernorm_matcher := guess_post_attention_layernorm_matcher(
-            model
-        )
-    ):
-        enhanced_config["post_attention_layernorm"] = post_attention_layernorm_matcher
+    types_to_guess: Iterable[LayerType] = (
+        [layer_type] if layer_type is not None else _LAYER_TYPE_TO_GUESSER.keys()
+    )
+    for guess_layer_type in types_to_guess:
+        if guess_layer_type not in config and (
+            layer_matcher := _LAYER_TYPE_TO_GUESSER[guess_layer_type](model)
+        ):
+            enhanced_config[guess_layer_type] = layer_matcher
     return enhanced_config
 
 
 def guess_and_enhance_layer_config(
-    model: Model, layer_config: Optional[ModelLayerConfig] = None
+    model: nn.Module,
+    layer_config: Optional[ModelLayerConfig] = None,
+    layer_type: Optional[LayerType] = None,
 ) -> ModelLayerConfig:
-    """Try to guess any missing parts of the layer config, after checking against predefined configs"""
-    if not layer_config:
-        layer_config = check_predefined_layer_configs(model)
-    layer_config = enhance_model_config_matchers(model, layer_config or {})
+    """
+    Try to guess any missing parts of the layer config, after checking against predefined configs.
+    If layer_type is provided, only guess the layer_matcher for that layer type.
+    """
+    layer_config = enhance_model_config_matchers(
+        model, layer_config or {}, layer_type=layer_type
+    )
     return layer_config

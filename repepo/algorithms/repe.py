@@ -1,23 +1,25 @@
+from contextlib import contextmanager
 from dataclasses import replace
-from typing import Any, Literal, NamedTuple, Optional, cast
+from typing import Literal, Optional
 from typing_extensions import override
 import random
+from repepo.core.pipeline import PipelineContext
 
-import torch
-from repepo.core import Pipeline
-from repepo.core.format import Formatter
-from repepo.core.types import Dataset, Example, Model
-from repepo.repe.rep_reading_pipeline import RepReadingPipeline
-from repepo.algorithms.base import Algorithm
-from repepo.utils.layer_matching import (
+from steering_vectors import (
+    LayerType,
+    SteeringVector,
+    train_steering_vector,
+    SteeringVectorTrainingSample,
     LayerMatcher,
     ModelLayerConfig,
-    get_num_matching_layers,
     guess_and_enhance_layer_config,
 )
-from repepo.utils.model_patcher import LayerType, ModelPatcher
 
-DirectionMethod = Literal["pca", "cluster_mean", "random"]
+from repepo.core import Pipeline
+from repepo.core.format import Formatter
+from repepo.core.types import Dataset, Example, Model, Tokenizer
+from repepo.algorithms.base import Algorithm
+
 MultiAnswerMethod = Literal["first_incorrect", "random_incorrect", "repeat_correct"]
 
 DEFAULT_READING_TEMPLATE = "Consider the amount of truthfulness in the following answer.\n\n{question} {answer}\n\nThe amount of truthfulness in the answer is "
@@ -34,73 +36,47 @@ def _validate_reading_template(reading_template: str):
         )
 
 
-class RepeTrainingData(NamedTuple):
-    # bizarrely, repe data labels are a list of lists of ints, but the prompts are just a list of strings
-    # why are the prompts not grouped the same way as the labels?
-    prompts: list[str]
-    labels: list[list[int]]
-
-
 class RepeReadingControl(Algorithm):
-    direction_method: DirectionMethod
     layer_type: LayerType
     multi_answer_method: MultiAnswerMethod
     reading_template: str
     layers: list[int] | None
-    n_difference: int
-    batch_size: int
-    max_length: int
     direction_multiplier: float
     layer_config: ModelLayerConfig | None
-    direction_finder_kwargs: dict[str, Any]
+    patch_generation_tokens_only: bool
     seed: int
 
     def __init__(
         self,
         reading_template: str = DEFAULT_READING_TEMPLATE,
-        direction_method: DirectionMethod = "pca",
         layer_type: LayerType = "decoder_block",
         multi_answer_method: MultiAnswerMethod = "first_incorrect",
-        n_difference: int = 1,  # TODO: what does this do?
-        batch_size: int = 8,
-        max_length: int = 2048,
         seed: int = 0,
         layers: Optional[list[int]] = None,
         layer_config: Optional[ModelLayerConfig] = None,
         direction_multiplier: float = 1.0,
-        # TODO: remove this when refactoring repe reading pipeline
-        direction_finder_kwargs: Optional[dict[str, Any]] = None,
+        patch_generation_tokens_only: bool = True,
     ):
-        self.direction_method = direction_method
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
         self.seed = seed
+        self.patch_generation_tokens_only = patch_generation_tokens_only
         _validate_reading_template(reading_template)
         self.reading_template = reading_template
         self.layers = layers
         self.layer_config = layer_config
-        self.n_difference = n_difference
         self.direction_multiplier = direction_multiplier
-        self.batch_size = batch_size
-        self.max_length = max_length
-        self.direction_finder_kwargs = direction_finder_kwargs or {}
 
-    def _build_repe_training_data_and_labels(
+    def _build_steering_vector_training_data(
         self, dataset: Dataset, formatter: Formatter
-    ) -> RepeTrainingData:
-        prompts: list[str] = []
-        grouped_labels: list[list[int]] = []
-        for i, example in enumerate(dataset):
-            example_prompts, example_labels = self._convert_example_to_repe_format(
-                example,
-                formatter,
-                # repe doesn't reflect differences across the origin, so we need to ensure
-                # an even balance of reversed and non-reversed examples
-                reverse_order=i % 2 == 0,
+    ) -> list[SteeringVectorTrainingSample]:
+        paired_prompts: list[SteeringVectorTrainingSample] = []
+        for example in dataset:
+            example_prompts = self._convert_example_to_training_samples(
+                example, formatter
             )
-            prompts.extend(example_prompts)
-            grouped_labels.append(example_labels)
-        return RepeTrainingData(prompts=prompts, labels=grouped_labels)
+            paired_prompts.extend(example_prompts)
+        return paired_prompts
 
     def _get_layer_matcher_for_model(self, model: Model) -> LayerMatcher:
         layer_config = guess_and_enhance_layer_config(model, self.layer_config)
@@ -110,66 +86,58 @@ class RepeReadingControl(Algorithm):
             )
         return layer_config[self.layer_type]
 
-    def _get_layers_with_default(self, model: Model) -> list[int]:
-        """Helper to fill in the default layers for the model if none are provided"""
-        if self.layers is not None:
-            return self.layers
-        layer_matcher = self._get_layer_matcher_for_model(model)
-        num_layers = get_num_matching_layers(model, layer_matcher)
-        return list(range(-1, -num_layers, -1))
-
-    def _get_directions(
+    def _get_steering_vector(
         self, pipeline: Pipeline, dataset: Dataset
-    ) -> dict[int, torch.Tensor]:
-        layers = self._get_layers_with_default(pipeline.model)
-        repe_training_data = self._build_repe_training_data_and_labels(
+    ) -> SteeringVector:
+        repe_training_data = self._build_steering_vector_training_data(
             dataset, pipeline.formatter
         )
-        repe_reading_pipeline = RepReadingPipeline(
-            model=pipeline.model,
-            tokenizer=pipeline.tokenizer,
-            device=pipeline.model.device,
+        return train_steering_vector(
+            pipeline.model,
+            pipeline.tokenizer,
+            repe_training_data,
+            layers=self.layers,
+            layer_type=self.layer_type,
+            layer_config=self.layer_config,
         )
-
-        rep_reader = cast(
-            Any,
-            repe_reading_pipeline.get_directions(
-                train_inputs=repe_training_data.prompts,
-                train_labels=repe_training_data.labels,
-                hidden_layers=layers,
-                n_difference=self.n_difference,
-                batch_size=self.batch_size,
-                direction_method=self.direction_method,
-                direction_finder_kwargs=self.direction_finder_kwargs,
-                # this must be for the tokenizer
-                max_length=self.max_length,
-                padding="longest",
-            ),
-        )
-        directions = {}
-        for layer, direction in rep_reader.directions.items():
-            sign = rep_reader.direction_signs[layer].item()
-            directions[layer] = (
-                self.direction_multiplier * sign * torch.FloatTensor(direction)
-            )
-        return directions
 
     @override
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
-        directions = self._get_directions(pipeline, dataset)
-        model_patcher = ModelPatcher(pipeline.model, self.layer_config)
-        # this will modify the model in place
-        model_patcher.patch_activations(directions, layer_type=self.layer_type)
+        steering_vector = self._get_steering_vector(pipeline, dataset)
+
+        # need to use a hook so we can inspect the current thing being generated to know
+        # which tokens to patch
+        @contextmanager
+        def steering_hook(context: PipelineContext):
+            handle = None
+            try:
+                min_token_index = 0
+                if self.patch_generation_tokens_only:
+                    min_token_index = _find_generation_start_token_index(
+                        pipeline.tokenizer,
+                        context.base_prompt,
+                        context.full_prompt,
+                    )
+                handle = steering_vector.patch_activations(
+                    model=pipeline.model,
+                    layer_config=self.layer_config,
+                    multiplier=self.direction_multiplier,
+                    min_token_index=min_token_index,
+                )
+                yield
+            finally:
+                if handle is not None:
+                    handle.remove()
+
+        pipeline.hooks.append(steering_hook)
         return pipeline
 
-    def _convert_example_to_repe_format(
-        self, example: Example, formatter: Formatter, reverse_order: bool
-    ) -> tuple[list[str], list[int]]:
-        """Converts an example to the format expected by repe"""
+    def _convert_example_to_training_samples(
+        self, example: Example, formatter: Formatter
+    ) -> list[SteeringVectorTrainingSample]:
+        """Converts an example to the format expected by steering-vectors"""
         if example.incorrect_outputs is None:
-            raise ValueError(
-                "RepEngReadingControl requires incorrect_outputs to be set"
-            )
+            raise ValueError("RepeReadingControl requires incorrect_outputs to be set")
         incorrect_examples = [
             replace(example, output=output) for output in example.incorrect_outputs
         ]
@@ -184,20 +152,36 @@ class RepeReadingControl(Algorithm):
         else:
             raise ValueError(f"Unknown multi_answer_method {self.multi_answer_method}")
         assert len(incorrect_examples) == len(correct_examples)
-        # repe (undocumentedly) expects interleaved positive and negative examples
-        if reverse_order:
-            labels = [0, 1] * len(correct_examples)
-            paired_examples = zip(incorrect_examples, correct_examples)
-        else:
-            labels = [1, 0] * len(correct_examples)
-            paired_examples = zip(correct_examples, incorrect_examples)
-        # interleaved pos, neg, pos neg, ...
-        examples = [ex for pair in paired_examples for ex in pair]
-        completions = [formatter.apply(ex) for ex in examples]
-        prompts = [
-            self.reading_template.format(
-                question=completion.prompt, answer=completion.response
-            )
-            for completion in completions
+        paired_completions = [
+            (formatter.apply(pos), formatter.apply(neg))
+            for pos, neg in zip(correct_examples, incorrect_examples)
         ]
-        return prompts, labels
+        return [
+            SteeringVectorTrainingSample(
+                positive_prompt=self.reading_template.format(
+                    question=pos.prompt, answer=pos.response
+                ),
+                negative_prompt=self.reading_template.format(
+                    question=neg.prompt, answer=neg.response
+                ),
+            )
+            for pos, neg in paired_completions
+        ]
+
+
+def _find_generation_start_token_index(
+    tokenizer: Tokenizer, base_prompt: str, full_prompt: str
+) -> int:
+    """Finds the index of the first generation token in the prompt"""
+    base_toks = tokenizer.encode(base_prompt)
+    full_toks = tokenizer.encode(full_prompt)
+    prompt_len = len(base_toks)
+    # try to account for cases where the final prompt token is different
+    # from the first generation token, ususally weirdness with spaces / special chars
+    for i, (base_tok, full_tok) in enumerate(zip(base_toks, full_toks)):
+        if base_tok != full_tok:
+            prompt_len = i
+            break
+    # The output of the last prompt token is the first generation token
+    # so need to subtract 1 here
+    return prompt_len - 1

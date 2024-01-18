@@ -3,7 +3,7 @@ from torch import nn
 from transformers import GPTNeoXForCausalLM, LlamaForCausalLM, GPT2LMHeadModel
 from repepo.core.types import Model
 
-from repepo.utils.layer_matching import (
+from steering_vectors.layer_matching import (
     Gpt2LayerConfig,
     GptNeoxLayerConfig,
     LlamaLayerConfig,

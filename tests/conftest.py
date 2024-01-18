@@ -23,7 +23,6 @@ def device() -> str:
 def model() -> GPTNeoXForCausalLM:
     model = GPTNeoXForCausalLM.from_pretrained(
         "EleutherAI/pythia-70m",
-        torch_dtype=torch.float64,
         token=True,
     )
     assert type(model) == GPTNeoXForCausalLM
