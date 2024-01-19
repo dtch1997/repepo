@@ -73,3 +73,8 @@ def empty_llama_model() -> LlamaForCausalLM:
         intermediate_size=2752,
     )
     return LlamaForCausalLM(config)
+
+
+@pytest.fixture
+def llama_chat_tokenizer() -> Tokenizer:
+    return AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
