@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Literal, Optional
 from typing_extensions import override
 import random
@@ -36,6 +36,45 @@ def _validate_reading_template(reading_template: str):
         )
 
 
+@dataclass
+class SteeringHook:
+    """
+    Pipeline hook that applies a steering vector to the model.
+    All relevant state for the hook is stored in this class.
+    If the params included in this class are changed, it will
+    affect future generation and logprob calls using this hook.
+    """
+
+    steering_vector: SteeringVector
+    direction_multiplier: float
+    patch_generation_tokens_only: bool
+    layer_config: ModelLayerConfig | None
+
+    # PipelineContext is created in both `pipeline.generate` or `pipeline.calculate_output_logprobs`,
+    # It also contains info about the current prompt which is used to determine which tokens to patch.
+    @contextmanager
+    def __call__(self, context: PipelineContext):
+        handle = None
+        try:
+            min_token_index = 0
+            if self.patch_generation_tokens_only:
+                min_token_index = _find_generation_start_token_index(
+                    context.pipeline.tokenizer,
+                    context.base_prompt,
+                    context.full_prompt,
+                )
+            handle = self.steering_vector.patch_activations(
+                model=context.pipeline.model,
+                layer_config=self.layer_config,
+                multiplier=self.direction_multiplier,
+                min_token_index=min_token_index,
+            )
+            yield
+        finally:
+            if handle is not None:
+                handle.remove()
+
+
 class RepeReadingControl(Algorithm):
     layer_type: LayerType
     multi_answer_method: MultiAnswerMethod
@@ -44,6 +83,7 @@ class RepeReadingControl(Algorithm):
     direction_multiplier: float
     layer_config: ModelLayerConfig | None
     patch_generation_tokens_only: bool
+    read_token_index: int
     seed: int
 
     def __init__(
@@ -59,6 +99,10 @@ class RepeReadingControl(Algorithm):
         skip_reading: bool = False,
         override_vector: Optional[SteeringVector] = None,
         skip_control: bool = False,
+        # For (A/B) datasets, the second last token corresponds to 'A' or 'B'
+        # which is what the CAA paper extracts.
+        # Reference: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/generate_vectors.py#L102C13-L102C67
+        read_token_index: int = -2,
     ):
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
@@ -67,6 +111,7 @@ class RepeReadingControl(Algorithm):
         _validate_reading_template(reading_template)
         self.reading_template = reading_template
         self.layers = layers
+        self.read_token_index = read_token_index
         self.layer_config = layer_config
         self.direction_multiplier = direction_multiplier
 
@@ -111,6 +156,7 @@ class RepeReadingControl(Algorithm):
             layer_type=self.layer_type,
             layer_config=self.layer_config,
             move_to_cpu=True,
+            read_token_index=self.read_token_index,
         )
 
     @override
@@ -134,38 +180,14 @@ class RepeReadingControl(Algorithm):
         # whenever we are in a `PipelineContext`'s scope.
         # After exiting the context, the hook is deleted.
 
-        # The PipelineContext is created in both `pipeline.generate` or `pipeline.calculate_output_logprobs`
-
         # need to use a hook so we can inspect the current thing being generated to know
         # which tokens to patch
-        @contextmanager
-        def steering_hook(context: PipelineContext):
-            handle = None
-            try:
-                min_token_index = 0
-                if self.patch_generation_tokens_only:
-                    min_token_index = _find_generation_start_token_index(
-                        pipeline.tokenizer,
-                        context.base_prompt,
-                        context.full_prompt,
-                    )
-                handle = steering_vector.patch_activations(
-                    model=pipeline.model,
-                    layer_config=self.layer_config,
-                    # NOTE: if the direction multiplier is changed,
-                    # subsequent generations will use the new value
-                    # because this is a reference to the outer scope.
-                    # This is probably counterintuitive
-                    # NOTE: Same goes for layer_config above,
-                    # but this is less critical because layer config is likely static
-                    # TODO: change at some point.
-                    multiplier=self.direction_multiplier,
-                    min_token_index=min_token_index,
-                )
-                yield
-            finally:
-                if handle is not None:
-                    handle.remove()
+        steering_hook = SteeringHook(
+            steering_vector=steering_vector,
+            direction_multiplier=self.direction_multiplier,
+            patch_generation_tokens_only=self.patch_generation_tokens_only,
+            layer_config=self.layer_config,
+        )
 
         if not self.skip_control:
             pipeline.hooks.append(steering_hook)
