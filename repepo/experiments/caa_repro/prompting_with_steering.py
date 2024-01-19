@@ -1,7 +1,6 @@
 import torch
 import json
 import pyrallis
-import numpy as np
 
 from tqdm import tqdm
 from dataclasses import dataclass
@@ -34,23 +33,11 @@ analysis_path = get_experiment_path() / "analysis"
 def evaluate_average_key_prob(predictions: List[EvalPrediction]) -> float:
     """Evaluates the average probability of the correct answer"""
 
-    def get_a_b_prob(prediction: EvalPrediction):
-        assert prediction.correct_output_probs is not None
-        # TODO: Need to calculate normalized probabilities for A/B token
-        # See here: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/utils/helpers.py#L143C1-L148C26
-
-        logprob = prediction.correct_output_probs.token_probs[-1].logprob
-        return np.exp(logprob)
-
     sum = 0
     count = 0
     for prediction in predictions:
-        if prediction.correct_output_probs is not None:
-            sum += get_a_b_prob(prediction)
-            count += 1
-        else:
-            raise RuntimeError("Predictions must have correct_output_probs")
-
+        sum += prediction.get_normalized_correct_probs()
+        count += 1
     return sum / count
 
 

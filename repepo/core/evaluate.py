@@ -1,5 +1,5 @@
 # pyright: strict
-
+import numpy as np
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -15,6 +15,20 @@ class EvalPrediction:
     generated_output: Optional[str] = None
     correct_output_probs: Optional[TextProbs] = None
     incorrect_outputs_probs: Optional[list[TextProbs]] = None
+
+    def get_normalized_correct_probs(self):
+        """Returns the normalized probability of the correct output"""
+        if self.correct_output_probs is None:
+            raise ValueError("correct_output_probs is required")
+        if self.incorrect_outputs_probs is None:
+            raise ValueError("incorrect_outputs_probs is required")
+
+        total_prob = np.exp(self.correct_output_probs.sum_logprobs) + sum(
+            [np.exp(x.sum_logprobs) for x in self.incorrect_outputs_probs]
+        )
+        correct_prob = np.exp(self.correct_output_probs.sum_logprobs)
+
+        return correct_prob / total_prob
 
 
 @dataclass
