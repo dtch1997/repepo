@@ -1,7 +1,9 @@
-from repepo.core.format import InputOutputFormatter
-from repepo.core.format import InstructionFormatter
-from repepo.core.types import Completion
-from repepo.core.types import Example
+from repepo.core.format import (
+    InputOutputFormatter,
+    InstructionFormatter,
+    LlamaChatFormatter,
+)
+from repepo.core.types import Completion, Example
 
 
 def test_input_output_formatter():
@@ -21,5 +23,14 @@ def test_instruction_formatter():
         "Write a response that appropriately completes the request.\n\n"
         "### Instruction:\nadd numbers\n\n### Input:\n1, 2\n\n### Response:"
     )
+    assert completion.prompt == expected_prompt
+    assert completion.response == "3"
+
+
+def test_llama_chat_formatter():
+    example = Example(instruction="add numbers", input="1, 2", output="3")
+    formatter = LlamaChatFormatter()
+    completion = formatter.apply(example)
+    expected_prompt = "[INST] add numbers\n1, 2 [/INST]"
     assert completion.prompt == expected_prompt
     assert completion.response == "3"

@@ -1,4 +1,5 @@
 import abc
+from dataclasses import dataclass
 from typing import List
 from typing_extensions import override
 
@@ -26,6 +27,31 @@ class IdentityPrompter(Prompter):
     @override
     def apply(self, completion):
         return completion
+
+
+@dataclass
+class LlamaChatPrompter(Prompter):
+    """
+    Prepend system message before the first prompt. This is based on the SycophancySteering
+    prompt format, except the system message is not inside of the [INST] tags. Hopefully
+    this is OK?
+
+    TODO: Put the sys message inside of the [INST] tags, or at least make it possible to do so.
+          This will require some rearchitecting
+
+    Based on: https://github.com/nrimsky/SycophancySteering/blob/main/utils/tokenize_llama.py#L30
+    """
+
+    system_prompt: str = "You are a helpful, honest and concise assistant."
+
+    B_SYS = "<<SYS>>\n"
+    E_SYS = "\n<</SYS>>\n\n"
+
+    @override
+    def apply(self, completion: Completion) -> Completion:
+        prompt = f"{self.B_SYS}{self.system_prompt}{self.E_SYS}{completion.prompt}"
+        response = completion.response
+        return Completion(prompt=prompt, response=response)
 
 
 class FewShotPrompter(Prompter):

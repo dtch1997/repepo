@@ -53,6 +53,28 @@ class IdentityFormatter(Formatter):
         )
 
 
+class LlamaChatFormatter(Formatter):
+    """
+    Add [INST] and [/INST] tags to the instruction and input.
+
+    Based on: https://github.com/nrimsky/SycophancySteering/blob/main/utils/tokenize_llama.py#L30
+    """
+
+    B_INST = "[INST]"
+    E_INST = "[/INST]"
+
+    @override
+    def apply(self, example: Example):
+        dialog_content_parts = []
+        if example.instruction:
+            dialog_content_parts.append(example.instruction.strip())
+        dialog_content_parts.append(example.input.strip())
+        dialog_content = "\n".join(dialog_content_parts)
+        prompt = f"{self.B_INST} {dialog_content} {self.E_INST}"
+        response = example.output.strip()
+        return Completion(prompt=prompt, response=response)
+
+
 class InstructionFormatter(Formatter):
     """Instruction formatter used for fine-tuning Alpaca."""
 
