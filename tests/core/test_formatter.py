@@ -31,6 +31,6 @@ def test_llama_chat_formatter():
     example = Example(instruction="add numbers", input="1, 2", output="3")
     formatter = LlamaChatFormatter()
     completion = formatter.apply(example)
-    expected_prompt = "[INST] add numbers\n1, 2 [/INST]"
+    expected_prompt = "[INST] add numbers\n1, 2 [/INST] "
     assert completion.prompt == expected_prompt
     assert completion.response == "3"
