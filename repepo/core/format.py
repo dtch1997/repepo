@@ -54,7 +54,7 @@ class LlamaChatFormatter(Formatter):
             dialog_content_parts.append(example.instruction.strip())
         dialog_content_parts.append(example.input.strip())
         dialog_content = "\n".join(dialog_content_parts)
-        prompt = f"{self.B_INST} {dialog_content} {self.E_INST}"
+        prompt = f"{self.B_INST} {dialog_content} {self.E_INST} "
         response = example.output.strip()
         return Completion(prompt=prompt, response=response)
 

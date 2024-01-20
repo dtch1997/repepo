@@ -1,12 +1,11 @@
 import torch
 from repepo.algorithms.repe import (
     RepeReadingControl,
-    SteeringHook,
     _find_generation_start_token_index,
 )
 from repepo.core.format import InputOutputFormatter, LlamaChatFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
-from repepo.core.pipeline import Pipeline, PipelineContext
+from repepo.core.pipeline import Pipeline
 from repepo.core.prompt import LlamaChatPrompter
 from syrupy import SnapshotAssertion
 from transformers import GPTNeoXForCausalLM, LlamaForCausalLM
