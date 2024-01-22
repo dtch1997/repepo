@@ -1,9 +1,8 @@
 from transformers import GPTNeoXForCausalLM
 from repepo.algorithms.icl import InContextLearning
 from repepo.core.pipeline import Pipeline
-from repepo.core.prompt import FewShotPrompter
 
-from repepo.core.types import Completion, Example, Tokenizer
+from repepo.core.types import Example, Tokenizer
 
 
 def test_InContextLearning_run(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) -> None:
@@ -16,13 +15,7 @@ def test_InContextLearning_run(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) 
     ]
 
     algorithm.run(pipeline, dataset=dataset)
-
-    assert isinstance(pipeline.prompter, FewShotPrompter)
-    assert pipeline.prompter.few_shot_completions == [
-        Completion(prompt="Input:  Paris is in \nOutput: ", response="France"),
-        Completion(prompt="Input:  London is in \nOutput: ", response="England"),
-        Completion(prompt="Input:  Berlin is in \nOutput: ", response="Germany"),
-    ]
+    assert pipeline.conversation_wrapper.conversation_history == dataset
 
 
 def test_InContextLearning_run_with_max_icl_examples(
@@ -37,9 +30,4 @@ def test_InContextLearning_run_with_max_icl_examples(
     ]
 
     algorithm.run(pipeline, dataset=dataset)
-
-    assert isinstance(pipeline.prompter, FewShotPrompter)
-    assert pipeline.prompter.few_shot_completions == [
-        Completion(prompt="Input:  Paris is in \nOutput: ", response="France"),
-        Completion(prompt="Input:  London is in \nOutput: ", response="England"),
-    ]
+    assert pipeline.conversation_wrapper.conversation_history == dataset[:2]

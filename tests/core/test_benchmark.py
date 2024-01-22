@@ -3,6 +3,7 @@ from transformers import GenerationConfig
 
 from repepo.algorithms.icl import InContextLearning
 from repepo.core.benchmark import Benchmark, train_and_evaluate_benchmark
+from repepo.core.conversation_wrapper import ConversationWrapper
 from repepo.core.evaluate import AccuracyEvaluator, MultipleChoiceAccuracyEvaluator
 from repepo.core.types import Dataset, Example, Tokenizer, Model
 
@@ -35,6 +36,7 @@ def test_evaluate_benchmark(larger_model: Model, larger_tokenizer: Tokenizer) ->
         generation_config=GenerationConfig(
             max_length=100, pad_token_id=larger_tokenizer.eos_token_id
         ),
+        conversation_wrapper=ConversationWrapper(msg_separator="\n\n"),
     )
 
     assert len(results.predictions) == 3

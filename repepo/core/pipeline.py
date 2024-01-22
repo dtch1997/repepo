@@ -5,8 +5,8 @@ from typing import Any, Callable, Literal, Optional
 from transformers.generation import GenerationConfig
 import torch
 
-from .types import Example, Model, Tokenizer
-from .prompt import Prompter, IdentityPrompter
+from .types import Completion, Example, Model, Tokenizer
+from .conversation_wrapper import ConversationWrapper
 from .format import Formatter, InputOutputFormatter
 
 
@@ -48,15 +48,18 @@ class Pipeline:
 
     model: Model
     tokenizer: Tokenizer
-    prompter: Prompter = field(default_factory=IdentityPrompter)
     formatter: Formatter = field(default_factory=InputOutputFormatter)
+    conversation_wrapper: ConversationWrapper = field(
+        default_factory=ConversationWrapper
+    )
     hooks: list[PipelineHook] = field(default_factory=list)
 
     def build_generation_prompt(self, example: Example) -> str:
         """Build a prompt for generation"""
-        completion = self.formatter.apply(example)
-        completion = self.prompter.apply(completion)
-        return completion.prompt
+        return self.build_completion(example).prompt.rstrip()
+
+    def build_completion(self, example: Example) -> Completion:
+        return self.conversation_wrapper.wrap(self.formatter, example)
 
     def generate(
         self,
@@ -90,8 +93,9 @@ class Pipeline:
 
     def calculate_output_logprobs(self, example: Example) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
-        base_prompt = self.build_generation_prompt(example)
-        full_prompt = base_prompt + example.output
+        completion = self.build_completion(example)
+        base_prompt = completion.prompt
+        full_prompt = _build_full_prompt(completion)
         inputs: Any = self.tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self.model.device)
         context = PipelineContext(
@@ -122,3 +126,8 @@ class Pipeline:
                     )
             return TextProbs(text=full_prompt, token_probs=text_probs)
         raise RuntimeError("Should never get here")
+
+
+def _build_full_prompt(completion: Completion) -> str:
+    """Build a prompt for generation"""
+    return completion.prompt.rstrip() + " " + completion.response.lstrip()

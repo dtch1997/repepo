@@ -6,6 +6,7 @@ from typing import Optional, Sequence
 from transformers.generation import GenerationConfig
 
 from repepo.algorithms.base import Algorithm
+from repepo.core.conversation_wrapper import ConversationWrapper
 from repepo.core.evaluate import EvalPrediction, EvalResult, Evaluator
 from repepo.core.format import Formatter, InputOutputFormatter
 from repepo.core.pipeline import Pipeline
@@ -27,9 +28,15 @@ def train_and_evaluate_benchmark(
     algorithms: Sequence[Algorithm],
     benchmark: Benchmark,
     formatter: Optional[Formatter] = None,
+    conversation_wrapper: Optional[ConversationWrapper] = None,
     generation_config: Optional[GenerationConfig] = None,
 ) -> EvalResult:
-    pipeline = Pipeline(model, tokenizer, formatter=formatter or InputOutputFormatter())
+    pipeline = Pipeline(
+        model,
+        tokenizer,
+        formatter=formatter or InputOutputFormatter(),
+        conversation_wrapper=conversation_wrapper or ConversationWrapper(),
+    )
 
     # train pipeline
     for algorithm in algorithms:
