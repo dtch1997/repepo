@@ -1,12 +1,15 @@
+import torch
 from repepo.algorithms.repe import (
     RepeReadingControl,
     _find_generation_start_token_index,
 )
-from repepo.core.format import InputOutputFormatter
+from repepo.core.format import InputOutputFormatter, LlamaChatFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
 from repepo.core.pipeline import Pipeline
+from repepo.core.prompt import LlamaChatPrompter
 from syrupy import SnapshotAssertion
-from transformers import GPTNeoXForCausalLM
+from transformers import GPTNeoXForCausalLM, LlamaForCausalLM
+from tests._original_caa.llama_wrapper import LlamaWrapper
 
 
 def test_RepeReadingControl_build_steering_vector_training_data_picks_one_neg_by_default(
@@ -117,6 +120,69 @@ def test_RepeReadingControl_get_steering_vector(
         assert act.shape == (512,)
 
 
+def test_RepeReadingControl_get_steering_vector_matches_caa(
+    empty_llama_model: LlamaForCausalLM, llama_chat_tokenizer: Tokenizer
+) -> None:
+    model = empty_llama_model
+    tokenizer = llama_chat_tokenizer
+    pipeline = Pipeline(
+        model,
+        tokenizer,
+        prompter=LlamaChatPrompter(),
+        formatter=LlamaChatFormatter(),
+    )
+    dataset: Dataset = [
+        Example(
+            instruction="",
+            input="Paris is in",
+            output="France",
+            incorrect_outputs=["Germany", "Italy"],
+        ),
+    ]
+    layers = [0, 1, 2]
+    algorithm = RepeReadingControl(multi_answer_method="repeat_correct", layers=layers)
+    steering_vector = algorithm._get_steering_vector(pipeline, dataset)
+
+    steering_training_data = algorithm._build_steering_vector_training_data(
+        dataset, pipeline.formatter
+    )
+    # hackily translated from generate_vectors.py script
+    tokenized_data = [
+        (tokenizer.encode(pos), tokenizer.encode(neg))
+        for pos, neg in steering_training_data
+    ]
+    pos_activations = dict([(layer, []) for layer in layers])
+    neg_activations = dict([(layer, []) for layer in layers])
+    wrapped_model = LlamaWrapper(model, tokenizer)
+
+    for p_tokens, n_tokens in tokenized_data:
+        p_tokens = torch.tensor(p_tokens).unsqueeze(0).to(model.device)
+        n_tokens = torch.tensor(n_tokens).unsqueeze(0).to(model.device)
+        wrapped_model.reset_all()
+        wrapped_model.get_logits(p_tokens)
+        for layer in layers:
+            p_activations = wrapped_model.get_last_activations(layer)
+            p_activations = p_activations[0, -2, :].detach().cpu()
+            pos_activations[layer].append(p_activations)
+        wrapped_model.reset_all()
+        wrapped_model.get_logits(n_tokens)
+        for layer in layers:
+            n_activations = wrapped_model.get_last_activations(layer)
+            n_activations = n_activations[0, -2, :].detach().cpu()
+            neg_activations[layer].append(n_activations)
+
+    caa_vecs_by_layer = {}
+    for layer in layers:
+        all_pos_layer = torch.stack(pos_activations[layer])
+        all_neg_layer = torch.stack(neg_activations[layer])
+        caa_vecs_by_layer[layer] = (all_pos_layer - all_neg_layer).mean(dim=0)
+
+    for layer in layers:
+        assert torch.allclose(
+            steering_vector.layer_activations[layer], caa_vecs_by_layer[layer]
+        )
+
+
 def test_RepeReadingControl_run(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
@@ -149,6 +215,72 @@ def test_RepeReadingControl_run(
 
     # TODO: find a better assertion that ensures this is actually doing what it should
     assert original_outputs != new_outputs
+
+
+# TODO: uncomment this test when https://github.com/nrimsky/SycophancySteering/issues/2 is fixed
+# def test_RepeReadingControl_run_steering_matches_caa_llama_wrapper(
+#     empty_llama_model: LlamaForCausalLM, llama_chat_tokenizer: Tokenizer
+# ) -> None:
+#     model = empty_llama_model
+#     tokenizer = llama_chat_tokenizer
+#     pipeline = Pipeline(
+#         model,
+#         tokenizer,
+#         prompter=LlamaChatPrompter(),
+#         formatter=LlamaChatFormatter(),
+#     )
+#     test_example = Example(
+#         instruction="",
+#         input="Paris is in",
+#         output="France",
+#         incorrect_outputs=["Germany", "Italy"],
+#     )
+#     dataset: Dataset = [
+#         test_example,
+#         Example(
+#             instruction="",
+#             input="1 + 1 =",
+#             output="2",
+#             incorrect_outputs=["11", "34", "3.14"],
+#         ),
+#     ]
+
+#     layers = [0, 1, 2]
+#     multiplier = 7
+#     algorithm = RepeReadingControl(
+#         patch_generation_tokens_only=True,
+#         direction_multiplier=multiplier,
+#         layers=layers,
+#     )
+#     algorithm.run(pipeline, dataset)
+#     hook = pipeline.hooks[0]
+
+#     # hackily recreating what the pipeline does during logprobs
+#     base_prompt = pipeline.build_generation_prompt(test_example)
+#     full_prompt = base_prompt + test_example.output
+#     inputs = tokenizer(full_prompt, return_tensors="pt").to(model.device)
+#     ctx = PipelineContext(
+#         method="logprobs",
+#         base_prompt=base_prompt,
+#         full_prompt=full_prompt,
+#         inputs=inputs,
+#         pipeline=pipeline,
+#     )
+#     orig_logits = model(**inputs).logits
+#     with hook(ctx):
+#         our_logits = model(**inputs).logits
+
+#     assert isinstance(hook, SteeringHook)  # keep pyright happy
+#     wrapped_model = LlamaWrapper(model, tokenizer, add_only_after_end_str=True)
+#     wrapped_model.reset_all()
+#     for layer in layers:
+#         wrapped_model.set_add_activations(
+#             layer, multiplier * hook.steering_vector.layer_activations[layer]
+#         )
+#     caa_logits = wrapped_model.get_logits(inputs["input_ids"])
+#     # only the final answer tokens should be different
+#     assert torch.allclose(our_logits[0, :-2], orig_logits[0, :-2])
+#     assert torch.allclose(our_logits, caa_logits)
 
 
 def test_RepeReadingControl_run_logprobs_with_patch_generation_tokens_only(
