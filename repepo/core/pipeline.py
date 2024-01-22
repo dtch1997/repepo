@@ -105,11 +105,16 @@ class Pipeline:
             for hook in self.hooks:
                 stack.enter_context(hook(context))
             outputs = self.model(**inputs, output_hidden_states=False, return_dict=True)
-            probs = torch.log_softmax(outputs.logits, dim=-1).detach().cpu()
+            probs = torch.log_softmax(outputs.logits, dim=-1)
             # collect the probability of the generated token -- probability at index 0 corresponds to the token at index 1
             probs = probs[:, :-1, :]
-            target_ids = inputs.input_ids[:, 1:].cpu()
-            gen_probs = torch.gather(probs, 2, target_ids[:, :, None]).squeeze(-1)[0]
+            target_ids = inputs.input_ids[:, 1:]
+            gen_probs = (
+                torch.gather(probs, 2, target_ids[:, :, None])
+                .squeeze(-1)[0]
+                .detach()
+                .cpu()
+            )
             text_probs: list[TokenProb] = []
             for token, p in zip(target_ids[0], gen_probs):
                 if token not in self.tokenizer.all_special_ids:

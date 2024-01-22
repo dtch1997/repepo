@@ -1,7 +1,6 @@
-# pyright: strict, reportMissingTypeStubs=false
-
 from dataclasses import dataclass, replace
 from typing import Optional, Sequence
+import torch
 
 from transformers.generation import GenerationConfig
 
@@ -21,6 +20,7 @@ class Benchmark:
     evaluators: list[Evaluator]
 
 
+@torch.no_grad()
 def train_and_evaluate_benchmark(
     model: Model,
     tokenizer: Tokenizer,

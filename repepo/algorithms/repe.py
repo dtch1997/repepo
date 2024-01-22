@@ -3,6 +3,8 @@ from dataclasses import dataclass, replace
 from typing import Literal, Optional
 from typing_extensions import override
 import random
+
+import torch
 from repepo.core.pipeline import PipelineContext
 
 from steering_vectors import (
@@ -142,6 +144,7 @@ class RepeReadingControl(Algorithm):
             )
         return layer_config[self.layer_type]
 
+    @torch.no_grad()
     def _get_steering_vector(
         self, pipeline: Pipeline, dataset: Dataset
     ) -> SteeringVector:

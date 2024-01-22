@@ -19,6 +19,7 @@ from pyrallis import field
 save_vectors_path = get_save_vectors_path()
 
 
+@torch.no_grad()
 def generate_and_save_vectors(
     dataset_spec: DatasetSpec,
     layers: List[int],

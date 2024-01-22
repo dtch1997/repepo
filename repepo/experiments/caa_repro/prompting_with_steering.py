@@ -48,7 +48,7 @@ def evaluate_pipeline(
 ) -> List[EvalPrediction]:
     # evaluate
     predictions: list[EvalPrediction] = []
-    requires_generation = True  # any([e.requires_generation for e in evaluators])
+    requires_generation = False  # any([e.requires_generation for e in evaluators])
     requires_probs = True  # any([e.requires_probs for e in evaluators])
 
     for example in example_iterator:
@@ -79,6 +79,7 @@ def evaluate_pipeline(
     return predictions
 
 
+@torch.no_grad()
 def test_steering(
     layers: List[int], multipliers: List[int], settings: SteeringSettings
 ):
