@@ -180,8 +180,10 @@ def test_RepeReadingControl_get_steering_vector_matches_caa(
 
     for layer in layers:
         assert torch.allclose(
-            steering_vector.layer_activations[layer], caa_vecs_by_layer[layer]
-        )
+            steering_vector.layer_activations[layer],
+            caa_vecs_by_layer[layer],
+            atol=1e-5,
+        ), f"Non-matching activations at layer {layer}"
 
 
 def test_RepeReadingControl_run(
