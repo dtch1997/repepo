@@ -110,3 +110,19 @@ class MultipleChoiceAccuracyEvaluator(Evaluator):
     def __call__(self, predictions: Sequence[EvalPrediction]) -> dict[str, float]:
         pred_results = [self.score_prediction(pred) for pred in predictions]
         return {"accuracy": mean(pred_results)}
+
+
+class NormalizedCorrectProbabilityEvaluator(Evaluator):
+    """
+    Evaluator that scores multiple choice examples by computing the average
+    normalized probability of the correct output
+    """
+
+    requires_probs = True
+
+    def score_prediction(self, prediction: EvalPrediction) -> float:
+        return prediction.get_normalized_correct_probs()
+
+    def __call__(self, predictions: Sequence[EvalPrediction]) -> dict[str, float]:
+        pred_results = [self.score_prediction(pred) for pred in predictions]
+        return {"accuracy": mean(pred_results)}
