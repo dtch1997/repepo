@@ -8,6 +8,8 @@ from typing import Optional, Sequence
 from repepo.core.pipeline import TextProbs
 from repepo.core.types import Example
 
+import numpy as np
+
 
 @dataclass
 class EvalPrediction:
@@ -15,6 +17,27 @@ class EvalPrediction:
     generated_output: Optional[str] = None
     correct_output_probs: Optional[TextProbs] = None
     incorrect_outputs_probs: Optional[list[TextProbs]] = None
+
+    def get_normalized_correct_probs(self):
+        # keep pyright happy
+        assert self.correct_output_probs is not None
+        assert self.incorrect_outputs_probs is not None
+
+        # calculate normalized logprobs
+        correct_logprob = self.correct_output_probs.sum_logprobs
+        incorrect_logprobs = [
+            incorrect_probs.sum_logprobs
+            for incorrect_probs in self.incorrect_outputs_probs
+        ]
+        # normalize by max to avoid underflow?
+        max_logprob = max([correct_logprob] + incorrect_logprobs)
+        correct_logprob = correct_logprob - max_logprob
+        incorrect_logprobs = [i - max_logprob for i in incorrect_logprobs]
+
+        # Calculate normalized probability
+        correct_prob = np.exp(correct_logprob)
+        incorrect_prob = sum([np.exp(i) for i in incorrect_logprobs])
+        return correct_prob / (correct_prob + incorrect_prob)
 
 
 @dataclass
