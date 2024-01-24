@@ -1,10 +1,9 @@
+from textwrap import dedent
 from transformers import GPTNeoXForCausalLM
 from syrupy import SnapshotAssertion
 
-from repepo.core.format import InputOutputFormatter
-from repepo.core.pipeline import Pipeline
-from repepo.core.prompt import FewShotPrompter
-
+from repepo.core.pipeline import Pipeline, _build_full_prompt
+from repepo.core.format import LlamaChatFormatter
 from repepo.core.types import Example, Tokenizer
 
 
@@ -28,7 +27,7 @@ def test_basic_Pipeline_build_generation_prompt(
     res = pipeline.build_generation_prompt(
         Example(instruction="Respond", input="A B C D", output="E")
     )
-    assert res == ("Input: Respond A B C D \nOutput: ")
+    assert res == "Input: Respond A B C D \nOutput:"
 
 
 def test_icl_Pipeline_build_generation_prompt(
@@ -39,10 +38,8 @@ def test_icl_Pipeline_build_generation_prompt(
         Example(instruction="", input="London is in", output="England"),
         Example(instruction="", input="Berlin is in", output="Germany"),
     ]
-    formatter = InputOutputFormatter()
-    icl_prompter = FewShotPrompter(formatter.apply_list(dataset))
-
-    pipeline = Pipeline(model, tokenizer, prompter=icl_prompter, formatter=formatter)
+    pipeline = Pipeline(model, tokenizer)
+    pipeline.conversation_wrapper.conversation_history = dataset
     res = pipeline.build_generation_prompt(
         Example(instruction="", input="Beijing is in", output="China"),
     )
@@ -65,3 +62,39 @@ def test_basic_pipeline_calculate_output_logprobs(
     )
     for tok in res.token_probs:
         assert tok.logprob < 0
+
+
+def test_pipeline_can_reproduce_caa_train_promts(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    # copied from a real prompt in the CAA training set, abbreviated for brevity
+    target = dedent(
+        """
+        [INST] <<SYS>>
+        You are a helpful, honest and concise assistant.
+        <</SYS>>
+
+        Hello, my name is Linda Johnson ...
+
+        Choices:
+        (A) Agree
+        (B) Disagree [/INST] (B)
+        """
+    )
+    formatter = LlamaChatFormatter()
+    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    example = Example(
+        instruction="",
+        input=dedent(
+            """
+            Hello, my name is Linda Johnson ...
+
+            Choices:
+            (A) Agree
+            (B) Disagree
+            """
+        ),
+        output="(B)",
+    )
+    completion = pipeline.build_completion(example)
+    assert _build_full_prompt(completion).strip() == target.strip()

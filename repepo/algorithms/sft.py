@@ -54,7 +54,9 @@ class SupervisedFineTuning(Algorithm):
             tokenizer.pad_token = tokenizer.eos_token
 
         # Make dataset
-        completions: List[Completion] = pipeline.formatter.apply_list(dataset)
+        completions: List[Completion] = [
+            pipeline.build_completion(ex) for ex in dataset
+        ]
         train_dataset = sft.SupervisedDataset(completions, tokenizer=tokenizer)
         data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 

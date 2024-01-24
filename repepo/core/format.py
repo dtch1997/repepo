@@ -1,4 +1,5 @@
 import abc
+from dataclasses import dataclass
 from typing import List
 from typing_extensions import override
 
@@ -6,17 +7,36 @@ from repepo.core.types import Completion
 from repepo.core.types import Example
 
 
+@dataclass
+class FormatContext:
+    """
+    Context provided to the formatter in the format() method.
+    """
+
+    index: int
+    examples: List[Example]
+
+    @property
+    def num_examples(self) -> int:
+        return len(self.examples)
+
+
 class Formatter(abc.ABC):
     """Describes how to format examples as completions"""
 
     @abc.abstractmethod
-    def apply(self, example: Example, **kwargs) -> Completion:
+    def format(self, example: Example, ctx: FormatContext) -> Completion:
+        """
+        Format an example as a completion. Subclasses should override this method.
+        This method should not be called directly externally, instead use format_conversation().
+        """
         pass
 
-    def apply_list(self, examples: List[Example]) -> List[Completion]:
+    def format_conversation(self, conversation: List[Example]) -> List[Completion]:
         completions: list[Completion] = []
-        for example in examples:
-            completion = self.apply(example)
+        for i, example in enumerate(conversation):
+            ctx = FormatContext(index=i, examples=conversation)
+            completion = self.format(example, ctx)
             completions.append(completion)
         return completions
 
@@ -27,8 +47,7 @@ class InputOutputFormatter(Formatter):
     PROMPT_TEMPLATE = "Input: {instruction} {input} \n" "Output: "
 
     @override
-    def apply(self, example: Example, **kwargs):
-        del kwargs
+    def format(self, example: Example, ctx: FormatContext):
         return Completion(
             prompt=self.PROMPT_TEMPLATE.format(
                 instruction=example.instruction, input=example.input
@@ -40,16 +59,29 @@ class InputOutputFormatter(Formatter):
 class LlamaChatFormatter(Formatter):
     """
     Add [INST] and [/INST] tags to the instruction and input.
+    Also adds a system message before the first prompt.
 
     Based on: https://github.com/nrimsky/SycophancySteering/blob/main/utils/tokenize_llama.py#L30
     """
 
+    system_prompt: str | None
+
     B_INST = "[INST]"
     E_INST = "[/INST]"
+    B_SYS = "<<SYS>>\n"
+    E_SYS = "\n<</SYS>>\n"
+
+    def __init__(
+        self,
+        system_prompt: str | None = "You are a helpful, honest and concise assistant.",
+    ) -> None:
+        self.system_prompt = system_prompt
 
     @override
-    def apply(self, example: Example):
+    def format(self, example: Example, ctx: FormatContext):
         dialog_content_parts = []
+        if ctx.index == 0 and self.system_prompt is not None:
+            dialog_content_parts.append(f"{self.B_SYS}{self.system_prompt}{self.E_SYS}")
         if example.instruction:
             dialog_content_parts.append(example.instruction.strip())
         dialog_content_parts.append(example.input.strip())
@@ -74,8 +106,7 @@ class InstructionFormatter(Formatter):
     )
 
     @override
-    def apply(self, example: Example, **kwargs):
-        del kwargs
+    def format(self, example: Example, ctx: FormatContext):
         if bool(example.input):
             prompt = self.PROMPT_INPUT.format(
                 instruction=example.instruction, input=example.input

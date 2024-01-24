@@ -64,7 +64,10 @@ def make_supervised_data_module(
 ) -> tuple[sft.SupervisedDataset, sft.DataCollatorForSupervisedDataset]:
     """Make dataset and collator for supervised fine-tuning."""
     examples: list[Example] = get_dataset(data_args.dataset_name)
-    completions: list[Completion] = InstructionFormatter().apply_list(examples)
+    fmt = InstructionFormatter()
+    completions: list[Completion] = [
+        fmt.format_conversation([ex])[0] for ex in examples
+    ]
     train_dataset = sft.SupervisedDataset(completions, tokenizer=tokenizer)
     data_collator = sft.DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return train_dataset, data_collator

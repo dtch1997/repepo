@@ -16,7 +16,6 @@ from steering_vectors import (
 )
 
 from repepo.core import Pipeline
-from repepo.core.format import Formatter
 from repepo.core.types import Dataset, Example, Model, Tokenizer
 from repepo.algorithms.base import Algorithm
 
@@ -129,12 +128,12 @@ class RepeReadingControl(Algorithm):
             )
 
     def _build_steering_vector_training_data(
-        self, dataset: Dataset, formatter: Formatter
+        self, dataset: Dataset, pipeline: Pipeline
     ) -> list[SteeringVectorTrainingSample]:
         paired_prompts: list[SteeringVectorTrainingSample] = []
         for example in dataset:
             example_prompts = self._convert_example_to_training_samples(
-                example, formatter
+                example, pipeline
             )
             paired_prompts.extend(example_prompts)
         return paired_prompts
@@ -151,7 +150,7 @@ class RepeReadingControl(Algorithm):
         self, pipeline: Pipeline, dataset: Dataset
     ) -> SteeringVector:
         repe_training_data = self._build_steering_vector_training_data(
-            dataset, pipeline.formatter
+            dataset, pipeline
         )
         return train_steering_vector(
             pipeline.model,
@@ -201,7 +200,7 @@ class RepeReadingControl(Algorithm):
         return pipeline
 
     def _convert_example_to_training_samples(
-        self, example: Example, formatter: Formatter
+        self, example: Example, pipeline: Pipeline
     ) -> list[SteeringVectorTrainingSample]:
         """Converts an example to the format expected by steering-vectors"""
         if example.incorrect_outputs is None:
@@ -221,7 +220,10 @@ class RepeReadingControl(Algorithm):
             raise ValueError(f"Unknown multi_answer_method {self.multi_answer_method}")
         assert len(incorrect_examples) == len(correct_examples)
         paired_completions = [
-            (formatter.apply(pos), formatter.apply(neg))
+            (
+                pipeline.build_completion(pos),
+                pipeline.build_completion(neg),
+            )
             for pos, neg in zip(correct_examples, incorrect_examples)
         ]
         return [
