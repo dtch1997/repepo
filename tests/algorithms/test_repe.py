@@ -7,7 +7,6 @@ from repepo.algorithms.repe import (
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
 from repepo.core.pipeline import Pipeline, PipelineContext
-from repepo.core.prompt import LlamaChatPrompter
 from syrupy import SnapshotAssertion
 from transformers import GPTNeoXForCausalLM, LlamaForCausalLM
 from tests._original_caa.llama_wrapper import LlamaWrapper
@@ -227,7 +226,6 @@ def test_RepeReadingControl_run_steering_matches_caa_llama_wrapper(
     pipeline = Pipeline(
         model,
         tokenizer,
-        prompter=LlamaChatPrompter(),
         formatter=LlamaChatFormatter(),
     )
     test_example = Example(
