@@ -1,11 +1,13 @@
 import torch
 from repepo.algorithms.repe import (
     RepeReadingControl,
+    SteeringHook,
     _find_generation_start_token_index,
 )
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.types import Dataset, Example, Tokenizer
-from repepo.core.pipeline import Pipeline
+from repepo.core.pipeline import Pipeline, PipelineContext
+from repepo.core.prompt import LlamaChatPrompter
 from syrupy import SnapshotAssertion
 from transformers import GPTNeoXForCausalLM, LlamaForCausalLM
 from tests._original_caa.llama_wrapper import LlamaWrapper
@@ -217,70 +219,72 @@ def test_RepeReadingControl_run(
     assert original_outputs != new_outputs
 
 
-# TODO: uncomment this test when https://github.com/nrimsky/SycophancySteering/issues/2 is fixed
-# def test_RepeReadingControl_run_steering_matches_caa_llama_wrapper(
-#     empty_llama_model: LlamaForCausalLM, llama_chat_tokenizer: Tokenizer
-# ) -> None:
-#     model = empty_llama_model
-#     tokenizer = llama_chat_tokenizer
-#     pipeline = Pipeline(
-#         model,
-#         tokenizer,
-#         prompter=LlamaChatPrompter(),
-#         formatter=LlamaChatFormatter(),
-#     )
-#     test_example = Example(
-#         instruction="",
-#         input="Paris is in",
-#         output="France",
-#         incorrect_outputs=["Germany", "Italy"],
-#     )
-#     dataset: Dataset = [
-#         test_example,
-#         Example(
-#             instruction="",
-#             input="1 + 1 =",
-#             output="2",
-#             incorrect_outputs=["11", "34", "3.14"],
-#         ),
-#     ]
+def test_RepeReadingControl_run_steering_matches_caa_llama_wrapper(
+    empty_llama_model: LlamaForCausalLM, llama_chat_tokenizer: Tokenizer
+) -> None:
+    model = empty_llama_model
+    tokenizer = llama_chat_tokenizer
+    pipeline = Pipeline(
+        model,
+        tokenizer,
+        prompter=LlamaChatPrompter(),
+        formatter=LlamaChatFormatter(),
+    )
+    test_example = Example(
+        instruction="",
+        input="Paris is in",
+        output="France",
+        incorrect_outputs=["Germany", "Italy"],
+    )
+    dataset: Dataset = [
+        test_example,
+        Example(
+            instruction="",
+            input="1 + 1 =",
+            output="2",
+            incorrect_outputs=["11", "34", "3.14"],
+        ),
+    ]
 
-#     layers = [0, 1, 2]
-#     multiplier = 7
-#     algorithm = RepeReadingControl(
-#         patch_generation_tokens_only=True,
-#         direction_multiplier=multiplier,
-#         layers=layers,
-#     )
-#     algorithm.run(pipeline, dataset)
-#     hook = pipeline.hooks[0]
+    layers = [0, 1, 2]
+    multiplier = 7
+    algorithm = RepeReadingControl(
+        patch_generation_tokens_only=True,
+        # CAA skips the first generation token for some reason, so we do here too to match
+        # https://github.com/nrimsky/CAA/issues/3
+        skip_first_n_generation_tokens=1,
+        direction_multiplier=multiplier,
+        layers=layers,
+    )
+    algorithm.run(pipeline, dataset)
+    hook = pipeline.hooks[0]
 
-#     # hackily recreating what the pipeline does during logprobs
-#     base_prompt = pipeline.build_generation_prompt(test_example)
-#     full_prompt = base_prompt + test_example.output
-#     inputs = tokenizer(full_prompt, return_tensors="pt").to(model.device)
-#     ctx = PipelineContext(
-#         method="logprobs",
-#         base_prompt=base_prompt,
-#         full_prompt=full_prompt,
-#         inputs=inputs,
-#         pipeline=pipeline,
-#     )
-#     orig_logits = model(**inputs).logits
-#     with hook(ctx):
-#         our_logits = model(**inputs).logits
+    # hackily recreating what the pipeline does during logprobs
+    base_prompt = pipeline.build_generation_prompt(test_example)
+    full_prompt = base_prompt + test_example.output
+    inputs = tokenizer(full_prompt, return_tensors="pt").to(model.device)
+    ctx = PipelineContext(
+        method="logprobs",
+        base_prompt=base_prompt,
+        full_prompt=full_prompt,
+        inputs=inputs,
+        pipeline=pipeline,
+    )
+    orig_logits = model(**inputs).logits
+    with hook(ctx):
+        our_logits = model(**inputs).logits
 
-#     assert isinstance(hook, SteeringHook)  # keep pyright happy
-#     wrapped_model = LlamaWrapper(model, tokenizer, add_only_after_end_str=True)
-#     wrapped_model.reset_all()
-#     for layer in layers:
-#         wrapped_model.set_add_activations(
-#             layer, multiplier * hook.steering_vector.layer_activations[layer]
-#         )
-#     caa_logits = wrapped_model.get_logits(inputs["input_ids"])
-#     # only the final answer tokens should be different
-#     assert torch.allclose(our_logits[0, :-2], orig_logits[0, :-2])
-#     assert torch.allclose(our_logits, caa_logits)
+    assert isinstance(hook, SteeringHook)  # keep pyright happy
+    wrapped_model = LlamaWrapper(model, tokenizer, add_only_after_end_str=True)
+    wrapped_model.reset_all()
+    for layer in layers:
+        wrapped_model.set_add_activations(
+            layer, multiplier * hook.steering_vector.layer_activations[layer]
+        )
+    caa_logits = wrapped_model.get_logits(inputs["input_ids"])
+    # only the final answer tokens should be different
+    assert torch.allclose(our_logits[0, :-2], orig_logits[0, :-2])
+    assert torch.allclose(our_logits, caa_logits)
 
 
 def test_RepeReadingControl_run_logprobs_with_patch_generation_tokens_only(

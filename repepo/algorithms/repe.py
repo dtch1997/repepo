@@ -47,6 +47,7 @@ class SteeringHook:
     steering_vector: SteeringVector
     direction_multiplier: float
     patch_generation_tokens_only: bool
+    skip_first_n_generation_tokens: int
     layer_config: ModelLayerConfig | None
 
     # PipelineContext is created in both `pipeline.generate` or `pipeline.calculate_output_logprobs`,
@@ -57,11 +58,12 @@ class SteeringHook:
         try:
             min_token_index = 0
             if self.patch_generation_tokens_only:
-                min_token_index = _find_generation_start_token_index(
+                gen_start_index = _find_generation_start_token_index(
                     context.pipeline.tokenizer,
                     context.base_prompt,
                     context.full_prompt,
                 )
+                min_token_index = gen_start_index + self.skip_first_n_generation_tokens
             handle = self.steering_vector.patch_activations(
                 model=context.pipeline.model,
                 layer_config=self.layer_config,
@@ -82,6 +84,7 @@ class RepeReadingControl(Algorithm):
     direction_multiplier: float
     layer_config: ModelLayerConfig | None
     patch_generation_tokens_only: bool
+    skip_first_n_generation_tokens: int
     read_token_index: int
     seed: int
 
@@ -95,6 +98,7 @@ class RepeReadingControl(Algorithm):
         layer_config: Optional[ModelLayerConfig] = None,
         direction_multiplier: float = 1.0,
         patch_generation_tokens_only: bool = True,
+        skip_first_n_generation_tokens: int = 0,  # only relevant if patch_generation_tokens_only is True
         skip_reading: bool = False,
         override_vector: Optional[SteeringVector] = None,
         skip_control: bool = False,
@@ -107,6 +111,7 @@ class RepeReadingControl(Algorithm):
         self.layer_type = layer_type
         self.seed = seed
         self.patch_generation_tokens_only = patch_generation_tokens_only
+        self.skip_first_n_generation_tokens = skip_first_n_generation_tokens
         _validate_reading_template(reading_template)
         self.reading_template = reading_template
         self.layers = layers
@@ -185,6 +190,7 @@ class RepeReadingControl(Algorithm):
             steering_vector=steering_vector,
             direction_multiplier=self.direction_multiplier,
             patch_generation_tokens_only=self.patch_generation_tokens_only,
+            skip_first_n_generation_tokens=self.skip_first_n_generation_tokens,
             layer_config=self.layer_config,
         )
 
