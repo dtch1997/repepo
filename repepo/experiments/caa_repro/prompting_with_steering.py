@@ -113,6 +113,7 @@ def test_steering(
                 skip_reading=True,
                 direction_multiplier=multiplier,
                 override_vector=steering_vector,
+                read_token_index=-2,
             )
             pipeline = Pipeline(model, tokenizer, formatter=LlamaChatFormatter())
             # Run algorithm to create the hooks

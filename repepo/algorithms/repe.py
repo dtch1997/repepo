@@ -116,10 +116,10 @@ class RepeReadingControl(Algorithm):
         skip_reading: bool = False,
         override_vector: Optional[SteeringVector] = None,
         skip_control: bool = False,
-        # For (A/B) datasets, the second last token corresponds to 'A' or 'B'
-        # which is what the CAA paper extracts.
+        # For (A/B) datasets, the second last token corresponds to 'A' or 'B' which is what the CAA paper extracts.
+        # make sure to set this to -2 when working with CAA's data format
         # Reference: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/generate_vectors.py#L102C13-L102C67
-        read_token_index: int = -2,
+        read_token_index: int = -1,
     ):
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
