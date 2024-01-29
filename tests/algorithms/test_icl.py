@@ -15,7 +15,7 @@ def test_InContextLearning_run(model: GPTNeoXForCausalLM, tokenizer: Tokenizer) 
     ]
 
     algorithm.run(pipeline, dataset=dataset)
-    assert pipeline.conversation_wrapper.conversation_history == dataset
+    assert pipeline.conversation_history == dataset
 
 
 def test_InContextLearning_run_with_max_icl_examples(
@@ -30,4 +30,4 @@ def test_InContextLearning_run_with_max_icl_examples(
     ]
 
     algorithm.run(pipeline, dataset=dataset)
-    assert pipeline.conversation_wrapper.conversation_history == dataset[:2]
+    assert pipeline.conversation_history == dataset[:2]

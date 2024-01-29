@@ -101,6 +101,7 @@ class RepeReadingControl(Algorithm):
     skip_first_n_generation_tokens: int
     read_token_index: int
     seed: int
+    show_progress: bool
 
     def __init__(
         self,
@@ -120,6 +121,7 @@ class RepeReadingControl(Algorithm):
         # make sure to set this to -2 when working with CAA's data format
         # Reference: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/generate_vectors.py#L102C13-L102C67
         read_token_index: int = -1,
+        show_progress: bool = True,
     ):
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
@@ -132,6 +134,7 @@ class RepeReadingControl(Algorithm):
         self.read_token_index = read_token_index
         self.layer_config = layer_config
         self.direction_multiplier = direction_multiplier
+        self.show_progress = show_progress
 
         self.skip_reading = skip_reading
         self.override_vector = override_vector
@@ -175,6 +178,7 @@ class RepeReadingControl(Algorithm):
             layer_config=self.layer_config,
             move_to_cpu=True,
             read_token_index=self.read_token_index,
+            show_progress=self.show_progress,
         )
 
     @override

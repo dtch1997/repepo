@@ -13,5 +13,5 @@ class InContextLearning(Algorithm):
     def run(self, pipeline: Pipeline, dataset: Dataset) -> dict[str, Any]:
         """Uses an in-context learning prefix to prompts"""
         icl_msgs = dataset[: self.max_icl_examples]
-        pipeline.conversation_wrapper.conversation_history = icl_msgs
+        pipeline.conversation_history = icl_msgs
         return {}

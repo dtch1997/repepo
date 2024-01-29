@@ -1,11 +1,11 @@
+from statistics import mean
 import torch
 import json
 import pyrallis
 
 from pprint import pprint
-from tqdm import tqdm
 from dataclasses import dataclass
-from typing import Optional, List, Iterable
+from typing import List
 from repepo.experiments.caa_repro.utils.helpers import (
     make_tensor_save_suffix,
     get_model_name,
@@ -14,70 +14,22 @@ from repepo.experiments.caa_repro.utils.helpers import (
     get_experiment_path,
     SteeringSettings,
 )
-from repepo.core.benchmark import EvalPrediction
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.algorithms.repe import RepeReadingControl
 from repepo.data.make_dataset import make_dataset
-from repepo.core.types import Example
-from repepo.core.evaluate import MultipleChoiceAccuracyEvaluator
+from repepo.core.evaluate import (
+    MultipleChoiceAccuracyEvaluator,
+    evaluate,
+    set_repe_direction_multiplier_at_eval,
+    update_completion_template_at_eval,
+)
 from pyrallis import field
 from steering_vectors.steering_vector import SteeringVector
-from dataclasses import replace
-from transformers.generation import GenerationConfig
 
 save_vectors_path = get_save_vectors_path()
 results_path = get_experiment_path() / "results"
 analysis_path = get_experiment_path() / "analysis"
-
-
-def evaluate_average_key_prob(predictions: List[EvalPrediction]) -> float:
-    """Evaluates the average probability of the correct answer"""
-
-    sum = 0
-    count = 0
-    for prediction in predictions:
-        sum += prediction.get_normalized_correct_probs()
-        count += 1
-    return sum / count
-
-
-def evaluate_pipeline(
-    pipeline: Pipeline,
-    example_iterator: Iterable[Example],
-    generation_config: Optional[GenerationConfig] = None,
-) -> List[EvalPrediction]:
-    # evaluate
-    predictions: list[EvalPrediction] = []
-    requires_generation = False  # any([e.requires_generation for e in evaluators])
-    requires_probs = True  # any([e.requires_probs for e in evaluators])
-
-    for example in example_iterator:
-        generated_output = None
-        correct_output_probs = None
-        incorrect_outputs_probs = None
-        if requires_generation:
-            generated_output = pipeline.generate(
-                example, generation_config=generation_config
-            )
-        if requires_probs:
-            correct_output_probs = pipeline.calculate_output_logprobs(example)
-            if example.incorrect_outputs is not None:
-                incorrect_outputs_probs = [
-                    pipeline.calculate_output_logprobs(
-                        replace(example, output=incorrect_output)
-                    )
-                    for incorrect_output in example.incorrect_outputs
-                ]
-        predictions.append(
-            EvalPrediction(
-                example=example,
-                generated_output=generated_output,
-                correct_output_probs=correct_output_probs,
-                incorrect_outputs_probs=incorrect_outputs_probs,
-            )
-        )
-    return predictions
 
 
 @torch.no_grad()
@@ -103,37 +55,44 @@ def test_steering(
 
         steering_vector = SteeringVector(layer_activations={layer_id: layer_activation})
         dataset = make_dataset(settings.dataset_spec)
+        algorithm = RepeReadingControl(
+            skip_reading=True,
+            override_vector=steering_vector,
+            patch_generation_tokens_only=True,
+            # CAA skips the first generation token, so doing the same here to match
+            skip_first_n_generation_tokens=1,
+        )
+        pipeline = Pipeline(model, tokenizer, formatter=LlamaChatFormatter())
+        # Run algorithm to create the hooks
+        pipeline = algorithm.run(pipeline, dataset)
 
         for multiplier in multipliers:
             # Run steering with the specified layer and multiplier
-            algorithm = RepeReadingControl(
-                # NOTE: According to https://github.com/nrimsky/CAA/issues/2
-                # the steering vector is currently applied at all token positions
-                patch_generation_tokens_only=False,
-                skip_reading=True,
-                direction_multiplier=multiplier,
-                override_vector=steering_vector,
-                read_token_index=-2,
-            )
-            pipeline = Pipeline(model, tokenizer, formatter=LlamaChatFormatter())
-            # Run algorithm to create the hooks
-            pipeline = algorithm.run(pipeline, dataset)
 
-            predictions = evaluate_pipeline(
+            result = evaluate(
                 pipeline,
-                tqdm(dataset, desc=f"Testing layer {layer_id} multiplier {multiplier}"),
+                dataset=dataset,
+                tqdm_desc=f"Testing layer {layer_id} multiplier {multiplier}",
+                evaluators=[MultipleChoiceAccuracyEvaluator()],
+                eval_hooks=[
+                    update_completion_template_at_eval(
+                        "{prompt} My answer is {response}"
+                    ),
+                    set_repe_direction_multiplier_at_eval(multiplier),
+                ],
             )
 
             if settings.type == "in_distribution":
-                evaluator = MultipleChoiceAccuracyEvaluator()
-                mcq_accuracy = evaluator(predictions)["accuracy"]
-                average_key_prob = evaluate_average_key_prob(predictions)
+                mcq_accuracy = result.metrics["accuracy"]
+                key_probs = [
+                    pred.get_normalized_correct_probs() for pred in result.predictions
+                ]
                 results.append(
                     {
                         "layer_id": layer_id,
                         "multiplier": multiplier,
                         "mcq_accuracy": mcq_accuracy,
-                        "average_key_prob": average_key_prob,
+                        "average_key_prob": mean(key_probs),
                         "type": settings.type,
                     }
                 )

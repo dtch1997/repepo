@@ -2,7 +2,7 @@ from textwrap import dedent
 from transformers import GPTNeoXForCausalLM
 from syrupy import SnapshotAssertion
 
-from repepo.core.pipeline import Pipeline, _build_full_prompt
+from repepo.core.pipeline import Pipeline
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.types import Example, Tokenizer
 
@@ -39,7 +39,7 @@ def test_icl_Pipeline_build_generation_prompt(
         Example(instruction="", input="Berlin is in", output="Germany"),
     ]
     pipeline = Pipeline(model, tokenizer)
-    pipeline.conversation_wrapper.conversation_history = dataset
+    pipeline.conversation_history = dataset
     res = pipeline.build_generation_prompt(
         Example(instruction="", input="Beijing is in", output="China"),
     )
@@ -96,5 +96,4 @@ def test_pipeline_can_reproduce_caa_train_promts(
         ),
         output="(B)",
     )
-    completion = pipeline.build_completion(example)
-    assert _build_full_prompt(completion).strip() == target.strip()
+    assert pipeline.build_full_prompt(example).strip() == target.strip()
