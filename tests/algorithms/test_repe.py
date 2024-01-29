@@ -1,5 +1,4 @@
 import torch
-import pytest
 from repepo.algorithms.repe import (
     RepeReadingControl,
     SteeringHook,
@@ -13,7 +12,6 @@ from transformers import GPTNeoXForCausalLM, LlamaForCausalLM
 from tests._original_caa.llama_wrapper import LlamaWrapper
 
 
-@pytest.mark.skip("Reading template has changed")
 def test_RepeReadingControl_build_steering_vector_training_data_picks_one_neg_by_default(
     model: GPTNeoXForCausalLM,
     tokenizer: Tokenizer,
@@ -143,7 +141,12 @@ def test_RepeReadingControl_get_steering_vector_matches_caa(
         ),
     ]
     layers = [0, 1, 2]
-    algorithm = RepeReadingControl(multi_answer_method="repeat_correct", layers=layers)
+    algorithm = RepeReadingControl(
+        multi_answer_method="repeat_correct",
+        layers=layers,
+        # CAA reads from index -2 for steering vectors
+        read_token_index=-2,
+    )
     steering_vector = algorithm._get_steering_vector(pipeline, dataset)
 
     steering_training_data = algorithm._build_steering_vector_training_data(
@@ -188,8 +191,7 @@ def test_RepeReadingControl_get_steering_vector_matches_caa(
         ), f"Non-matching activations at layer {layer}"
 
 
-@pytest.mark.skip("Reading template has changed")
-def test_RepeReadingControl_run(
+def test_RepeReadingControl_run_basic(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
     tokenizer.pad_token_id = model.config.eos_token_id
@@ -223,7 +225,6 @@ def test_RepeReadingControl_run(
     assert original_outputs != new_outputs
 
 
-@pytest.mark.skip("Reading template has changed")
 def test_RepeReadingControl_run_steering_matches_caa_llama_wrapper(
     empty_llama_model: LlamaForCausalLM, llama_chat_tokenizer: Tokenizer
 ) -> None:
@@ -291,7 +292,6 @@ def test_RepeReadingControl_run_steering_matches_caa_llama_wrapper(
     assert torch.allclose(our_logits, caa_logits)
 
 
-@pytest.mark.skip("Reading template has changed")
 def test_RepeReadingControl_run_logprobs_with_patch_generation_tokens_only(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:

@@ -3,38 +3,22 @@
   list([
     SteeringVectorTrainingSample(
       negative_prompt='''
-        Consider the amount of truthfulness in the following answer.
-        
-        Input:  Paris is in 
-        Output:  Germany
-        
-        The amount of truthfulness in the answer is 
+        <s> Input:  Paris is in 
+        Output: Germany
       ''',
       positive_prompt='''
-        Consider the amount of truthfulness in the following answer.
-        
-        Input:  Paris is in 
-        Output:  France
-        
-        The amount of truthfulness in the answer is 
+        <s> Input:  Paris is in 
+        Output: France
       ''',
     ),
     SteeringVectorTrainingSample(
       negative_prompt='''
-        Consider the amount of truthfulness in the following answer.
-        
-        Input:  1 + 1 = 
-        Output:  11
-        
-        The amount of truthfulness in the answer is 
+        <s> Input:  1 + 1 = 
+        Output: 11
       ''',
       positive_prompt='''
-        Consider the amount of truthfulness in the following answer.
-        
-        Input:  1 + 1 = 
-        Output:  2
-        
-        The amount of truthfulness in the answer is 
+        <s> Input:  1 + 1 = 
+        Output: 2
       ''',
     ),
   ])
