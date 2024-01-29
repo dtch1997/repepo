@@ -26,6 +26,7 @@ dependencies = [
     "nbdime>=4.0.1",
     "steering-vectors>=0.3.0",
     "openai>=1.10.0",
+    "arrr>=1.0.4",
 ]
 
 [tool.black]
