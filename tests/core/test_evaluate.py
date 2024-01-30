@@ -3,9 +3,10 @@ import torch
 from transformers import GPTNeoXForCausalLM
 
 from repepo.core.types import Example, Tokenizer
-from repepo.core.pipeline import Pipeline
+from repepo.core.pipeline import Pipeline, TextProbs, TokenProb
 from repepo.core.format import InputOutputFormatter
 from repepo.core.evaluate import (
+    EvalPrediction,
     select_repe_layer_at_eval,
     update_completion_template_at_eval,
     set_repe_direction_multiplier_at_eval,
@@ -80,3 +81,28 @@ def test_select_repe_layer_at_eval_hook(
 
     # the pipeline should be restored to its original state after the hook exits
     assert steering_hook.steering_vector.layer_activations == layer_activations
+
+
+def test_EvalPrediction_get_normalized_correct_probs_equally_splits_equal_probs() -> (
+    None
+):
+    example = Example(instruction="", input="hello", output="world")
+    text_probs = TextProbs(
+        text="hello world",
+        token_probs=[
+            TokenProb(token_id=1234, text="hello", logprob=-20),
+            TokenProb(token_id=1235, text="world", logprob=-11),
+        ],
+    )
+    prediction = EvalPrediction(
+        example=example,
+        correct_output_probs=text_probs,
+        incorrect_outputs_probs=[
+            text_probs,
+            text_probs,
+            text_probs,
+        ],
+    )
+
+    # since both correct and 3 incorrect have identical probs, the normalized correct probs should be 0.25 (1 / (1 + 3))
+    assert prediction.get_normalized_correct_probs() == 0.25
