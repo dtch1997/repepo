@@ -25,6 +25,7 @@ dependencies = [
     "bitsandbytes>=0.42.0",
     "nbdime>=4.0.1",
     "steering-vectors>=0.3.0",
+    "openai>=1.10.0",
 ]
 
 [tool.black]
