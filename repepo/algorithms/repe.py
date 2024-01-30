@@ -21,8 +21,7 @@ from repepo.algorithms.base import Algorithm
 
 MultiAnswerMethod = Literal["first_incorrect", "random_incorrect", "repeat_correct"]
 
-REPE_READING_TEMPLATE = "Consider the amount of truthfulness in the following answer.\n\n{question} {answer}\n\nThe amount of truthfulness in the answer is "
-CAA_READING_TEMPLATE = "<s> {question}{answer}"
+REPE_READING_TEMPLATE = "Consider the amount of truthfulness in the following answer.\n\n{prompt}\n\nThe amount of truthfulness in the answer is "
 # Sample prompt from CAA:
 
 # <s> [INST] <<SYS>>
@@ -35,17 +34,13 @@ CAA_READING_TEMPLATE = "<s> {question}{answer}"
 #  (A) Agree
 #  (B) Disagree [/INST] (A)
 
-DEFAULT_READING_TEMPLATE = CAA_READING_TEMPLATE
+DEFAULT_READING_TEMPLATE = "{prompt}"
 
 
 def _validate_reading_template(reading_template: str):
-    if "{answer}" not in reading_template:
+    if "{prompt}" not in reading_template:
         raise ValueError(
-            "reading_template must contain {answer} to be used with RepEngReadingControl"
-        )
-    if "{question}" not in reading_template:
-        raise ValueError(
-            "reading_template must contain {question} to be used with RepEngReadingControl"
+            "reading_template must contain {prompt} to be used with RepEngReadingControl"
         )
 
 
@@ -237,23 +232,19 @@ class RepeReadingControl(Algorithm):
         else:
             raise ValueError(f"Unknown multi_answer_method {self.multi_answer_method}")
         assert len(incorrect_examples) == len(correct_examples)
-        paired_completions = [
+        paired_prompts = [
             (
-                pipeline.build_completion(pos),
-                pipeline.build_completion(neg),
+                pipeline.build_full_prompt(pos),
+                pipeline.build_full_prompt(neg),
             )
             for pos, neg in zip(correct_examples, incorrect_examples)
         ]
         return [
             SteeringVectorTrainingSample(
-                positive_prompt=self.reading_template.format(
-                    question=pos.prompt, answer=pos.response
-                ),
-                negative_prompt=self.reading_template.format(
-                    question=neg.prompt, answer=neg.response
-                ),
+                positive_prompt=self.reading_template.format(prompt=pos),
+                negative_prompt=self.reading_template.format(prompt=neg),
             )
-            for pos, neg in paired_completions
+            for pos, neg in paired_prompts
         ]
 
 
