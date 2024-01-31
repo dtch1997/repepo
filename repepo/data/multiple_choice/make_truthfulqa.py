@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any, Literal, cast
 from datasets import load_dataset
 
 from repepo.data.make_dataset import get_dataset_dir
@@ -24,6 +24,52 @@ def convert_hf_truthfulqa_dataset(hf_dataset: Any) -> Dataset:
                 incorrect_outputs=incorrect_outputs,
             )
         )
+    return tqa_dataset
+
+
+def convert_hf_truthfulqa_caa_dataset(
+    hf_dataset: Any,
+    multi_answer_method: Literal[
+        "first_incorrect", "repeat_correct"
+    ] = "first_incorrect",
+) -> Dataset:
+    tqa_dataset: Dataset = []
+    index = 0
+    for question, mc_targets in zip(hf_dataset["question"], hf_dataset["mc1_targets"]):
+        correct_index = mc_targets["labels"].index(1)
+        output = mc_targets["choices"][correct_index]
+        incorrect_outputs = [
+            choice
+            for choice, label in zip(mc_targets["choices"], mc_targets["labels"])
+            if label == 0
+        ]
+        if multi_answer_method == "first_incorrect":
+            correct_outputs = [output]
+            incorrect_outputs = incorrect_outputs[:1]
+        elif multi_answer_method == "repeat_correct":
+            correct_outputs = [output] * len(incorrect_outputs)
+        else:
+            raise ValueError(
+                f"multi_answer_method must be one of 'first_incorrect' or 'repeat_correct', but got {multi_answer_method}"
+            )
+        for correct_output, incorrect_output in zip(correct_outputs, incorrect_outputs):
+            index += 1
+            if index % 2 == 0:
+                order = [correct_output, incorrect_output]
+                correct_ans = "(A)"
+                incorrect_ans = "(B)"
+            else:
+                order = [incorrect_output, correct_output]
+                correct_ans = "(B)"
+                incorrect_ans = "(A)"
+            tqa_dataset.append(
+                Example(
+                    instruction="",
+                    input=f"{question}\n\n(A) {order[0]}\n(B) {order[1]}",
+                    output=correct_ans,
+                    incorrect_outputs=[incorrect_ans],
+                )
+            )
     return tqa_dataset
 
 
@@ -74,5 +120,13 @@ def make_truthfulqa():
     jdump(tqa_dataset, get_dataset_dir() / "truthfulqa.json")
 
 
+def make_truthfulqa_caa():
+    # hf's dataset is too general and requires casting every field we access, so just using Any for simplicity
+    hf_dataset = cast(Any, load_dataset("truthful_qa", "multiple_choice"))["validation"]
+    tqa_dataset = convert_hf_truthfulqa_caa_dataset(hf_dataset)
+    jdump(tqa_dataset, get_dataset_dir() / "truthfulqa_caa.json")
+
+
 if __name__ == "__main__":
     make_truthfulqa()
+    make_truthfulqa_caa()
