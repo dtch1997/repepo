@@ -120,8 +120,8 @@ def get_save_vectors_path():
     )
 
 
-def get_experiment_path():
-    return pathlib.Path(Environ.ProjectDir) / "repepo" / "experiments" / "caa_repro"
+def get_experiment_path(experiment_name: str = "caa_repro"):
+    return pathlib.Path(Environ.ProjectDir) / "repepo" / "experiments" / experiment_name
 
 
 def make_tensor_save_suffix(layer: int, model_name_path: str):

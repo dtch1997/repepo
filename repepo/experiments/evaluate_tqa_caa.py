@@ -22,8 +22,8 @@ from repepo.experiments.caa_repro.utils.helpers import (
 
 @dataclass
 class EvaluateTqaCaaConfig:
+    experiment_name: str = "caa_repro"
     layers: list[int] = field(default=[], is_mutable=True)
-    model_size: str = "7b"
     multipliers: list[float] = field(default=[], is_mutable=True)
     settings: SteeringSettings = field(default=SteeringSettings(), is_mutable=True)
     train_dataset_spec: DatasetSpec = field(
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # save results to disk
     results_dicts = [res.__dict__ for res in results]
     save_suffix = config.settings.make_result_save_suffix(None, None)
-    results_path = get_experiment_path() / "results"
+    results_path = get_experiment_path(config.experiment_name) / "results"
     results_path.mkdir(parents=True, exist_ok=True)
     with open(results_path / f"results_{save_suffix}.json", "w") as f:
         json.dump(results_dicts, f, ensure_ascii=False, indent=4)

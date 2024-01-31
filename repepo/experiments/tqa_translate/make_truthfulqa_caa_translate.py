@@ -29,10 +29,10 @@ def translate_dataset(
 if __name__ == "__main__":
     datasets = {}
     datasets["tqa_english_train"] = make_dataset(
-        DatasetSpec(name="truthfulqa", split=":10%", seed=0)
+        DatasetSpec(name="truthfulqa", split=":80%", seed=0)
     )
     datasets["tqa_english_test"] = make_dataset(
-        DatasetSpec(name="truthfulqa", split="10:20%", seed=0)
+        DatasetSpec(name="truthfulqa", split="80:%", seed=0)
     )
 
     for language_name, translation_fn in (
