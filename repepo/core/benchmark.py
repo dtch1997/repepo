@@ -1,13 +1,17 @@
 # pyright: strict, reportMissingTypeStubs=false
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from transformers.generation import GenerationConfig
 
 from repepo.algorithms.base import Algorithm
-from repepo.core.conversation_wrapper import ConversationWrapper
-from repepo.core.evaluate import EvalPrediction, EvalResult, Evaluator
+from repepo.core.evaluate import (
+    EvalHook,
+    EvalResult,
+    Evaluator,
+    evaluate,
+)
 from repepo.core.format import Formatter, InputOutputFormatter
 from repepo.core.pipeline import Pipeline
 
@@ -22,59 +26,73 @@ class Benchmark:
     evaluators: list[Evaluator]
 
 
+def train_benchmark(
+    model: Model,
+    tokenizer: Tokenizer,
+    algorithms: Sequence[Algorithm],
+    benchmark: Benchmark,
+    formatter: Optional[Formatter] = None,
+) -> Pipeline:
+    pipeline = Pipeline(
+        model,
+        tokenizer,
+        formatter=formatter or InputOutputFormatter(),
+    )
+    for algorithm in algorithms:
+        # Re-initialize pipeline, which gets destructively modified
+        # TODO: do something with outputs?
+        _ = algorithm.run(pipeline, benchmark.train_dataset)
+    return pipeline
+
+
+def evaluate_benchmark(
+    pipeline: Pipeline,
+    benchmark: Benchmark,
+    generation_config: Optional[GenerationConfig] = None,
+    # these eval_hooks allow us to do custom stuff to the pipeline only during evaluation,
+    # e.g. mess with the formatter to use CAA's special answer format
+    eval_hooks: list[EvalHook] = [],
+    show_progress: bool = True,
+    tqdm_desc: str = "Evaluating",
+) -> EvalResult:
+    # evaluate
+    return evaluate(
+        pipeline,
+        dataset=benchmark.test_dataset,
+        evaluators=benchmark.evaluators,
+        generation_config=generation_config,
+        eval_hooks=eval_hooks,
+        show_progress=show_progress,
+        tqdm_desc=tqdm_desc,
+    )
+
+
 def train_and_evaluate_benchmark(
     model: Model,
     tokenizer: Tokenizer,
     algorithms: Sequence[Algorithm],
     benchmark: Benchmark,
     formatter: Optional[Formatter] = None,
-    conversation_wrapper: Optional[ConversationWrapper] = None,
     generation_config: Optional[GenerationConfig] = None,
+    # these eval_hooks allow us to do custom stuff to the pipeline only during evaluation,
+    # e.g. mess with the formatter to use CAA's special answer format
+    eval_hooks: list[EvalHook] = [],
+    show_progress: bool = True,
 ) -> EvalResult:
-    pipeline = Pipeline(
+    # train
+    pipeline = train_benchmark(
         model,
         tokenizer,
-        formatter=formatter or InputOutputFormatter(),
-        conversation_wrapper=conversation_wrapper or ConversationWrapper(),
+        algorithms,
+        benchmark,
+        formatter=formatter,
     )
 
-    # train pipeline
-    for algorithm in algorithms:
-        # Re-initialize pipeline, which gets destructively modified
-        # TODO: do something with outputs?
-        _ = algorithm.run(pipeline, benchmark.train_dataset)
-
     # evaluate
-    predictions: list[EvalPrediction] = []
-    requires_generation = any([e.requires_generation for e in benchmark.evaluators])
-    requires_probs = any([e.requires_probs for e in benchmark.evaluators])
-    # TODO: support batching
-    for example in benchmark.test_dataset:
-        generated_output = None
-        correct_output_probs = None
-        incorrect_outputs_probs = None
-        if requires_generation:
-            generated_output = pipeline.generate(
-                example, generation_config=generation_config
-            )
-        if requires_probs:
-            correct_output_probs = pipeline.calculate_output_logprobs(example)
-            if example.incorrect_outputs is not None:
-                incorrect_outputs_probs = [
-                    pipeline.calculate_output_logprobs(
-                        replace(example, output=incorrect_output)
-                    )
-                    for incorrect_output in example.incorrect_outputs
-                ]
-        predictions.append(
-            EvalPrediction(
-                example=example,
-                generated_output=generated_output,
-                correct_output_probs=correct_output_probs,
-                incorrect_outputs_probs=incorrect_outputs_probs,
-            )
-        )
-    metrics: dict[str, float] = {}
-    for evaluator in benchmark.evaluators:
-        metrics.update(evaluator(predictions))
-    return EvalResult(predictions, metrics)
+    return evaluate_benchmark(
+        pipeline,
+        benchmark,
+        generation_config=generation_config,
+        eval_hooks=eval_hooks,
+        show_progress=show_progress,
+    )

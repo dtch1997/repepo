@@ -24,6 +24,9 @@ class FormatContext:
 class Formatter(abc.ABC):
     """Describes how to format examples as completions"""
 
+    msg_separator: str = "\n"
+    completion_template: str = "{prompt} {response}"
+
     @abc.abstractmethod
     def format(self, example: Example, ctx: FormatContext) -> Completion:
         """
@@ -32,19 +35,51 @@ class Formatter(abc.ABC):
         """
         pass
 
-    def format_conversation(self, conversation: List[Example]) -> List[Completion]:
+    def format_completion(self, completion: Completion) -> str:
+        """
+        Format a completion as a string.
+        """
+        return self.completion_template.format(
+            prompt=completion.prompt.strip(), response=completion.response.strip()
+        )
+
+    def format_conversation(
+        self,
+        current_message: Example,
+        history: list[Example] = [],
+    ) -> Completion:
+        """
+        Generate a completion for a conversation, handling ICL convo history
+        """
+        conversation = [*history, current_message]
         completions: list[Completion] = []
         for i, example in enumerate(conversation):
             ctx = FormatContext(index=i, examples=conversation)
             completion = self.format(example, ctx)
             completions.append(completion)
-        return completions
+        prefix_completions = completions[:-1]
+        final_completion = completions[-1]
+        convo_prefix = self.msg_separator.join(
+            self.format_completion(completion) for completion in prefix_completions
+        )
+        prompt = final_completion.prompt.strip()
+        if len(convo_prefix) > 0:
+            prompt = convo_prefix + self.msg_separator + final_completion.prompt
+        return Completion(prompt=prompt, response=final_completion.response)
 
 
 class InputOutputFormatter(Formatter):
     """Format as a simple input-output pair."""
 
     PROMPT_TEMPLATE = "Input: {instruction} {input} \n" "Output: "
+
+    def __init__(
+        self,
+        msg_separator: str = "\n",
+        completion_template: str = "{prompt} {response}",
+    ) -> None:
+        self.completion_template = completion_template
+        self.msg_separator = msg_separator
 
     @override
     def format(self, example: Example, ctx: FormatContext):
@@ -74,8 +109,12 @@ class LlamaChatFormatter(Formatter):
     def __init__(
         self,
         system_prompt: str | None = "You are a helpful, honest and concise assistant.",
+        msg_separator: str = "\n",
+        completion_template: str = "{prompt} {response}",
     ) -> None:
         self.system_prompt = system_prompt
+        self.msg_separator = msg_separator
+        self.completion_template = completion_template
 
     @override
     def format(self, example: Example, ctx: FormatContext):

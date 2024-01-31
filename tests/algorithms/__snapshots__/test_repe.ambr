@@ -3,21 +3,21 @@
   list([
     SteeringVectorTrainingSample(
       negative_prompt='''
-        <s> Input:  Paris is in 
+        Input:  Paris is in 
         Output: Germany
       ''',
       positive_prompt='''
-        <s> Input:  Paris is in 
+        Input:  Paris is in 
         Output: France
       ''',
     ),
     SteeringVectorTrainingSample(
       negative_prompt='''
-        <s> Input:  1 + 1 = 
+        Input:  1 + 1 = 
         Output: 11
       ''',
       positive_prompt='''
-        <s> Input:  1 + 1 = 
+        Input:  1 + 1 = 
         Output: 2
       ''',
     ),

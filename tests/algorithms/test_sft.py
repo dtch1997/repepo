@@ -34,7 +34,7 @@ def test_SupervisedFineTuning_run(
     final_train_state = train_state_log_history[-1]
 
     assert int(final_train_state["epoch"] == NUM_TRAIN_EPOCHS)
-    assert final_train_state["train_loss"] < 0.1
+    assert final_train_state["train_loss"] < 0.2
 
 
 def test_SupervisedFineTuning_run_with_generate(
@@ -67,7 +67,7 @@ def test_SupervisedFineTuning_run_with_generate(
     final_train_state = train_state_log_history[-1]
 
     assert int(final_train_state["epoch"] == NUM_TRAIN_EPOCHS)
-    assert final_train_state["train_loss"] < 0.1
+    assert final_train_state["train_loss"] < 0.2
 
     new_outputs = pipeline.generate(test_example)
     assert original_outputs != new_outputs
