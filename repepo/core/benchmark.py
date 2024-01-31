@@ -54,6 +54,7 @@ def evaluate_benchmark(
     eval_hooks: list[EvalHook] = [],
     show_progress: bool = True,
     tqdm_desc: str = "Evaluating",
+    verbose: bool = False,
 ) -> EvalResult:
     # evaluate
     return evaluate(
@@ -64,6 +65,7 @@ def evaluate_benchmark(
         eval_hooks=eval_hooks,
         show_progress=show_progress,
         tqdm_desc=tqdm_desc,
+        verbose=verbose,
     )
 
 

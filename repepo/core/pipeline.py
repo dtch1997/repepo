@@ -50,6 +50,7 @@ class Pipeline:
     formatter: Formatter = field(default_factory=InputOutputFormatter)
     conversation_history: list[Example] = field(default_factory=list)
     hooks: list[PipelineHook] = field(default_factory=list)
+    print_first_example: bool = True
 
     def build_generation_prompt(self, example: Example) -> str:
         """Build a prompt for generation"""

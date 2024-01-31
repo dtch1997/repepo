@@ -178,6 +178,8 @@ class RepeReadingControl(Algorithm):
             print(pos_example)
             print("Negative prompt:")
             print(neg_example)
+            for i in range(2):
+                print()
 
         return train_steering_vector(
             pipeline.model,

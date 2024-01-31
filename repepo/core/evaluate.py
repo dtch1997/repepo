@@ -19,6 +19,20 @@ import numpy as np
 EvalHook = Callable[[Pipeline], AbstractContextManager[None]]
 
 
+def print_first_example() -> EvalHook:
+    """Eval hook that prints the first example"""
+
+    @contextmanager
+    def print_first_example_hook(pipeline: Pipeline):
+        try:
+            pipeline.print_first_example = True
+            yield
+        finally:
+            pipeline.print_first_example = False
+
+    return print_first_example_hook
+
+
 def update_completion_template_at_eval(new_template: str) -> EvalHook:
     """Eval hook that changes the completion template for the duration of the evaluation"""
 
@@ -213,6 +227,7 @@ def evaluate(
     eval_hooks: Sequence[EvalHook] = [],
     show_progress: bool = True,
     tqdm_desc: str = "Evaluating",
+    verbose: bool = False,
 ) -> EvalResult:
     # evaluate
     predictions: list[EvalPrediction] = []
@@ -222,15 +237,23 @@ def evaluate(
         for eval_hook in eval_hooks:
             stack.enter_context(eval_hook(pipeline))
         # TODO: support batching
-        for example in tqdm(dataset, disable=not show_progress, desc=tqdm_desc):
+        for i, example in enumerate(
+            tqdm(dataset, disable=not show_progress, desc=tqdm_desc)
+        ):
             generated_output = None
             correct_output_probs = None
             incorrect_outputs_probs = None
             if requires_generation:
+                if i == 0 and verbose:
+                    print("Example generation prompt:")
+                    print(pipeline.build_generation_prompt(example))
                 generated_output = pipeline.generate(
                     example, generation_config=generation_config
                 )
             if requires_probs:
+                if i == 0 and verbose:
+                    print("Example full prompt:")
+                    print(pipeline.build_full_prompt(example))
                 correct_output_probs = pipeline.calculate_output_logprobs(example)
                 if example.incorrect_outputs is not None:
                     incorrect_outputs_probs = [

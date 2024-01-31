@@ -23,7 +23,7 @@ from repepo.experiments.caa_repro.utils.helpers import (
 
 @dataclass
 class EvaluateTqaCaaConfig:
-    experiment_name: str | None = None
+    experiment_name: str = field(default=None)
     layers: list[int] = field(default=[], is_mutable=True)
     multipliers: list[float] = field(default=[], is_mutable=True)
     settings: SteeringSettings = field(default=SteeringSettings(), is_mutable=True)
@@ -91,6 +91,7 @@ def evaluate_tqa_caa(
                     set_repe_direction_multiplier_at_eval(multiplier),
                     select_repe_layer_at_eval(layer_id),
                 ],
+                verbose=config.verbose,
             )
             key_probs = [
                 pred.get_normalized_correct_probs() for pred in result.predictions
