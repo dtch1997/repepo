@@ -67,6 +67,7 @@ def evaluate_tqa_caa(
         read_token_index=-2,
         # CAA skips the first generation token, so doing the same here to match
         skip_first_n_generation_tokens=1,
+        verbose=config.verbose,
     )
 
     trained_pipeline = train_benchmark(
