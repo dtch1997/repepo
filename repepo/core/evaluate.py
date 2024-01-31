@@ -200,7 +200,7 @@ class NormalizedCorrectProbabilityEvaluator(Evaluator):
 
     def __call__(self, predictions: Sequence[EvalPrediction]) -> dict[str, float]:
         pred_results = [self.score_prediction(pred) for pred in predictions]
-        return {"accuracy": mean(pred_results)}
+        return {"average_key_prob": mean(pred_results)}
 
 
 def evaluate(
