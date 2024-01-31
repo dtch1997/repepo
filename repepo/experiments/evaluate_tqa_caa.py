@@ -11,6 +11,7 @@ from repepo.core.evaluate import (
     set_repe_direction_multiplier_at_eval,
     update_completion_template_at_eval,
 )
+from repepo.core.format import LlamaChatFormatter
 from repepo.data.make_dataset import make_dataset, DatasetSpec
 from repepo.experiments.caa_repro.utils.helpers import (
     get_experiment_path,
@@ -73,6 +74,7 @@ def evaluate_tqa_caa(
         tokenizer,
         algorithms=[repe_algo],
         benchmark=benchmark,
+        formatter=LlamaChatFormatter(),
     )
 
     results = []
