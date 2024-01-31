@@ -10,6 +10,7 @@ from repepo.experiments.evaluate_tqa_caa import EvaluateTqaCaaConfig, EvaluateCa
 
 def plot_in_distribution_data_for_layer(
     all_results: list[EvaluateCaaResult],
+    title: str,
     layers: list[int],
 ) -> plt.Figure:
     # Create figure
@@ -29,6 +30,7 @@ def plot_in_distribution_data_for_layer(
         )
 
     ax.legend()
+    ax.set_title(title)
     ax.set_xlabel("Multiplier")
     ax.set_ylabel("Probability of sycophantic answer to A/B question")
     fig.tight_layout()
@@ -50,5 +52,7 @@ if __name__ == "__main__":
         _results = json.load(f)
         results = [EvaluateCaaResult(**res) for res in _results]
 
-    fig = plot_in_distribution_data_for_layer(results, config.layers)
+    fig = plot_in_distribution_data_for_layer(
+        results, config.experiment_name, config.layers
+    )
     fig.savefig(results_path / f"results_{save_suffix}.png")
