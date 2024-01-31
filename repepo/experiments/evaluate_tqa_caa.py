@@ -23,7 +23,7 @@ from repepo.experiments.caa_repro.utils.helpers import (
 
 @dataclass
 class EvaluateTqaCaaConfig:
-    experiment_name: str = "caa_repro"
+    experiment_name: str | None = None
     layers: list[int] = field(default=[], is_mutable=True)
     multipliers: list[float] = field(default=[], is_mutable=True)
     settings: SteeringSettings = field(default=SteeringSettings(), is_mutable=True)
@@ -117,6 +117,12 @@ if __name__ == "__main__":
     # save results to disk
     results_dicts = [res.__dict__ for res in results]
     save_suffix = config.settings.make_result_save_suffix(None, None)
+
+    if config.experiment_name is None:
+        config.experiment_name = (
+            f"{config.train_dataset_spec.name}_{config.test_dataset_spec.name}"
+        )
+
     results_path = get_experiment_path(config.experiment_name) / "results"
     results_path.mkdir(parents=True, exist_ok=True)
     with open(results_path / f"results_{save_suffix}.json", "w") as f:

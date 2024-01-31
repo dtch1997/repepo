@@ -3,8 +3,6 @@
 from repepo.experiments.tqa_translate.translate import (
     translate_example,
     translate_to_leetspeak,
-    translate_to_pig_latin,
-    translate_to_pirate_speak,
     TranslationFn,
 )
 
@@ -29,25 +27,25 @@ def translate_dataset(
 if __name__ == "__main__":
     datasets = {}
     datasets["tqa_english_train"] = make_dataset(
-        DatasetSpec(name="truthfulqa", split=":80%", seed=0)
+        DatasetSpec(name="truthfulqa_caa", split=":40%", seed=0)
+    )
+    datasets["tqa_english_val"] = make_dataset(
+        DatasetSpec(name="truthfulqa_caa", split="40:50%", seed=0)
     )
     datasets["tqa_english_test"] = make_dataset(
-        DatasetSpec(name="truthfulqa", split="80:%", seed=0)
+        DatasetSpec(name="truthfulqa_caa", split="50:100%", seed=0)
     )
 
     for language_name, translation_fn in (
         ("leetspeak", translate_to_leetspeak),
-        ("pig_latin", translate_to_pig_latin),
-        ("pirate_speak", translate_to_pirate_speak),
+        # ("pig_latin", translate_to_pig_latin),
+        # ("pirate_speak", translate_to_pirate_speak),
     ):
-        datasets[f"tqa_{language_name}_train"] = translate_dataset(
-            datasets["tqa_english_train"],
-            translation_fn,
-        )
-        datasets[f"tqa_{language_name}_test"] = translate_dataset(
-            datasets["tqa_english_test"],
-            translation_fn,
-        )
+        for split in ("train", "val", "test"):
+            datasets[f"tqa_{language_name}_{split}"] = translate_dataset(
+                datasets[f"tqa_english_{split}"],
+                translation_fn,
+            )
 
     for name, dataset in datasets.items():
         dataset_path = get_dataset_dir() / "experimental"
