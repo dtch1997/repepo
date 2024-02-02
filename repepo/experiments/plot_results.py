@@ -9,32 +9,36 @@ from repepo.experiments.evaluate_tqa_caa import EvaluateTqaCaaConfig, EvaluateCa
 
 
 def plot_in_distribution_data_for_layer(
+    ax: plt.Axes,
     all_results: list[EvaluateCaaResult],
     title: str,
     layers: list[int],
-) -> plt.Figure:
+    linestyle="dashed",
+    label_suffix="",
+) -> plt.Axes:
     # Create figure
-    fig, ax = plt.subplots(figsize=(6, 6))
 
+    viridis = plt.cm.get_cmap("viridis", len(layers))
     for layer in layers:
         layer_results = [x for x in all_results if x.layer_id == layer]
         layer_results.sort(key=lambda x: x.multiplier)
         ax.plot(
             [x.multiplier for x in layer_results],
             [x.average_key_prob for x in layer_results],
-            label=f"Layer {layer}",
+            label=f"Layer {layer} {label_suffix}",
             marker="o",
-            linestyle="dashed",
+            linestyle=linestyle,
             markersize=5,
             linewidth=2.5,
+            # color by layer,
+            color=viridis(layers.index(layer)),
         )
 
     ax.legend()
     ax.set_title(title)
     ax.set_xlabel("Multiplier")
     ax.set_ylabel("Probability of sycophantic answer to A/B question")
-    fig.tight_layout()
-    return fig
+    return ax
 
 
 if __name__ == "__main__":
@@ -52,7 +56,9 @@ if __name__ == "__main__":
         _results = json.load(f)
         results = [EvaluateCaaResult(**res) for res in _results]
 
-    fig = plot_in_distribution_data_for_layer(
-        results, config.experiment_name, config.layers
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax = plot_in_distribution_data_for_layer(
+        ax, results, config.experiment_name, config.layers
     )
+    fig.tight_layout()
     fig.savefig(results_path / f"results_{save_suffix}.png")
