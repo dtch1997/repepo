@@ -20,6 +20,8 @@ from repepo.experiments.caa_repro.utils.helpers import (
     SteeringSettings,
 )
 
+from repepo.experiments.tqa_translate.translate import translate_to_leetspeak
+
 
 @dataclass
 class EvaluateTqaCaaConfig:
@@ -61,6 +63,23 @@ def evaluate_tqa_caa(
         evaluators=[MultipleChoiceAccuracyEvaluator()],
     )
 
+    # NOTE: It seems like we need two different formatters for different languages
+    # TODO: refactor this mess...
+    english_sys_msg = "You are a helpful, honest and concise assistant."
+    if "leetspeak" in config.train_dataset_spec.name:
+        train_formatter = LlamaChatFormatter(
+            system_prompt=translate_to_leetspeak(english_sys_msg)
+        )
+    else:
+        train_formatter = LlamaChatFormatter(system_prompt=english_sys_msg)
+
+    if "leetspeak" in config.test_dataset_spec.name:
+        test_formatter = LlamaChatFormatter(
+            system_prompt=translate_to_leetspeak(english_sys_msg)
+        )
+    else:
+        test_formatter = LlamaChatFormatter(system_prompt=english_sys_msg)
+
     repe_algo = RepeReadingControl(
         patch_generation_tokens_only=True,
         # CAA reads from position -2, since the last token is ")"
@@ -75,8 +94,12 @@ def evaluate_tqa_caa(
         tokenizer,
         algorithms=[repe_algo],
         benchmark=benchmark,
-        formatter=LlamaChatFormatter(),
+        formatter=train_formatter,
     )
+
+    # Patch the formatter to handle the case where we're
+    # transferring between languages
+    trained_pipeline.formatter = test_formatter
 
     results = []
     for layer_id in config.layers:
