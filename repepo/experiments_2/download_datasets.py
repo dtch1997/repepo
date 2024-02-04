@@ -73,11 +73,12 @@ if __name__ == "__main__":
         dataset = convert_ab_dataset_to_example_dataset(list_data, dataset_info)
 
         # Save the dataset
+        dataset_name = dataset_name.split("/")[1].replace(".jsonl", "")
         jdump(dataset, DATASET_DIR / f"{dataset_name}.json")
 
         # test loading
         dataset = make_dataset(
-            DatasetSpec(name=dataset_name.split("/")[1], split=":100%"),
+            DatasetSpec(name=dataset_name, split=":100%"),
             dataset_dir=DATASET_DIR,
         )
         print(dataset[0])
