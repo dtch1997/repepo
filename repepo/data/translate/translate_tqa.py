@@ -132,7 +132,7 @@ def main() -> None:
             continue
         translated_tqa = translate_tqa_to_style(tqa, style, max_workers=100)
         # can't save the outer DatasetDict object using to_json, so just save inner dataset
-        translated_tqa["validation"].to_json(file)
+        translated_tqa["validation"].to_json(file, force_ascii=False)
     for language in TARGET_LANGUAGES:
         translated_tqa = translate_tqa_to_language(tqa, language, max_workers=100)
         # can't save the outer DatasetDict object using to_json, so just save inner dataset
@@ -140,7 +140,7 @@ def main() -> None:
         if file.exists():
             print(f"File {file} already exists, skipping.")
             continue
-        translated_tqa["validation"].to_json(file)
+        translated_tqa["validation"].to_json(file, force_ascii=False)
 
 
 if __name__ == "__main__":
