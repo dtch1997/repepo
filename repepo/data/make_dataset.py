@@ -42,6 +42,9 @@ class DatasetSpec:
     split: str = ":100%"
     seed: int = 0
 
+    def __repr__(self) -> str:
+        return f"DatasetSpec(name={self.name},split={self.split},seed={self.seed})"
+
 
 def _parse_split(split_string: str, length: int) -> slice:
     # Define the regular expression pattern
