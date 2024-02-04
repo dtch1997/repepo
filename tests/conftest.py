@@ -14,6 +14,12 @@ from repepo.core.types import Tokenizer
 _device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+# mock openai.OpenAI for testing
+@pytest.fixture(autouse=True)
+def openai_mock(mocker):
+    return mocker.patch("openai.OpenAI")
+
+
 @pytest.fixture
 def device() -> str:
     return _device
