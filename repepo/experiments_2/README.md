@@ -1,6 +1,21 @@
 
 Workflow for generating datasets:
 
-1. First we have to download the Anthropic MWE datasets
-2. Then we have to translate them
-3. I think the (A) / (B) formatting should only be introduced in preprocessing
+## Download MWE Datasets
+
+Generate the list of filenames to download
+1. Clone the Model-Written Evals github repo and cd into it
+2. Run this command: 
+```
+ls -a persona | grep jsonl | sed 's/^/persona\//' > anthropic_dataset_names.txt
+```
+3. Move the file back to this directory
+
+Download files in the list of filenames and preprocess them to our own dataset format
+```
+python download_datasets.py
+```
+
+Inspect the datasets using `inspect_datasets.ipynb`
+
+## Extract Concept Vectors
