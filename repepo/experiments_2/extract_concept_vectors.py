@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-import pyrallis
 from pyrallis import field
 from repepo.algorithms.repe import RepeReadingControl
-from repepo.data.make_dataset import DatasetSpec
+from repepo.data.make_dataset import DatasetSpec, list_datasets
 
 # TODO: Move this into main repo as it seems fairly re-used
 from repepo.experiments.caa_repro.utils.helpers import (
@@ -189,8 +188,7 @@ def extract_concept_vectors_and_mean_relative_norms(
     return concept_vectors, mean_relative_norms
 
 
-if __name__ == "__main__":
-    config = pyrallis.parse(ConceptVectorsConfig)
+def run_extract_and_save(config: ConceptVectorsConfig):
     (
         concept_vectors,
         mean_relative_norms,
@@ -208,3 +206,23 @@ if __name__ == "__main__":
         mean_relative_norms,
         vectors_save_dir / f"mean_relative_norms_{result_save_suffix}.pt",
     )
+
+
+if __name__ == "__main__":
+    import simple_parsing
+
+    parser = simple_parsing.ArgumentParser()
+    parser.add_arguments(ConceptVectorsConfig, dest="config")
+    parser.add_argument("--all", action="store_true", help="Run on all datasets")
+    args = parser.parse_args()
+    config = args.config
+
+    if args.all:
+        all_datasets = list_datasets(DATASET_DIR)
+        for dataset_name in all_datasets:
+            config.train_dataset_spec.name = dataset_name
+            print(f"Running on dataset: {dataset_name}")
+            run_extract_and_save(config)
+
+    else:
+        run_extract_and_save(config)
