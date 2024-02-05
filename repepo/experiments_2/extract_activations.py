@@ -72,7 +72,7 @@ def get_pos_and_neg_activations(
     # TODO: batching
     for i, (pos_prompt, neg_prompt) in enumerate(
         tqdm(
-            training_samples, disable=not show_progress, desc="Training steering vector"
+            training_samples, disable=not show_progress, desc="Extracting activations"
         )
     ):
         pos_acts = _extract_activations(

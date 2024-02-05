@@ -1,10 +1,12 @@
 import os
 import pathlib
+import torch
 
 from dataclasses import dataclass
 from pyrallis import field
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from transformers import BitsAndBytesConfig
 from repepo.core.types import Example
 from repepo.data.make_dataset import DatasetSpec, make_dataset
 from repepo.experiments_2.utils.config import (
@@ -38,12 +40,20 @@ def get_model_and_tokenizer(
     load_in_4bit: bool = bool(LOAD_IN_4BIT),
     load_in_8bit: bool = bool(LOAD_IN_8BIT),
 ):
+
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=load_in_4bit,
+        load_in_8bit=load_in_8bit,
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_quant_type="nf4",
+    )
+
     tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
     # Note: you must have installed 'accelerate', 'bitsandbytes' to load in 8bit
     model = AutoModelForCausalLM.from_pretrained(
         model_name, token=token, 
-        load_in_4bit=load_in_4bit,
-        load_in_8bit=load_in_8bit
+        quantization_config=bnb_config,
+        device_map = "auto"
     )
     return model, tokenizer
 
