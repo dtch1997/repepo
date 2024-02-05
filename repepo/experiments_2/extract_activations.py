@@ -4,10 +4,13 @@ from repepo.algorithms.repe import RepeReadingControl
 from repepo.data.make_dataset import DatasetSpec, list_datasets
 
 # TODO: Move this into main repo as it seems fairly re-used
-from repepo.experiments.caa_repro.utils.helpers import (
-    get_model_name,
+from repepo.experiments_2.utils.helpers import (
+    get_model_name, 
     get_model_and_tokenizer,
+    get_experiment_path,
+    ConceptVectorsConfig
 )
+from repepo.experiments_2.utils.config import WORK_DIR, DATASET_DIR
 
 from collections import defaultdict
 from typing import Optional
@@ -18,9 +21,6 @@ from torch import Tensor, nn
 from tqdm import tqdm
 from transformers import PreTrainedTokenizerBase
 
-# TODO: Move this config into main repo
-# It's probably better than the weird Environ stuff I have going on
-from repepo.experiments_2.config import WORK_DIR, DATASET_DIR
 from repepo.data.make_dataset import make_dataset
 from repepo.core.pipeline import Pipeline
 from repepo.core.format import LlamaChatFormatter
@@ -32,24 +32,6 @@ from steering_vectors.layer_matching import (
     guess_and_enhance_layer_config,
 )
 from steering_vectors.train_steering_vector import _extract_activations
-
-
-@dataclass
-class ConceptVectorsConfig:
-    use_base_model: bool = field(default=False)
-    model_size: str = field(default="13b")
-    train_dataset_spec: DatasetSpec = field(
-        default=DatasetSpec(name="subscribes-to-virtue-ethics"), is_mutable=True
-    )
-    verbose: bool = True
-
-    def make_result_save_suffix(self) -> str:
-        return f"use-base-model={self.use_base_model}_model-size={self.model_size}_dataset={self.train_dataset_spec}"
-
-
-def get_experiment_path() -> pathlib.Path:
-    return WORK_DIR / "concept_vector_linearity"
-
 
 @torch.no_grad()
 def get_pos_and_neg_activations(
@@ -123,10 +105,9 @@ def get_pos_and_neg_activations(
     return pos_activations, neg_activations
 
 
-def extract_concept_vectors_and_mean_relative_norms(
+def extract_difference_vectors(
     config: ConceptVectorsConfig,
 ):
-    """Run in_distribution train and eval in CAA style in a single run"""
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)
     pipeline = Pipeline(model, tokenizer, formatter=LlamaChatFormatter())
@@ -163,50 +144,44 @@ def extract_concept_vectors_and_mean_relative_norms(
             for pos_act, neg_act in zip(pos_acts[layer_num], neg_acts[layer_num])
         ]
 
-    # Calculate concept vectors via mean-difference
-    concept_vectors: dict[int, Tensor] = {}
-    for layer_num in difference_vectors.keys():
-        diff_vecs = difference_vectors[layer_num]
-        concept_vec = torch.mean(torch.stack(diff_vecs), dim=0)
-        concept_vectors[layer_num] = concept_vec
+    return difference_vectors
+    # # Calculate concept vectors via mean-difference
+    # concept_vectors: dict[int, Tensor] = {}
+    # for layer_num in difference_vectors.keys():
+    #     diff_vecs = difference_vectors[layer_num]
+    #     concept_vec = torch.mean(torch.stack(diff_vecs), dim=0)
+    #     concept_vectors[layer_num] = concept_vec
 
-    # Calculate mean intra-cluster distance
-    mean_relative_norms: dict[int, float] = {}
-    for layer_num in difference_vectors.keys():
-        concept_vector = concept_vectors[layer_num]
-        concept_vector_norm = torch.norm(concept_vector)
-        distances_to_mean_diff_vec = [
-            torch.norm(diff_vec - concept_vector)
-            for diff_vec in difference_vectors[layer_num]
-        ]
-        relative_distances = [
-            dist / concept_vector_norm for dist in distances_to_mean_diff_vec
-        ]
-        mean_relative_norm = torch.mean(torch.stack(relative_distances))
-        mean_relative_norms[layer_num] = mean_relative_norm.item()
+    # # Calculate mean intra-cluster distance
+    # mean_relative_norms: dict[int, float] = {}
+    # for layer_num in difference_vectors.keys():
+    #     concept_vector = concept_vectors[layer_num]
+    #     concept_vector_norm = torch.norm(concept_vector)
+    #     distances_to_mean_diff_vec = [
+    #         torch.norm(diff_vec - concept_vector)
+    #         for diff_vec in difference_vectors[layer_num]
+    #     ]
+    #     relative_distances = [
+    #         dist / concept_vector_norm for dist in distances_to_mean_diff_vec
+    #     ]
+    #     mean_relative_norm = torch.mean(torch.stack(relative_distances))
+    #     mean_relative_norms[layer_num] = mean_relative_norm.item()
 
-    return concept_vectors, mean_relative_norms
+    # return concept_vectors, mean_relative_norms
 
 
 def run_extract_and_save(config: ConceptVectorsConfig):
-    (
-        concept_vectors,
-        mean_relative_norms,
-    ) = extract_concept_vectors_and_mean_relative_norms(config)
+
+    difference_vectors = extract_difference_vectors(config)
 
     # Save results
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_result_save_suffix()
-    vectors_save_dir = experiment_path / "vectors"
-    vectors_save_dir.mkdir(parents=True, exist_ok=True)
+    activations_save_dir = experiment_path / "activations"
+    activations_save_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
-        concept_vectors, vectors_save_dir / f"concept_vectors_{result_save_suffix}.pt"
+        difference_vectors, activations_save_dir / f"difference_vectors_{result_save_suffix}.pt"
     )
-    torch.save(
-        mean_relative_norms,
-        vectors_save_dir / f"mean_relative_norms_{result_save_suffix}.pt",
-    )
-
 
 if __name__ == "__main__":
     import simple_parsing
