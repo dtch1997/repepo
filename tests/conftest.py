@@ -1,4 +1,5 @@
 import pytest
+from pytest_mock import MockerFixture
 import torch
 
 from transformers import (
@@ -16,8 +17,8 @@ _device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 # mock openai.OpenAI for testing
 @pytest.fixture(autouse=True)
-def openai_mock(mocker):
-    return mocker.patch("openai.OpenAI")
+def get_openai_client_mock(mocker: MockerFixture):
+    return mocker.patch("repepo.utils.translation.get_openai_client")
 
 
 @pytest.fixture

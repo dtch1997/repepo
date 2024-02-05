@@ -1,4 +1,6 @@
 from unittest.mock import MagicMock
+
+from pytest_mock import MockerFixture
 from repepo.utils.translation import (
     translate_strings_parallel,
     gpt4_style_translate,
@@ -23,9 +25,11 @@ def test_translate_strings_parallel() -> None:
     }
 
 
-def test_gpt4_style_translate(openai_mock: MagicMock) -> None:
-    return_val_mock = MagicMock()
-    openai_mock().chat.completions.create.return_value = return_val_mock
+def test_gpt4_style_translate(
+    mocker: MockerFixture, get_openai_client_mock: MagicMock
+) -> None:
+    return_val_mock = mocker.MagicMock()
+    get_openai_client_mock().chat.completions.create.return_value = return_val_mock
     return_val_mock.choices.__getitem__().message.content = "Arrr this be a test"
 
     text = "This is a test."
@@ -34,12 +38,14 @@ def test_gpt4_style_translate(openai_mock: MagicMock) -> None:
     assert translation == "Arrr this be a test"
 
 
-def test_gpt4_language_translate(openai_mock: MagicMock) -> None:
-    return_val_mock = MagicMock()
-    openai_mock().chat.completions.create.return_value = return_val_mock
+def test_gpt4_language_translate(
+    mocker: MockerFixture, get_openai_client_mock: MagicMock
+) -> None:
+    return_val_mock = mocker.MagicMock()
+    get_openai_client_mock().chat.completions.create.return_value = return_val_mock
     return_val_mock.choices.__getitem__().message.content = "Voila un test."
 
     text = "This is a test."
-    style = "French"
-    translation = gpt4_language_translate(text, style)
+    language = "French"
+    translation = gpt4_language_translate(text, language)
     assert translation == "Voila un test."
