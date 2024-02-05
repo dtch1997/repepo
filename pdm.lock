@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:754d08ed9f291f18401f50af7ead6a1cca102f26d5e9c2d80e7226aacd9a9514"
+content_hash = "sha256:b31e780a278752e877567b165947c9b08b7a9561905bda9949f93b0c2066eca8"
 
 [[package]]
 name = "absl-py"
@@ -785,6 +785,16 @@ version = "0.6.2"
 summary = "Pythonic argument parser, that will make you smile"
 files = [
     {file = "docopt-0.6.2.tar.gz", hash = "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"},
+]
+
+[[package]]
+name = "docstring-parser"
+version = "0.15"
+requires_python = ">=3.6,<4.0"
+summary = "Parse Python docstrings in reST, Google and Numpydoc format"
+files = [
+    {file = "docstring_parser-0.15-py3-none-any.whl", hash = "sha256:d1679b86250d269d06a99670924d6bce45adc00b08069dae8c47d98e89b667a9"},
+    {file = "docstring_parser-0.15.tar.gz", hash = "sha256:48ddc093e8b1865899956fcc03b03e66bb7240c310fac5af81814580c55bf682"},
 ]
 
 [[package]]
@@ -3565,6 +3575,20 @@ summary = "Tool to Detect Surrounding Shell"
 files = [
     {file = "shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686"},
     {file = "shellingham-1.5.4.tar.gz", hash = "sha256:8dbca0739d487e5bd35ab3ca4b36e11c4078f3a234bfce294b0a0291363404de"},
+]
+
+[[package]]
+name = "simple-parsing"
+version = "0.1.5"
+requires_python = ">=3.7"
+summary = "A small utility for simplifying and cleaning up argument parsing scripts."
+dependencies = [
+    "docstring-parser~=0.15",
+    "typing-extensions>=4.5.0",
+]
+files = [
+    {file = "simple_parsing-0.1.5-py3-none-any.whl", hash = "sha256:46f35ed7002f9bb25dca3a49eac491cc78d2140e4adcbe156225ae643c2874ea"},
+    {file = "simple_parsing-0.1.5.tar.gz", hash = "sha256:d26ac15be5173cf28174e171a68153c11e462ad2cb3c23d3ad8634b00719d1fc"},
 ]
 
 [[package]]

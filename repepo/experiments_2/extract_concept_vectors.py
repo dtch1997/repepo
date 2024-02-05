@@ -36,11 +36,11 @@ from steering_vectors.train_steering_vector import _extract_activations
 
 
 @dataclass
-class ExtractConceptVectorsConfig:
+class ConceptVectorsConfig:
     use_base_model: bool = field(default=False)
     model_size: str = field(default="13b")
     train_dataset_spec: DatasetSpec = field(
-        default=DatasetSpec(name="truthfulqa_caa", split=":80%"), is_mutable=True
+        default=DatasetSpec(name="subscribes-to-virtue-ethics"), is_mutable=True
     )
     verbose: bool = True
 
@@ -125,7 +125,7 @@ def get_pos_and_neg_activations(
 
 
 def extract_concept_vectors_and_mean_relative_norms(
-    config: ExtractConceptVectorsConfig,
+    config: ConceptVectorsConfig,
 ):
     """Run in_distribution train and eval in CAA style in a single run"""
     model_name = get_model_name(config.use_base_model, config.model_size)
@@ -190,7 +190,7 @@ def extract_concept_vectors_and_mean_relative_norms(
 
 
 if __name__ == "__main__":
-    config = pyrallis.parse(ExtractConceptVectorsConfig)
+    config = pyrallis.parse(ConceptVectorsConfig)
     (
         concept_vectors,
         mean_relative_norms,

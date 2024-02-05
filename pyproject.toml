@@ -30,6 +30,7 @@ dependencies = [
     "spacy>=3.7.2",
     "mosestokenizer>=1.2.1",
     "gradio>=4.16.0",
+    "simple-parsing>=0.1.5",
 ]
 
 [tool.black]

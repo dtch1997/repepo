@@ -62,11 +62,48 @@ def convert_ab_dataset_to_example_dataset(
     return dataset
 
 
+def _maybe_swap(a, b, condition):
+    if condition:
+        return b, a
+    return a, b
+
+
+def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str]]:
+    new_list_data = []
+    for i, data in enumerate(list_data):
+        question = data["question"]
+        answer_a = data["answer_matching_behavior"]
+        answer_b = data["answer_not_matching_behavior"]
+
+        # Construct A/B formatted question / answer pair
+        new_question = f"{question}\n\nChoices:\n(A): {answer_a}\n(B): {answer_b}"
+        new_answer_matching_behavior = "(A)"
+        new_answer_not_matching_behavior = "(B)"
+
+        # Swap A and B every other time
+        answer_a, answer_b = _maybe_swap(answer_a, answer_b, i % 2 == 0)
+        new_answer_matching_behavior, new_answer_not_matching_behavior = _maybe_swap(
+            new_answer_matching_behavior, new_answer_not_matching_behavior, i % 2 == 0
+        )
+
+        new_list_data.append(
+            {
+                "question": new_question,
+                "answer_matching_behavior": new_answer_matching_behavior,
+                "answer_not_matching_behavior": new_answer_not_matching_behavior,
+            }
+        )
+
+    return new_list_data
+
+
 if __name__ == "__main__":
     dataset_names = get_anthropic_dataset_names()
     for dataset_name in dataset_names:
         # Download the dataset
         list_data = generate_ab_questions_anthropic_data(dataset_name)
+        # Preprocess the dataset
+        list_data = preprocess_ab_dataset(list_data)
 
         # Convert the dataset to our format
         dataset_info = {"behavior": dataset_name}
