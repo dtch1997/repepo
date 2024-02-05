@@ -2,7 +2,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 from datasets import load_dataset
-from repepo.data.utils import translate_row_recursive
+from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
 from repepo.utils.translation import (
     LANG_OR_STYLE_MAPPING,
     LangOrStyleCode,
@@ -10,20 +10,6 @@ from repepo.utils.translation import (
     translate_strings_parallel,
 )
 from repepo.variables import Environ
-
-
-def collect_all_tqa_strings(tqa: Any) -> set[str]:
-    """
-    Collect all the strings from the TQA dataset.
-    """
-    tqa_strings: set[str] = set()
-    # TODO: make this recursive and general so it can work on any arbitrary dataset
-    for example in tqa["validation"]:
-        tqa_strings.add(example["question"])
-        for target in ["mc1_targets", "mc2_targets"]:
-            for choice in example[target]["choices"]:
-                tqa_strings.add(choice)
-    return tqa_strings
 
 
 def translate_tqa_with_fn(
@@ -37,7 +23,7 @@ def translate_tqa_with_fn(
     Translate the TQA dataset to the target style using GPT4.
     """
     tqa = load_dataset("truthful_qa", "multiple_choice")
-    tqa_strings = collect_all_tqa_strings(tqa)
+    tqa_strings = collect_all_strings_recursive(tqa)
     translations = translate_strings_parallel(
         tqa_strings,
         translate_fn=translate_fn,
