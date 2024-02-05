@@ -8,7 +8,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from transformers import BitsAndBytesConfig
 from repepo.core.types import Example
-from repepo.data.make_dataset import DatasetSpec, make_dataset
+from repepo.data.make_dataset import (
+    DatasetSpec, 
+    make_dataset, 
+    list_datasets as list_all_datasets
+)
 from repepo.experiments_2.utils.config import (
     WORK_DIR,
     LOAD_IN_4BIT,
@@ -73,3 +77,40 @@ def get_experiment_path(
     experiment_suite: str = "concept_vector_linearity"
 ) -> pathlib.Path:
     return WORK_DIR / experiment_suite
+
+def save_activation_differences(
+    config: ConceptVectorsConfig, 
+    activation_differences: dict[int, list[torch.Tensor]]
+):
+    experiment_path = get_experiment_path()
+    result_save_suffix = config.make_result_save_suffix()
+    activations_save_dir = experiment_path / "activations"
+    activations_save_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        activation_differences, 
+        activations_save_dir / f"activation_differences_{result_save_suffix}.pt"
+    )
+
+def load_activation_differences(
+    config: ConceptVectorsConfig
+) -> dict[int, list[torch.Tensor]]:
+    experiment_path = get_experiment_path()
+    result_save_suffix = config.make_result_save_suffix()
+    activations_save_dir = experiment_path / "activations"
+    return torch.load(activations_save_dir / f"activation_differences_{result_save_suffix}.pt")
+
+def list_datasets(
+    subset = "all",
+):
+    if subset == "all":
+        return list_all_datasets()
+    elif subset == "dev":
+        return tuple([
+            "truthfulqa",
+            "subscribes-to-virtue-ethics",
+            "interest-in-math",
+            "anti-immigration",
+            "has-disability"
+        ])
+    else:
+        raise ValueError(f"Unknown subset: {subset}")

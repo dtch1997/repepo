@@ -1,14 +1,18 @@
+import gc
+
 from dataclasses import dataclass
 from pyrallis import field
 from repepo.algorithms.repe import RepeReadingControl
-from repepo.data.make_dataset import DatasetSpec, list_datasets
+from repepo.data.make_dataset import DatasetSpec
 
 # TODO: Move this into main repo as it seems fairly re-used
 from repepo.experiments_2.utils.helpers import (
     get_model_name, 
     get_model_and_tokenizer,
     get_experiment_path,
-    ConceptVectorsConfig
+    ConceptVectorsConfig,
+    save_activation_differences,
+    list_datasets
 )
 from repepo.experiments_2.utils.config import WORK_DIR, DATASET_DIR
 
@@ -104,7 +108,7 @@ def get_pos_and_neg_activations(
 
     return pos_activations, neg_activations
 
-
+@torch.no_grad()
 def extract_difference_vectors(
     config: ConceptVectorsConfig,
 ):
@@ -125,6 +129,10 @@ def extract_difference_vectors(
     repe_training_data = repe_algo._build_steering_vector_training_data(
         train_dataset, pipeline
     )
+
+    _pos, _neg = repe_training_data[0]
+    print(_pos)
+    print(_neg)
 
     # Extract activations
     pos_acts, neg_acts = get_pos_and_neg_activations(
@@ -173,27 +181,24 @@ def extract_difference_vectors(
 def run_extract_and_save(config: ConceptVectorsConfig):
 
     difference_vectors = extract_difference_vectors(config)
+    save_activation_differences(config, difference_vectors)
 
-    # Save results
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_result_save_suffix()
-    activations_save_dir = experiment_path / "activations"
-    activations_save_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        difference_vectors, activations_save_dir / f"difference_vectors_{result_save_suffix}.pt"
-    )
+    # Not sure why this is necessary, but it seems to be
+    del difference_vectors
+    gc.collect()
+    torch.cuda.empty_cache()
 
 if __name__ == "__main__":
     import simple_parsing
 
     parser = simple_parsing.ArgumentParser()
     parser.add_arguments(ConceptVectorsConfig, dest="config")
-    parser.add_argument("--all", action="store_true", help="Run on all datasets")
+    parser.add_argument("--datasets", type=str, default="") 
     args = parser.parse_args()
     config = args.config
 
-    if args.all:
-        all_datasets = list_datasets(DATASET_DIR)
+    if args.datasets:
+        all_datasets = list_datasets(args.datasets)
         for dataset_name in all_datasets:
             config.train_dataset_spec.name = dataset_name
             print(f"Running on dataset: {dataset_name}")
