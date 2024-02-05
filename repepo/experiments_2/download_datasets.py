@@ -26,7 +26,7 @@ def generate_ab_questions_anthropic_data(dataset_name: str) -> list[dict[str, st
     }
     """
     all_data = []
-    url = f"https://huggingface.co/datasets/Anthropic/model-written-evals/raw/main/{dataset_name}"
+    url = f"https://raw.githubusercontent.com/anthropics/evals/main/{dataset_name}"
     r = requests.get(url).text
     data = [json.loads(l) for l in r.split("\n") if l != ""]
     for item in data:
@@ -98,7 +98,21 @@ def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str
 
 
 if __name__ == "__main__":
+    import simple_parsing
+
+    parser = simple_parsing.ArgumentParser()
+    parser.add_argument(
+        "--n-datasets",
+        type=int,
+        default=-1,
+        help="Number of datasets to download. If -1, download all datasets.",
+    )
+    args = parser.parse_args()
+
     dataset_names = get_anthropic_dataset_names()
+    if args.n_datasets > 0:
+        dataset_names = dataset_names[: args.n_datasets]
+
     for dataset_name in dataset_names:
         # Download the dataset
         list_data = generate_ab_questions_anthropic_data(dataset_name)

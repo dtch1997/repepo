@@ -32,8 +32,8 @@ def _get_datasets(dataset_dir: pathlib.Path | None = None) -> dict[str, pathlib.
     return datasets
 
 
-def list_datasets() -> tuple[str, ...]:
-    return tuple(_get_datasets().keys())
+def list_datasets(dataset_dir: pathlib.Path | None = None) -> tuple[str, ...]:
+    return tuple(_get_datasets(dataset_dir).keys())
 
 
 @dataclass
