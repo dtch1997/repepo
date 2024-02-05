@@ -46,6 +46,6 @@ def test_gpt4_language_translate(
     return_val_mock.choices.__getitem__().message.content = "Voila un test."
 
     text = "This is a test."
-    language = "French"
+    language = "fr"
     translation = gpt4_language_translate(text, language)
     assert translation == "Voila un test."

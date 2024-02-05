@@ -1,4 +1,5 @@
 """ Utilities for reading, writing datasets to disk """
+
 # Taken from: https://github.com/tatsu-lab/stanford_alpaca/blob/main/utils.py
 
 from dataclasses import asdict, is_dataclass
@@ -45,7 +46,7 @@ def jdump(obj, f, mode="w", indent=4):
     """
     f = _make_w_io_base(f, mode)
     if isinstance(obj, (dict, list)):
-        json.dump(obj, f, indent=indent, cls=DataclassEncoder)
+        json.dump(obj, f, indent=indent, cls=DataclassEncoder, ensure_ascii=False)
     elif isinstance(obj, str):
         f.write(obj)
     else:

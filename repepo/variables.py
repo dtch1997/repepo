@@ -22,7 +22,7 @@ class Environ:
     ProjectDir = str(_get_project_dir())
     TranslatedDatasetsDir = str(
         os.environ.get(
-            "TRANSLATED_DATASETS_DIR", _get_project_dir() / "repepo/data/translated"
+            "TRANSLATED_DATASETS_DIR", _get_project_dir() / "raw_datasets/translated"
         )
     )
     OutputDir = str(os.environ.get("OUTPUT_DIR", _get_project_dir() / "output"))

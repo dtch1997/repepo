@@ -1,12 +1,27 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import cache
-from typing import Callable
+from typing import Callable, Literal
 import openai
 from tqdm import tqdm
 
 
 LANGUAGE_TRANSLATE_SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant that translates English text into {language}. You preserve the meaning of the text, as well as it's approximate length. You rewrite the text such that if you translated it back to English, it would produce the original text."""
 STYLE_TRANSLATE_SYSTEM_PROMPT = """You are a helpful assistant that rewrites text in target styles. You preserve the meaning of the text, as well as it's approximate length. You rewrite the text such that if you translated it back to the original style, it would produce the original text."""
+
+
+LangCode = Literal["fr", "ja", "zh"]
+StyleCode = Literal["pirate"]
+LangOrStyleCode = LangCode | StyleCode
+
+LANG_MAPPING: dict[LangCode, str] = {
+    "fr": "French",
+    "ja": "Japanese",
+    "zh": "Simplified Chinese",
+}
+STYLE_MAPPING: dict[StyleCode, str] = {
+    "pirate": "pirate",
+}
+LANG_OR_STYLE_MAPPING: dict[LangOrStyleCode, str] = {**LANG_MAPPING, **STYLE_MAPPING}
 
 
 # putting this into a function so it doesn't error on import if not API key is set
@@ -57,7 +72,7 @@ def _strip_outer_quotes(text: str) -> str:
 
 def gpt4_style_translate(
     text: str,
-    style: str,
+    style: StyleCode,
     model="gpt-4-turbo-preview",
     max_tokens=100,
     temperature=0.7,
@@ -70,7 +85,8 @@ def gpt4_style_translate(
     """
 
     # Define the prompt for the translation task
-    prompt = f'Translate the following text into {style} style: "{text}"'
+    style_name = STYLE_MAPPING[style]
+    prompt = f'Translate the following text into {style_name} style: "{text}"'
     res = _prompt_openai(
         system_prompt=STYLE_TRANSLATE_SYSTEM_PROMPT,
         prompt=prompt,
@@ -86,7 +102,7 @@ def gpt4_style_translate(
 
 def gpt4_language_translate(
     text: str,
-    language: str,
+    lang_code: LangCode,
     model="gpt-4-turbo-preview",
     max_tokens=100,
     temperature=0.7,
@@ -97,7 +113,8 @@ def gpt4_language_translate(
     Translate a string to a different style using GPT4.
     Based on the translators.ipynb notebook in examples
     """
-    system_prompt = LANGUAGE_TRANSLATE_SYSTEM_PROMPT_TEMPLATE.format(language=language)
+    lang_name = LANG_MAPPING[lang_code]
+    system_prompt = LANGUAGE_TRANSLATE_SYSTEM_PROMPT_TEMPLATE.format(language=lang_name)
     res = _prompt_openai(
         system_prompt=system_prompt,
         prompt=text,
@@ -109,6 +126,43 @@ def gpt4_language_translate(
     if strip_outer_quotes:
         res = _strip_outer_quotes(res)
     return res
+
+
+def gpt4_lang_or_style_translate(
+    text: str,
+    lang_or_style: LangOrStyleCode,
+    model="gpt-4-turbo-preview",
+    max_tokens=100,
+    temperature=0.7,
+    stop=None,
+    strip_outer_quotes=True,
+) -> str:
+    """
+    Translate a string to a different style using GPT4.
+    Based on the translators.ipynb notebook in examples
+    """
+    if lang_or_style in LANG_MAPPING:
+        return gpt4_language_translate(
+            text,
+            lang_code=lang_or_style,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stop=stop,
+            strip_outer_quotes=strip_outer_quotes,
+        )
+    elif lang_or_style in STYLE_MAPPING:
+        return gpt4_style_translate(
+            text,
+            style=lang_or_style,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stop=stop,
+            strip_outer_quotes=strip_outer_quotes,
+        )
+    else:
+        raise ValueError(f"Unknown lang_or_style: {lang_or_style}")
 
 
 def translate_strings_parallel(

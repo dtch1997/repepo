@@ -123,9 +123,9 @@ def make_truthfulqa():
 
     # also build translated datasets
     for translated_tqa in Path(Environ.TranslatedDatasetsDir).glob(
-        "truthful_qa_*.jsonl"
+        "*/truthful_qa.jsonl"
     ):
-        lang_or_style = translated_tqa.stem.split("_")[-1]
+        lang_or_style = translated_tqa.parent.stem
         dataset = HFDataset.from_json(str(translated_tqa))
         converted_dataset = convert_hf_truthfulqa_dataset(dataset)
         jdump(
@@ -142,9 +142,9 @@ def make_truthfulqa_caa():
 
     # also build translated datasets
     for translated_tqa in Path(Environ.TranslatedDatasetsDir).glob(
-        "truthful_qa_*.jsonl"
+        "*/truthful_qa.jsonl"
     ):
-        lang_or_style = translated_tqa.stem.split("_")[-1]
+        lang_or_style = translated_tqa.parent.stem
         dataset = HFDataset.from_json(str(translated_tqa))
         converted_dataset = convert_hf_truthfulqa_caa_dataset(dataset)
         jdump(
