@@ -4,6 +4,7 @@ output
 # Dataset files
 *.hdf5
 *.json
+!raw_datasets/**/*.json
 # Direnv config
 .envrc
 .pdm-python
