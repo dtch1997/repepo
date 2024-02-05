@@ -19,3 +19,10 @@ python download_datasets.py
 Inspect the datasets using `inspect_datasets.ipynb`
 
 ## Extract Concept Vectors
+
+Extract concept vectors using: 
+```
+python extract_concept_vectors.py
+```
+
+Inspect concept vectors using `inspect_concept_vectors.ipynb` 
