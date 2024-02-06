@@ -1,6 +1,7 @@
 import os
 import pathlib
 import torch
+import pandas as pd
 
 from dataclasses import dataclass
 from pyrallis import field
@@ -114,3 +115,7 @@ def list_datasets(
         ])
     else:
         raise ValueError(f"Unknown subset: {subset}")
+
+def convert_to_dataframe(example_list: list[Example]) -> pd.DataFrame:
+    df = pd.DataFrame([vars(example) for example in example_list])
+    return df
