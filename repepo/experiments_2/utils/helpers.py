@@ -25,9 +25,12 @@ from repepo.experiments_2.utils.config import (
 token = os.getenv("HF_TOKEN")
 
 SPLITS = {
-    "train": ":40%",
+    "train-dev": "0:1%",
+    "train": "0:40%",
     "val": "40:50%",
+    "val-dev": "40:41%",
     "test": "50:100%",
+    "test-dev": "50:51%"
 }
 
 def pretty_print_example(example: Example):
@@ -73,13 +76,17 @@ def get_model_and_tokenizer(
 class ConceptVectorsConfig:
     use_base_model: bool = field(default=False)
     model_size: str = field(default="13b")
-    train_dataset_spec: DatasetSpec = field(
-        default=DatasetSpec(name="subscribes-to-virtue-ethics"), is_mutable=True
-    )
+    train_dataset_name: str = field(default="truthfulqa")
+    train_split_name: str = field(default = "train-dev")
     verbose: bool = True
 
     def make_save_suffix(self) -> str:
-        return f"use-base-model={self.use_base_model}_model-size={self.model_size}_dataset={self.train_dataset_spec}"
+        return (
+            f"use-base-model={self.use_base_model}_"
+            f"model-size={self.model_size}_"
+            f"train-dataset={self.train_dataset_name}_"
+            f"train-split={self.train_split_name}"
+        )
 
 @dataclass 
 class SteeringConfig(ConceptVectorsConfig):
@@ -91,13 +98,18 @@ class SteeringConfig(ConceptVectorsConfig):
         default=[-1, 0, 1], 
         is_mutable=True
     )
-    test_dataset_spec: DatasetSpec = field(
-        default=DatasetSpec(name="subscribes-to-virtue-ethics"), is_mutable=True
-    )
+    test_dataset_name: str = field(default="truthfulqa")
+    test_split_name: str = field(default = "test-dev")
 
     def make_steering_results_save_suffix(self) -> str:
         super_suffix = self.make_save_suffix()
-        return f"{super_suffix}_layers={self.layers}_multipliers={self.multipliers}_test-dataset={self.test_dataset_spec}"
+        return (
+            f"{super_suffix}_"
+            f"layers={self.layers}_"
+            f"multipliers={self.multipliers}_"
+            f"test-dataset={self.test_dataset_name}_"
+            f"test-split={self.test_split_name}"
+        )
 
 def get_experiment_path(
     experiment_suite: str = "concept_vector_linearity",
@@ -213,7 +225,10 @@ def make_dataset(
 ):
     if not split_name in SPLITS:
         raise ValueError(f"Unknown split name: {split_name}")
-    return _make_dataset(DatasetSpec(name=name, split=SPLITS[split_name]))
+    return _make_dataset(
+        DatasetSpec(name=name, split=SPLITS[split_name]),
+        DATASET_DIR
+    )
 
 def make_subset_of_datasets(
     subset = "all",
@@ -244,9 +259,14 @@ def list_subset_of_datasets(
 
 def get_configs_for_datasets(
     datasets: Iterable[str],
-    split: str = ":100%",
+    split_name: str = "train",
 ):
-    return [ConceptVectorsConfig(train_dataset_spec=DatasetSpec(name=dataset, split=split)) for dataset in datasets]
+    return [
+        ConceptVectorsConfig(
+            train_dataset_name=dataset, 
+            train_split_name=split_name
+        ) for dataset in datasets
+    ]
 
 def convert_to_dataframe(example_list: list[Example]) -> pd.DataFrame:
     df = pd.DataFrame([vars(example) for example in example_list])

@@ -9,7 +9,8 @@ from repepo.experiments_2.utils.helpers import (
     ConceptVectorsConfig,
     save_activation_differences,
     list_subset_of_datasets,
-    get_configs_for_datasets
+    get_configs_for_datasets,
+    make_dataset
 )
 from repepo.experiments_2.utils.config import DATASET_DIR
 
@@ -21,7 +22,6 @@ from torch import Tensor, nn
 from tqdm import tqdm
 from transformers import PreTrainedTokenizerBase
 
-from repepo.data.make_dataset import make_dataset
 from repepo.core.pipeline import Pipeline
 from repepo.core.format import LlamaChatFormatter
 
@@ -121,7 +121,7 @@ def extract_difference_vectors(
         verbose=config.verbose,
     )
 
-    train_dataset = make_dataset(config.train_dataset_spec, DATASET_DIR)
+    train_dataset = make_dataset(config.train_dataset_name, config.train_split_name)
     repe_training_data = repe_algo._build_steering_vector_training_data(
         train_dataset, pipeline
     )
@@ -149,29 +149,6 @@ def extract_difference_vectors(
         ]
 
     return difference_vectors
-    # # Calculate concept vectors via mean-difference
-    # concept_vectors: dict[int, Tensor] = {}
-    # for layer_num in difference_vectors.keys():
-    #     diff_vecs = difference_vectors[layer_num]
-    #     concept_vec = torch.mean(torch.stack(diff_vecs), dim=0)
-    #     concept_vectors[layer_num] = concept_vec
-
-    # # Calculate mean intra-cluster distance
-    # mean_relative_norms: dict[int, float] = {}
-    # for layer_num in difference_vectors.keys():
-    #     concept_vector = concept_vectors[layer_num]
-    #     concept_vector_norm = torch.norm(concept_vector)
-    #     distances_to_mean_diff_vec = [
-    #         torch.norm(diff_vec - concept_vector)
-    #         for diff_vec in difference_vectors[layer_num]
-    #     ]
-    #     relative_distances = [
-    #         dist / concept_vector_norm for dist in distances_to_mean_diff_vec
-    #     ]
-    #     mean_relative_norm = torch.mean(torch.stack(relative_distances))
-    #     mean_relative_norms[layer_num] = mean_relative_norm.item()
-
-    # return concept_vectors, mean_relative_norms
 
 
 def run_extract_and_save(config: ConceptVectorsConfig):
@@ -195,10 +172,9 @@ if __name__ == "__main__":
 
     if args.datasets:
         all_datasets = list_subset_of_datasets(args.datasets)
-        configs = get_configs_for_datasets(all_datasets, config.train_dataset_spec.split)
+        configs = get_configs_for_datasets(all_datasets, config.train_split_name)
         for config in configs:
-            dataset_name = config.train_dataset_spec.name
-            print(f"Running on dataset: {dataset_name}")
+            print(f"Running on dataset: {config.train_dataset_name}")
             run_extract_and_save(config)
 
     else:
