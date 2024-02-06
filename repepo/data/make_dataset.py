@@ -23,15 +23,17 @@ def get_all_json_filepaths(root_dir: pathlib.Path) -> List[pathlib.Path]:
 
 
 # Intentionally don't cache anything here, otherwise datasets don't be available after downloading
-def _get_datasets() -> dict[str, pathlib.Path]:
+def _get_datasets(dataset_dir: pathlib.Path | None = None) -> dict[str, pathlib.Path]:
     datasets: dict[str, pathlib.Path] = {}
-    for path in get_all_json_filepaths(get_dataset_dir()):
+    if dataset_dir is None:
+        dataset_dir = get_dataset_dir()
+    for path in get_all_json_filepaths(dataset_dir):
         datasets[path.stem] = path.absolute()
     return datasets
 
 
-def list_datasets() -> tuple[str, ...]:
-    return tuple(_get_datasets().keys())
+def list_datasets(dataset_dir: pathlib.Path | None = None) -> tuple[str, ...]:
+    return tuple(_get_datasets(dataset_dir).keys())
 
 
 @dataclass
@@ -39,6 +41,9 @@ class DatasetSpec:
     name: str
     split: str = ":100%"
     seed: int = 0
+
+    def __repr__(self) -> str:
+        return f"DatasetSpec(name={self.name},split={self.split},seed={self.seed})"
 
 
 def _parse_split(split_string: str, length: int) -> slice:
@@ -61,8 +66,8 @@ def _parse_split(split_string: str, length: int) -> slice:
         raise ValueError(f"Parse string {split_string} not recognized")
 
 
-def get_dataset(name: str) -> Dataset:
-    datasets = _get_datasets()
+def get_dataset(name: str, dataset_dir: pathlib.Path | None = None) -> Dataset:
+    datasets = _get_datasets(dataset_dir)
     if name not in datasets:
         raise ValueError(f"Unknown dataset: {name}")
 
@@ -84,6 +89,6 @@ def _shuffle_and_split(items: list[T], split_string: str, seed: int) -> list[T]:
     return shuffled_items[split]
 
 
-def make_dataset(spec: DatasetSpec):
-    dataset = get_dataset(spec.name)
+def make_dataset(spec: DatasetSpec, dataset_dir: pathlib.Path | None = None):
+    dataset = get_dataset(spec.name, dataset_dir)
     return _shuffle_and_split(dataset, spec.split, spec.seed)

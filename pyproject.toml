@@ -26,6 +26,13 @@ dependencies = [
     "nbdime>=4.0.1",
     "steering-vectors>=0.3.0",
     "openai>=1.10.0",
+    "arrr>=1.0.4",
+    "spacy>=3.7.2",
+    "mosestokenizer>=1.2.1",
+    "gradio>=4.16.0",
+    "simple-parsing>=0.1.5",
+    "torchmetrics>=1.3.0.post0",
+    "umap-learn>=0.5.5",
 ]
 
 [tool.black]

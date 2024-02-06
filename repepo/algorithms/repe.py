@@ -3,6 +3,7 @@ from dataclasses import dataclass, replace
 from typing import Literal, Optional
 from typing_extensions import override
 import random
+import torch
 from repepo.core.pipeline import PipelineContext
 
 from steering_vectors import (
@@ -97,6 +98,7 @@ class RepeReadingControl(Algorithm):
     read_token_index: int
     seed: int
     show_progress: bool
+    verbose: bool
 
     def __init__(
         self,
@@ -117,6 +119,8 @@ class RepeReadingControl(Algorithm):
         # Reference: https://github.com/nrimsky/SycophancySteering/blob/25f93a1f1aad51f94288f52d01f6a10d10f42bf1/generate_vectors.py#L102C13-L102C67
         read_token_index: int = -1,
         show_progress: bool = True,
+        verbose: bool = False,
+        steering_vector_save_path: Optional[str] = None,
     ):
         self.multi_answer_method = multi_answer_method
         self.layer_type = layer_type
@@ -130,6 +134,8 @@ class RepeReadingControl(Algorithm):
         self.layer_config = layer_config
         self.direction_multiplier = direction_multiplier
         self.show_progress = show_progress
+        self.verbose = verbose
+        self.steering_vector_save_path = steering_vector_save_path
 
         self.skip_reading = skip_reading
         self.override_vector = override_vector
@@ -164,6 +170,17 @@ class RepeReadingControl(Algorithm):
         repe_training_data = self._build_steering_vector_training_data(
             dataset, pipeline
         )
+        if self.verbose:
+            # Print a small section of the dataset
+            pos_example, neg_example = repe_training_data[0]
+            print("Example steering vector training data:")
+            print("Positive prompt:")
+            print(pos_example)
+            print("Negative prompt:")
+            print(neg_example)
+            for i in range(2):
+                print()
+
         return train_steering_vector(
             pipeline.model,
             pipeline.tokenizer,
@@ -178,9 +195,7 @@ class RepeReadingControl(Algorithm):
 
     @override
     def run(self, pipeline: Pipeline, dataset: Dataset) -> Pipeline:
-        # Steering vector reading
-        # NOTE: The hooks read from this steering vector.
-
+        # TODO: Clean up this horrible code...
         if self.override_vector is not None:
             steering_vector: SteeringVector = self.override_vector
         elif not self.skip_reading:
@@ -191,6 +206,10 @@ class RepeReadingControl(Algorithm):
             raise RuntimeError(
                 "Either reading or override vector must be provided for control"
             )
+
+        if self.steering_vector_save_path is not None:
+            # TODO: Refactor into steering_vector.save
+            torch.save(steering_vector, self.steering_vector_save_path)
 
         # Creating the hooks that will do steering vector control
         # NOTE: How this works is that we create a context manager that creates a hook
