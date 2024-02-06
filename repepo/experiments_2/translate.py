@@ -1,3 +1,4 @@
+from typing import cast
 import openai
 
 from dataclasses import dataclass
@@ -20,7 +21,7 @@ class TranslationSettings:
     max_tokens: int = 100
     temperature: float = 0.7
     n: int = 1
-    stop: str = None
+    stop: str | None = None
 
 
 def translate_to_style(
@@ -46,7 +47,9 @@ def translate_to_style(
     )
 
     # Extract the translated text from the API response
-    translation = [choice.message.content.strip() for choice in response.choices]
+    translation = [
+        cast(str, choice.message.content).strip() for choice in response.choices
+    ]
     return translation
 
 
@@ -63,6 +66,7 @@ def translate_example(
         output_future = executor.submit(
             translate_to_style, client, example.output, style, settings
         )
+        assert example.incorrect_outputs is not None
         incorrect_future = executor.submit(
             translate_to_style, client, example.incorrect_outputs[0], style, settings
         )

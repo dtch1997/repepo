@@ -45,12 +45,10 @@ if __name__ == "__main__":
     config = pyrallis.parse(EvaluateTqaCaaConfig)
     save_suffix = config.settings.make_result_save_suffix(None, None)
 
-    if config.experiment_name is None:
-        config.experiment_name = (
-            f"{config.train_dataset_spec.name}_{config.test_dataset_spec.name}"
-        )
-
-    results_path = get_experiment_path(config.experiment_name) / "results"
+    experiment_name = (
+        f"{config.train_dataset_spec.name}_{config.test_dataset_spec.name}"
+    )
+    results_path = get_experiment_path() / experiment_name / "results"
     results_path.mkdir(parents=True, exist_ok=True)
     with open(results_path / f"results_{save_suffix}.json", "r") as f:
         _results = json.load(f)
@@ -58,7 +56,7 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax = plot_in_distribution_data_for_layer(
-        ax, results, config.experiment_name, config.layers
+        ax, results, experiment_name, config.layers
     )
     fig.tight_layout()
     fig.savefig(results_path / f"results_{save_suffix}.png")
