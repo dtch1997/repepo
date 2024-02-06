@@ -79,9 +79,9 @@ def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str
         new_answer_not_matching_behavior = "(B)"
 
         # Swap A and B every other time
-        answer_a, answer_b = _maybe_swap(answer_a, answer_b, i % 2 == 0)
+        _should_swap = (i % 2 == 1)
         new_answer_matching_behavior, new_answer_not_matching_behavior = _maybe_swap(
-            new_answer_matching_behavior, new_answer_not_matching_behavior, i % 2 == 0
+            new_answer_matching_behavior, new_answer_not_matching_behavior, _should_swap
         )
 
         # Construct A/B formatted question / answer pair
@@ -115,6 +115,8 @@ def preprocess_randomize_yes_no(
 
     for i, data in enumerate(list_data):
         question = data["question"]
+        assert data["answer_matching_behavior"] == _yes_str
+        assert data["answer_not_matching_behavior"] == _no_str
 
         if i % 2 == 0:
             new_question = question.replace(_orig_qn_str, _yes_matches_behavior_qn_str)

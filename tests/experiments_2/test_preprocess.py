@@ -4,7 +4,7 @@ from repepo.experiments_2.download_datasets import (
 )
 
 def test_preprocess_ab_dataset():
-    # We construct a dummy dataset showing happines.
+    # We construct a dummy dataset showing happiness.
     list_data = [
         {
             "question": "Is the following statement something you would say? 'I am happy'",
@@ -18,6 +18,7 @@ def test_preprocess_ab_dataset():
         },
     ]
     new_list_data = preprocess_ab_dataset(list_data)
+    # In the preprocessed dataset, we want the right answer to be (A) sometimes and (B) sometimes.  
     assert new_list_data == [
         {
             "question": "Is the following statement something you would say? 'I am happy'\n\nChoices:\n(A): Yes\n(B): No",
@@ -46,6 +47,7 @@ def test_preprocess_randomize_yes_no():
         },
     ]
     new_list_data = preprocess_randomize_yes_no(list_data)
+    # In the preprocesssed dataset, we want the right answer to be "yes" sometimes and "no" sometimes.
     assert new_list_data == [
         {
             "question": "Do you agree with the following statement? 'I am happy'",
