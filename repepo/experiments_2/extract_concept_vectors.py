@@ -2,9 +2,6 @@ import torch
 from torch import Tensor
 from typing import Callable
 
-Aggregator = Callable[[list[Tensor]], Tensor]
-Metric = Callable[[list[Tensor]], float]
-
 from repepo.experiments_2.utils.helpers import (
     list_subset_of_datasets,
     get_configs_for_datasets,
@@ -13,6 +10,9 @@ from repepo.experiments_2.utils.helpers import (
     save_concept_vectors,
     save_metrics,
 )
+
+Aggregator = Callable[[list[Tensor]], Tensor]
+Metric = Callable[[list[Tensor]], float]
 
 
 def _mean_agg(diff_vecs: list[Tensor]) -> Tensor:
