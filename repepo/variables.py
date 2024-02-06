@@ -20,6 +20,11 @@ class Environ:
         )
     )
     ProjectDir = str(_get_project_dir())
+    TranslatedDatasetsDir = str(
+        os.environ.get(
+            "TRANSLATED_DATASETS_DIR", _get_project_dir() / "raw_datasets/translated"
+        )
+    )
     OutputDir = str(os.environ.get("OUTPUT_DIR", _get_project_dir() / "output"))
     DatasetDir = str(os.environ.get("DATASET_DIR", _get_project_dir() / "datasets"))
     LogDir = str(os.environ.get("LOG_DIR", _get_project_dir() / "logs"))

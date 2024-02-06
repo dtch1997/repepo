@@ -1,9 +1,11 @@
+from pathlib import Path
 from typing import Any, Literal, cast
-from datasets import load_dataset
+from datasets import load_dataset, Dataset as HFDataset
 
 from repepo.data.make_dataset import get_dataset_dir
 from repepo.data.io import jdump
 from repepo.core.types import Dataset, Example
+from repepo.variables import Environ
 
 
 def convert_hf_truthfulqa_dataset(hf_dataset: Any) -> Dataset:
@@ -119,12 +121,36 @@ def make_truthfulqa():
     tqa_dataset = convert_hf_truthfulqa_dataset(hf_dataset)
     jdump(tqa_dataset, get_dataset_dir() / "truthfulqa.json")
 
+    # also build translated datasets
+    for translated_tqa in Path(Environ.TranslatedDatasetsDir).glob(
+        "*/truthful_qa.jsonl"
+    ):
+        lang_or_style = translated_tqa.parent.stem
+        dataset = HFDataset.from_json(str(translated_tqa))
+        converted_dataset = convert_hf_truthfulqa_dataset(dataset)
+        jdump(
+            converted_dataset,
+            get_dataset_dir() / f"truthfulqa_{lang_or_style}.json",
+        )
+
 
 def make_truthfulqa_caa():
     # hf's dataset is too general and requires casting every field we access, so just using Any for simplicity
     hf_dataset = cast(Any, load_dataset("truthful_qa", "multiple_choice"))["validation"]
     tqa_dataset = convert_hf_truthfulqa_caa_dataset(hf_dataset)
     jdump(tqa_dataset, get_dataset_dir() / "truthfulqa_caa.json")
+
+    # also build translated datasets
+    for translated_tqa in Path(Environ.TranslatedDatasetsDir).glob(
+        "*/truthful_qa.jsonl"
+    ):
+        lang_or_style = translated_tqa.parent.stem
+        dataset = HFDataset.from_json(str(translated_tqa))
+        converted_dataset = convert_hf_truthfulqa_caa_dataset(dataset)
+        jdump(
+            converted_dataset,
+            get_dataset_dir() / f"truthfulqa_caa_{lang_or_style}.json",
+        )
 
 
 if __name__ == "__main__":

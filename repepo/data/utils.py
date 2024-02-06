@@ -1,3 +1,4 @@
+import collections.abc
 from typing import Any, Dict, NewType, Sequence
 
 import torch
@@ -99,3 +100,17 @@ def tokenize(
         input_ids=input_ids,
         labels=labels,
     )
+
+
+def translate_row_recursive(row: Any, translations: dict[str, str]) -> Any:
+    """
+    Recursively translate a row of a dataset.
+    """
+    if isinstance(row, str):
+        return translations[row]
+    elif isinstance(row, collections.abc.Mapping):
+        return {k: translate_row_recursive(v, translations) for k, v in row.items()}
+    elif isinstance(row, collections.abc.Sequence):
+        return [translate_row_recursive(v, translations) for v in row]
+    else:
+        return row
