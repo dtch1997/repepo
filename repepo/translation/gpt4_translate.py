@@ -1,27 +1,13 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import cache
-from typing import Callable, Literal
+from typing import Callable
 import openai
 from tqdm import tqdm
+from .constants import STYLE_MAPPING, LANG_MAPPING, LangCode, StyleCode, LangOrStyleCode
 
 
 LANGUAGE_TRANSLATE_SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant that translates English text into {language}. You preserve the meaning of the text, as well as it's approximate length. You rewrite the text such that if you translated it back to English, it would produce the original text."""
 STYLE_TRANSLATE_SYSTEM_PROMPT = """You are a helpful assistant that rewrites text in target styles. You preserve the meaning of the text, as well as it's approximate length. You rewrite the text such that if you translated it back to the original style, it would produce the original text."""
-
-
-LangCode = Literal["fr", "ja", "zh"]
-StyleCode = Literal["pirate"]
-LangOrStyleCode = LangCode | StyleCode
-
-LANG_MAPPING: dict[LangCode, str] = {
-    "fr": "French",
-    "ja": "Japanese",
-    "zh": "Simplified Chinese",
-}
-STYLE_MAPPING: dict[StyleCode, str] = {
-    "pirate": "pirate",
-}
-LANG_OR_STYLE_MAPPING: dict[LangOrStyleCode, str] = {**LANG_MAPPING, **STYLE_MAPPING}
 
 
 # putting this into a function so it doesn't error on import if not API key is set
@@ -132,7 +118,7 @@ def gpt4_lang_or_style_translate(
     text: str,
     lang_or_style: LangOrStyleCode,
     model="gpt-4-turbo-preview",
-    max_tokens=100,
+    max_tokens=256,
     temperature=0.7,
     stop=None,
     strip_outer_quotes=True,
