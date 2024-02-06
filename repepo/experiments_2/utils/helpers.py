@@ -107,8 +107,8 @@ class ConceptVectorsConfig:
 
 @dataclass
 class SteeringConfig(ConceptVectorsConfig):
-    layers: list[int] = field(default=[10, 13, 15, 18, 20], is_mutable=True)
-    multipliers: list[float] = field(default=[-1.0, 0.0, 1.0], is_mutable=True)
+    layers: list[int] = field(default=[10, 11, 12, 13, 14, 15, 16, 17, 18, 19], is_mutable=True)
+    multipliers: list[float] = field(default=[-1.0, -0.5, 0.0, 0.5, 1.0], is_mutable=True)
     test_dataset_name: str = field(default="truthfulqa")
     test_split_name: str = field(default="test-dev")
 
