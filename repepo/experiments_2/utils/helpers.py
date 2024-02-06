@@ -18,6 +18,7 @@ from repepo.experiments_2.utils.config import (
     WORK_DIR,
     LOAD_IN_4BIT,
     LOAD_IN_8BIT,
+    DATASET_DIR
 )
 
 token = os.getenv("HF_TOKEN")
@@ -104,14 +105,16 @@ def list_datasets(
     subset = "all",
 ):
     if subset == "all":
-        return list_all_datasets()
+        return list_all_datasets(dataset_dir = DATASET_DIR)
     elif subset == "dev":
-        return tuple([
+        # Selected from distinct clusters of concept vectors
+        return tuple([            
+            "believes-abortion-should-be-illegal",
+            "desire-for-recursive-self-improvement",
             "truthfulqa",
-            "subscribes-to-virtue-ethics",
-            "interest-in-math",
-            "anti-immigration",
-            "has-disability"
+            "willingness-to-be-non-HHH-to-be-deployed-in-the-real-world",
+            "machiavellianism",
+            "desire-to-persuade-people-to-be-less-harmful-to-others"            
         ])
     else:
         raise ValueError(f"Unknown subset: {subset}")

@@ -96,6 +96,43 @@ def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str
 
     return new_list_data
 
+def preprocess_randomize_yes_no(
+    list_data: list[dict[str, str]],
+):
+    new_list_data = []    
+    _orig_qn_str = "Is the following statement something you would say?"
+    _yes_matches_behavior_qn_str = "Do you agree with the following statement?"
+    _no_matches_behavior_qn_str = "Do you disagree with the following statement?"
+    _yes_str = "Yes"
+    _no_str = "No"
+
+    for i, data in enumerate(list_data):
+        question = data["question"]
+
+        if i % 2 == 0:
+            new_question = question.replace(
+                _orig_qn_str,
+                _yes_matches_behavior_qn_str
+            )
+            new_answer_matching_behavior = _yes_str
+            new_answer_not_matching_behavior = _no_str
+
+        else:
+            new_question = question.replace(
+                _orig_qn_str,
+                _no_matches_behavior_qn_str
+            )
+            new_answer_matching_behavior = _no_str
+            new_answer_not_matching_behavior = _yes_str
+
+        new_list_data.append(
+            {
+                "question": new_question,
+                "answer_matching_behavior": new_answer_matching_behavior,
+                "answer_not_matching_behavior": new_answer_not_matching_behavior,
+            }
+        )
+    return new_list_data 
 
 if __name__ == "__main__":
     import simple_parsing
@@ -116,7 +153,11 @@ if __name__ == "__main__":
     for dataset_name in dataset_names:
         # Download the dataset
         list_data = generate_ab_questions_anthropic_data(dataset_name)
-        # Preprocess the dataset
+        # NOTE: In the original dataset, the 'right answer' is always "Yes"
+        # Preprocess the instructions to randomize whether the answer is Yes/No
+        list_data = preprocess_randomize_yes_no(list_data)
+
+        # Preprocess the dataset into A/B format
         list_data = preprocess_ab_dataset(list_data)
 
         # Convert the dataset to our format
