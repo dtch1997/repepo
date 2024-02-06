@@ -10,18 +10,18 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import BitsAndBytesConfig
 from repepo.core.types import Example
 from repepo.data.make_dataset import (
-    DatasetSpec, 
-    make_dataset, 
-    list_datasets as list_all_datasets
+    DatasetSpec,
+    list_datasets as list_all_datasets,
 )
 from repepo.experiments_2.utils.config import (
     WORK_DIR,
     LOAD_IN_4BIT,
     LOAD_IN_8BIT,
-    DATASET_DIR
+    DATASET_DIR,
 )
 
 token = os.getenv("HF_TOKEN")
+
 
 def pretty_print_example(example: Example):
     print("Example(")
@@ -31,6 +31,7 @@ def pretty_print_example(example: Example):
     print("\tincorrect_output=", example.incorrect_outputs)
     print("\tmeta=", example.meta)
     print(")")
+
 
 def get_model_name(use_base_model: bool, model_size: str):
     """Gets model name for Llama-[7b,13b], base model or chat model"""
@@ -46,7 +47,6 @@ def get_model_and_tokenizer(
     load_in_4bit: bool = bool(LOAD_IN_4BIT),
     load_in_8bit: bool = bool(LOAD_IN_8BIT),
 ):
-
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=load_in_4bit,
         load_in_8bit=load_in_8bit,
@@ -57,11 +57,10 @@ def get_model_and_tokenizer(
     tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
     # Note: you must have installed 'accelerate', 'bitsandbytes' to load in 8bit
     model = AutoModelForCausalLM.from_pretrained(
-        model_name, token=token, 
-        quantization_config=bnb_config,
-        device_map = "auto"
+        model_name, token=token, quantization_config=bnb_config, device_map="auto"
     )
     return model, tokenizer
+
 
 @dataclass
 class ConceptVectorsConfig:
@@ -75,49 +74,57 @@ class ConceptVectorsConfig:
     def make_result_save_suffix(self) -> str:
         return f"use-base-model={self.use_base_model}_model-size={self.model_size}_dataset={self.train_dataset_spec}"
 
+
 def get_experiment_path(
-    experiment_suite: str = "concept_vector_linearity"
+    experiment_suite: str = "concept_vector_linearity",
 ) -> pathlib.Path:
     return WORK_DIR / experiment_suite
 
+
 def save_activation_differences(
-    config: ConceptVectorsConfig, 
-    activation_differences: dict[int, list[torch.Tensor]]
+    config: ConceptVectorsConfig, activation_differences: dict[int, list[torch.Tensor]]
 ):
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_result_save_suffix()
     activations_save_dir = experiment_path / "activations"
     activations_save_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
-        activation_differences, 
-        activations_save_dir / f"activation_differences_{result_save_suffix}.pt"
+        activation_differences,
+        activations_save_dir / f"activation_differences_{result_save_suffix}.pt",
     )
 
+
 def load_activation_differences(
-    config: ConceptVectorsConfig
+    config: ConceptVectorsConfig,
 ) -> dict[int, list[torch.Tensor]]:
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_result_save_suffix()
     activations_save_dir = experiment_path / "activations"
-    return torch.load(activations_save_dir / f"activation_differences_{result_save_suffix}.pt")
+    return torch.load(
+        activations_save_dir / f"activation_differences_{result_save_suffix}.pt"
+    )
+
 
 def list_datasets(
-    subset = "all",
+    subset="all",
 ):
     if subset == "all":
-        return list_all_datasets(dataset_dir = DATASET_DIR)
+        return list_all_datasets(dataset_dir=DATASET_DIR)
     elif subset == "dev":
         # Selected from distinct clusters of concept vectors
-        return tuple([            
-            "believes-abortion-should-be-illegal",
-            "desire-for-recursive-self-improvement",
-            "truthfulqa",
-            "willingness-to-be-non-HHH-to-be-deployed-in-the-real-world",
-            "machiavellianism",
-            "desire-to-persuade-people-to-be-less-harmful-to-others"            
-        ])
+        return tuple(
+            [
+                "believes-abortion-should-be-illegal",
+                "desire-for-recursive-self-improvement",
+                "truthfulqa",
+                "willingness-to-be-non-HHH-to-be-deployed-in-the-real-world",
+                "machiavellianism",
+                "desire-to-persuade-people-to-be-less-harmful-to-others",
+            ]
+        )
     else:
         raise ValueError(f"Unknown subset: {subset}")
+
 
 def convert_to_dataframe(example_list: list[Example]) -> pd.DataFrame:
     df = pd.DataFrame([vars(example) for example in example_list])

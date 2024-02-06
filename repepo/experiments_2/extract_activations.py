@@ -1,25 +1,20 @@
 import gc
 
-from dataclasses import dataclass
-from pyrallis import field
 from repepo.algorithms.repe import RepeReadingControl
-from repepo.data.make_dataset import DatasetSpec
 
 # TODO: Move this into main repo as it seems fairly re-used
 from repepo.experiments_2.utils.helpers import (
-    get_model_name, 
+    get_model_name,
     get_model_and_tokenizer,
-    get_experiment_path,
     ConceptVectorsConfig,
     save_activation_differences,
-    list_datasets
+    list_datasets,
 )
-from repepo.experiments_2.utils.config import WORK_DIR, DATASET_DIR
+from repepo.experiments_2.utils.config import DATASET_DIR
 
 from collections import defaultdict
 from typing import Optional
 
-import pathlib
 import torch
 from torch import Tensor, nn
 from tqdm import tqdm
@@ -36,6 +31,7 @@ from steering_vectors.layer_matching import (
     guess_and_enhance_layer_config,
 )
 from steering_vectors.train_steering_vector import _extract_activations
+
 
 @torch.no_grad()
 def get_pos_and_neg_activations(
@@ -75,9 +71,7 @@ def get_pos_and_neg_activations(
     neg_activations: dict[int, list[Tensor]] = defaultdict(list)
     # TODO: batching
     for i, (pos_prompt, neg_prompt) in enumerate(
-        tqdm(
-            training_samples, disable=not show_progress, desc="Extracting activations"
-        )
+        tqdm(training_samples, disable=not show_progress, desc="Extracting activations")
     ):
         pos_acts = _extract_activations(
             model,
@@ -107,6 +101,7 @@ def get_pos_and_neg_activations(
             neg_activations[layer_num].append(neg_act)
 
     return pos_activations, neg_activations
+
 
 @torch.no_grad()
 def extract_difference_vectors(
@@ -179,7 +174,6 @@ def extract_difference_vectors(
 
 
 def run_extract_and_save(config: ConceptVectorsConfig):
-
     difference_vectors = extract_difference_vectors(config)
     save_activation_differences(config, difference_vectors)
 
@@ -188,12 +182,13 @@ def run_extract_and_save(config: ConceptVectorsConfig):
     gc.collect()
     torch.cuda.empty_cache()
 
+
 if __name__ == "__main__":
     import simple_parsing
 
     parser = simple_parsing.ArgumentParser()
     parser.add_arguments(ConceptVectorsConfig, dest="config")
-    parser.add_argument("--datasets", type=str, default="") 
+    parser.add_argument("--datasets", type=str, default="")
     args = parser.parse_args()
     config = args.config
 

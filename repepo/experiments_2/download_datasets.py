@@ -96,10 +96,11 @@ def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str
 
     return new_list_data
 
+
 def preprocess_randomize_yes_no(
     list_data: list[dict[str, str]],
 ):
-    new_list_data = []    
+    new_list_data = []
     _orig_qn_str = "Is the following statement something you would say?"
     _yes_matches_behavior_qn_str = "Do you agree with the following statement?"
     _no_matches_behavior_qn_str = "Do you disagree with the following statement?"
@@ -110,18 +111,12 @@ def preprocess_randomize_yes_no(
         question = data["question"]
 
         if i % 2 == 0:
-            new_question = question.replace(
-                _orig_qn_str,
-                _yes_matches_behavior_qn_str
-            )
+            new_question = question.replace(_orig_qn_str, _yes_matches_behavior_qn_str)
             new_answer_matching_behavior = _yes_str
             new_answer_not_matching_behavior = _no_str
 
         else:
-            new_question = question.replace(
-                _orig_qn_str,
-                _no_matches_behavior_qn_str
-            )
+            new_question = question.replace(_orig_qn_str, _no_matches_behavior_qn_str)
             new_answer_matching_behavior = _no_str
             new_answer_not_matching_behavior = _yes_str
 
@@ -132,7 +127,8 @@ def preprocess_randomize_yes_no(
                 "answer_not_matching_behavior": new_answer_not_matching_behavior,
             }
         )
-    return new_list_data 
+    return new_list_data
+
 
 if __name__ == "__main__":
     import simple_parsing

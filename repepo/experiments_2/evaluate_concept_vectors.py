@@ -14,11 +14,10 @@ from repepo.data.make_dataset import DatasetSpec, make_dataset
 from repepo.core.types import Dataset
 from repepo.core.pipeline import Pipeline
 from repepo.core.evaluate import (
-    MultipleChoiceAccuracyEvaluator,
     select_repe_layer_at_eval,
     set_repe_direction_multiplier_at_eval,
     update_completion_template_at_eval,
-    evaluate
+    evaluate,
 )
 from repepo.algorithms.repe import SteeringHook
 from steering_vectors import SteeringVector
@@ -27,12 +26,14 @@ from repepo.experiments_2.extract_concept_vectors import (
     get_experiment_path,
 )
 
+
 @dataclass
 class EvaluateCaaResult:
     layer_id: int
     multiplier: float
     mcq_accuracy: float
     average_key_prob: float
+
 
 def load_concept_vectors_and_mean_relative_norms(
     config: ConceptVectorsConfig,
@@ -48,6 +49,7 @@ def load_concept_vectors_and_mean_relative_norms(
         vectors_save_dir / f"mean_relative_norms_{result_save_suffix}.pt"
     )
     return concept_vectors, mean_relative_norms
+
 
 def evaluate_steering_with_concept_vectors(
     pipeline: Pipeline,
@@ -76,14 +78,14 @@ def evaluate_steering_with_concept_vectors(
             result = evaluate(
                 pipeline,
                 dataset,
-                eval_hooks = [
+                eval_hooks=[
                     update_completion_template_at_eval(
                         "{prompt} My answer is {response}"
                     ),
                     set_repe_direction_multiplier_at_eval(multiplier),
                     select_repe_layer_at_eval(layer_id),
                 ],
-                evaluators = []
+                evaluators=[],
             )
             key_probs = [
                 pred.get_normalized_correct_probs() for pred in result.predictions
@@ -103,8 +105,9 @@ def evaluate_steering_with_concept_vectors(
 
     # Remove steering hook
     pipeline.hooks[0].remove()
-        
+
     return caa_results
+
 
 if __name__ == "__main__":
     parser = simple_parsing.ArgumentParser()
@@ -115,7 +118,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     config = args.config
-    test_dataset = make_dataset(args.test_dataset) 
+    test_dataset = make_dataset(args.test_dataset)
 
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)

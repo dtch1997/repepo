@@ -1,7 +1,6 @@
 from typing import Any, Literal, cast
 from datasets import load_dataset
 
-from repepo.data.make_dataset import get_dataset_dir
 from repepo.data.io import jdump
 from repepo.core.types import Dataset, Example
 from repepo.experiments_2.utils.config import DATASET_DIR
@@ -112,6 +111,7 @@ def load_truthfulqa_primer_dataset() -> Dataset:
         )
         for question, output, incorrect_output in tqa_6shot_data
     ]
+
 
 def make_truthfulqa_caa():
     # hf's dataset is too general and requires casting every field we access, so just using Any for simplicity
