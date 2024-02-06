@@ -79,7 +79,7 @@ def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str
         new_answer_not_matching_behavior = "(B)"
 
         # Swap A and B every other time
-        _should_swap = (i % 2 == 1)
+        _should_swap = i % 2 == 1
         new_answer_matching_behavior, new_answer_not_matching_behavior = _maybe_swap(
             new_answer_matching_behavior, new_answer_not_matching_behavior, _should_swap
         )

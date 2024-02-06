@@ -31,31 +31,37 @@ def _scaled_var_agg(diff_vecs: list[Tensor]) -> float:
     norm_vecs_to_mean = [torch.norm(vec) for vec in vecs_to_mean]
     return (torch.mean(torch.stack(norm_vecs_to_mean)) / mean_norm).item()
 
+
 def _unscaled_var_agg(diff_vecs: list[Tensor]) -> float:
     mean = _mean_agg(diff_vecs)
     vecs_to_mean = [diff_vec - mean for diff_vec in diff_vecs]
     norm_vecs_to_mean = [torch.norm(vec) for vec in vecs_to_mean]
     return torch.mean(torch.stack(norm_vecs_to_mean)).item()
 
+
 def _cosine_agg(diff_vecs: list[Tensor]) -> float:
     mean = _mean_agg(diff_vecs)
-    vecs_to_mean = [torch.nn.functional.cosine_similarity(diff_vec, mean, dim=-1) for diff_vec in diff_vecs]
+    vecs_to_mean = [
+        torch.nn.functional.cosine_similarity(diff_vec, mean, dim=-1)
+        for diff_vec in diff_vecs
+    ]
     norm_vecs_to_mean = [torch.norm(vec) for vec in vecs_to_mean]
     return torch.mean(torch.stack(norm_vecs_to_mean)).item()
+
 
 def _dot_product_agg(diff_vecs: list[Tensor]) -> float:
     mean = _mean_agg(diff_vecs)
     vecs_to_mean = [torch.dot(diff_vec, mean) for diff_vec in diff_vecs]
     norm_vecs_to_mean = [torch.norm(vec) for vec in vecs_to_mean]
     return torch.mean(torch.stack(norm_vecs_to_mean)).item()
-    
+
 
 metrics: dict[str, Metric] = {
-    "mean_norm": _mean_norm, 
+    "mean_norm": _mean_norm,
     "scaled_var": _scaled_var_agg,
     "unscaled_var": _unscaled_var_agg,
     "cosine": _cosine_agg,
-    "dot_product": _dot_product_agg  
+    "dot_product": _dot_product_agg,
 }
 
 
