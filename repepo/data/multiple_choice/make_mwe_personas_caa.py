@@ -30,11 +30,13 @@ def preprocess_ab_dataset(
         new_answer_matching_behavior = "(A)"
         new_answer_not_matching_behavior = "(B)"
 
-        # Swap A and B every other time
-        answer_a, answer_b = _maybe_swap(answer_a, answer_b, i % 2 == 0)
+        # Swap A and B every 2 samples
+        # The MWE data alternates every sample, so don't want to undo their alternating
+        swap = int(i / 2) % 2 == 0
+        answer_a, answer_b = _maybe_swap(answer_a, answer_b, swap)
         new_question = f"{question}\n\n{choices_str}\n(A): {answer_a}\n(B): {answer_b}"
         new_answer_matching_behavior, new_answer_not_matching_behavior = _maybe_swap(
-            new_answer_matching_behavior, new_answer_not_matching_behavior, i % 2 == 0
+            new_answer_matching_behavior, new_answer_not_matching_behavior, swap
         )
 
         new_list_data.append(
