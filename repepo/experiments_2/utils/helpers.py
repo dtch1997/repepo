@@ -105,11 +105,11 @@ class ConceptVectorsConfig:
 @dataclass 
 class SteeringConfig(ConceptVectorsConfig):
     layers: list[int] = field(
-        default=[], 
+        default=[10, 13, 15, 18, 20],
         is_mutable=True
     )
     multipliers: list[float] = field(
-        default=[-1, 0, 1], 
+        default=[-1.0, 0.0, 1.0],
         is_mutable=True
     )
     test_dataset_name: str = field(default="truthfulqa")
@@ -277,6 +277,20 @@ def get_configs_for_datasets(
         ConceptVectorsConfig(
             train_dataset_name=dataset, 
             train_split_name=split_name
+        ) for dataset in datasets
+    ]
+
+def get_steering_configs_for_datasets(
+    datasets: Iterable[str],
+    train_split_name: str = "train",
+    test_split_name: str = "test",
+):
+    return [
+        SteeringConfig(
+            train_dataset_name=dataset,
+            test_dataset_name=dataset,
+            train_split_name=train_split_name,
+            test_split_name=test_split_name
         ) for dataset in datasets
     ]
 
