@@ -8,6 +8,7 @@ Metric = Callable[[list[Tensor]], float]
 from repepo.experiments_2.utils.config import DATASET_DIR
 from repepo.experiments_2.utils.helpers import (
     list_subset_of_datasets,
+    get_configs_for_datasets,
     ConceptVectorsConfig,
     load_activation_differences,
     save_concept_vectors,
@@ -47,7 +48,7 @@ def run_load_extract_and_save(
     config: ConceptVectorsConfig,
     metric_names: list[str]
 ):
-    print("Running on dataset: ", config.train_dataset_spec.name)
+    print("Running on dataset: ", config.train_dataset_name)
     difference_vectors = load_activation_differences(config)
     concept_vectors = aggregate(
         difference_vectors,
@@ -72,8 +73,8 @@ if __name__ == "__main__":
 
     if args.datasets:
         all_datasets = list_subset_of_datasets(args.datasets)
-        for dataset_name in all_datasets:
-            config.train_dataset_spec.name = dataset_name
+        configs = get_configs_for_datasets(all_datasets, config.train_split_name)
+        for config in configs:
             run_load_extract_and_save(config, metric_names=metric_names)
     else:
         run_load_extract_and_save(config, metric_names=metric_names)

@@ -128,7 +128,7 @@ if __name__ == "__main__":
         all_datasets = list_subset_of_datasets(args.datasets)
         for dataset_name in all_datasets:
             # Train and test on the same dataset
-            config.train_dataset_spec.name = dataset_name
+            config.train_dataset_name = dataset_name
             config.test_dataset_spec.name = dataset_name
             run_load_extract_and_save(config)
     else:
