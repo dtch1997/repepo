@@ -104,6 +104,30 @@ def load_activation_differences(
         activations_save_dir / f"activation_differences_{result_save_suffix}.pt"
     )
 
+def save_concept_vectors(
+    config: ConceptVectorsConfig, 
+    concept_vectors: dict[int, torch.Tensor]
+):
+    experiment_path = get_experiment_path()
+    result_save_suffix = config.make_result_save_suffix()
+    activations_save_dir = experiment_path / "vectors"
+    activations_save_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        concept_vectors,
+        activations_save_dir / f"concept_vectors_{result_save_suffix}.pt",
+    )
+
+
+def load_concept_vectors(
+    config: ConceptVectorsConfig,
+) -> dict[int, torch.Tensor]:
+    experiment_path = get_experiment_path()
+    result_save_suffix = config.make_result_save_suffix()
+    activations_save_dir = experiment_path / "vectors"
+    return torch.load(
+        activations_save_dir / f"concept_vectors_{result_save_suffix}.pt"
+    )
+
 
 def list_datasets(
     subset="all",
