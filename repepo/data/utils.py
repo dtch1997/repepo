@@ -1,5 +1,5 @@
 import collections.abc
-from typing import Any, Dict, Iterable, NewType, Sequence
+from typing import Any, Dict, NewType, Sequence
 
 import torch
 import transformers

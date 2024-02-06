@@ -1,7 +1,7 @@
 """ Script to make datasets for Anthropic's Advanced AI Risk Model-Written Evals """
 
 import json
-from typing import Any, cast
+from typing import cast
 
 from repepo.data.make_dataset import get_dataset_dir, get_raw_dataset_dir
 from repepo.data.io import jdump
