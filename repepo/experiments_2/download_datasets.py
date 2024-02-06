@@ -75,8 +75,6 @@ def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str
         answer_a = data["answer_matching_behavior"]
         answer_b = data["answer_not_matching_behavior"]
 
-        # Construct A/B formatted question / answer pair
-        new_question = f"{question}\n\nChoices:\n(A): {answer_a}\n(B): {answer_b}"
         new_answer_matching_behavior = "(A)"
         new_answer_not_matching_behavior = "(B)"
 
@@ -84,6 +82,14 @@ def preprocess_ab_dataset(list_data: list[dict[str, str]]) -> list[dict[str, str
         answer_a, answer_b = _maybe_swap(answer_a, answer_b, i % 2 == 0)
         new_answer_matching_behavior, new_answer_not_matching_behavior = _maybe_swap(
             new_answer_matching_behavior, new_answer_not_matching_behavior, i % 2 == 0
+        )
+
+        # Construct A/B formatted question / answer pair
+        new_question = (
+            f"{question}\n\n"
+            f"Choices:\n"
+            f"{new_answer_matching_behavior}: {answer_a}\n"
+            f"{new_answer_not_matching_behavior}: {answer_b}"
         )
 
         new_list_data.append(
