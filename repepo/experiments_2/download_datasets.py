@@ -5,7 +5,6 @@ import requests
 
 from repepo.core.types import Example, Dataset
 from repepo.experiments_2.utils.config import EXPERIMENT_DIR, DATASET_DIR
-from repepo.experiments_2.utils.helpers import SPLITS
 from repepo.data.make_dataset import make_dataset, DatasetSpec
 from repepo.data.io import jdump
 
@@ -151,6 +150,7 @@ if __name__ == "__main__":
         # Download the dataset
         list_data = generate_ab_questions_anthropic_data(dataset_name)
         from pprint import pprint
+
         pprint(list_data[0])
         # NOTE: In the original dataset, the 'right answer' is always "Yes"
         # Preprocess the instructions to randomize whether the answer is Yes/No

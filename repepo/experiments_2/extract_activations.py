@@ -10,9 +10,8 @@ from repepo.experiments_2.utils.helpers import (
     save_activation_differences,
     list_subset_of_datasets,
     get_configs_for_datasets,
-    make_dataset
+    make_dataset,
 )
-from repepo.experiments_2.utils.config import DATASET_DIR
 
 from collections import defaultdict
 from typing import Optional

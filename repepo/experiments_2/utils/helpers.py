@@ -33,11 +33,12 @@ SPLITS = {
     "val": "40:50%",
     "val-dev": "40:41%",
     "test": "50:100%",
-    "test-dev": "50:51%"
+    "test-dev": "50:51%",
 }
 
+
 class EmptyTorchCUDACache:
-    """ Context manager to free GPU memory """
+    """Context manager to free GPU memory"""
 
     def __enter__(self, *args, **kwargs):
         return self
@@ -45,6 +46,7 @@ class EmptyTorchCUDACache:
     def __exit__(self, *args, **kwargs):
         gc.collect()
         torch.cuda.empty_cache()
+
 
 def pretty_print_example(example: Example):
     print("Example(")
@@ -90,7 +92,7 @@ class ConceptVectorsConfig:
     use_base_model: bool = field(default=False)
     model_size: str = field(default="13b")
     train_dataset_name: str = field(default="truthfulqa")
-    train_split_name: str = field(default = "train-dev")
+    train_split_name: str = field(default="train-dev")
     verbose: bool = True
 
     def make_save_suffix(self) -> str:
@@ -102,18 +104,13 @@ class ConceptVectorsConfig:
         )
         return hashlib.md5(str.encode()).hexdigest()
 
-@dataclass 
+
+@dataclass
 class SteeringConfig(ConceptVectorsConfig):
-    layers: list[int] = field(
-        default=[10, 13, 15, 18, 20],
-        is_mutable=True
-    )
-    multipliers: list[float] = field(
-        default=[-1.0, 0.0, 1.0],
-        is_mutable=True
-    )
+    layers: list[int] = field(default=[10, 13, 15, 18, 20], is_mutable=True)
+    multipliers: list[float] = field(default=[-1.0, 0.0, 1.0], is_mutable=True)
     test_dataset_name: str = field(default="truthfulqa")
-    test_split_name: str = field(default = "test-dev")
+    test_split_name: str = field(default="test-dev")
 
     def make_steering_results_save_suffix(self) -> str:
         super_suffix = self.make_save_suffix()
@@ -125,6 +122,7 @@ class SteeringConfig(ConceptVectorsConfig):
             f"test-split={self.test_split_name}"
         )
         return hashlib.md5(str.encode()).hexdigest()
+
 
 def get_experiment_path(
     experiment_suite: str = "concept_vector_linearity",
@@ -155,9 +153,9 @@ def load_activation_differences(
         activations_save_dir / f"activation_differences_{result_save_suffix}.pt"
     )
 
+
 def save_concept_vectors(
-    config: ConceptVectorsConfig, 
-    concept_vectors: dict[int, torch.Tensor]
+    config: ConceptVectorsConfig, concept_vectors: dict[int, torch.Tensor]
 ):
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
@@ -167,6 +165,7 @@ def save_concept_vectors(
         concept_vectors,
         activations_save_dir / f"concept_vectors_{result_save_suffix}.pt",
     )
+
 
 def save_metrics(
     config: ConceptVectorsConfig,
@@ -182,6 +181,7 @@ def save_metrics(
         metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt",
     )
 
+
 def load_metrics(
     config: ConceptVectorsConfig,
     metric_name: str,
@@ -189,9 +189,7 @@ def load_metrics(
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     metrics_save_dir = experiment_path / "metrics"
-    return torch.load(
-        metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt"
-    )
+    return torch.load(metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt")
 
 
 def load_concept_vectors(
@@ -200,9 +198,8 @@ def load_concept_vectors(
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     activations_save_dir = experiment_path / "vectors"
-    return torch.load(
-        activations_save_dir / f"concept_vectors_{result_save_suffix}.pt"
-    )
+    return torch.load(activations_save_dir / f"concept_vectors_{result_save_suffix}.pt")
+
 
 @dataclass
 class SteeringResult:
@@ -210,6 +207,7 @@ class SteeringResult:
     multiplier: float
     mcq_accuracy: float
     average_key_prob: float
+
 
 def save_results(
     config: SteeringConfig,
@@ -222,6 +220,7 @@ def save_results(
     with open(results_save_dir / f"results_{result_save_suffix}.pickle", "wb") as f:
         pickle.dump(results, f)
 
+
 def load_results(
     config: SteeringConfig,
 ) -> list[SteeringResult]:
@@ -231,54 +230,54 @@ def load_results(
     with open(results_save_dir / f"results_{result_save_suffix}.pickle", "rb") as f:
         return cast(list[SteeringResult], pickle.load(f))
 
+
 def make_dataset(
     name: str,
     split_name: str = "train",
 ):
-    if not split_name in SPLITS:
+    if split_name not in SPLITS:
         raise ValueError(f"Unknown split name: {split_name}")
-    return _make_dataset(
-        DatasetSpec(name=name, split=SPLITS[split_name]),
-        DATASET_DIR
-    )
+    return _make_dataset(DatasetSpec(name=name, split=SPLITS[split_name]), DATASET_DIR)
+
 
 def make_subset_of_datasets(
-    subset = "all",
+    subset="all",
     split_name: str = "train",
 ):
     datasets = list_subset_of_datasets(subset=subset)
     return [make_dataset(name, split_name) for name in datasets]
 
+
 def list_subset_of_datasets(
     subset="all",
-):    
+):
     if subset == "all":
         return _list_dataset(dataset_dir=DATASET_DIR)
     elif subset == "dev":
         # Selected from distinct clusters of concept vectors
         return tuple(
             [
-                f"believes-abortion-should-be-illegal",
-                f"desire-for-recursive-self-improvement",
-                f"truthfulqa",
-                f"willingness-to-be-non-HHH-to-be-deployed-in-the-real-world",
-                f"machiavellianism",
-                f"desire-to-persuade-people-to-be-less-harmful-to-others",
+                "believes-abortion-should-be-illegal",
+                "desire-for-recursive-self-improvement",
+                "truthfulqa",
+                "willingness-to-be-non-HHH-to-be-deployed-in-the-real-world",
+                "machiavellianism",
+                "desire-to-persuade-people-to-be-less-harmful-to-others",
             ]
         )
     else:
         raise ValueError(f"Unknown subset: {subset}")
+
 
 def get_configs_for_datasets(
     datasets: Iterable[str],
     split_name: str = "train",
 ):
     return [
-        ConceptVectorsConfig(
-            train_dataset_name=dataset, 
-            train_split_name=split_name
-        ) for dataset in datasets
+        ConceptVectorsConfig(train_dataset_name=dataset, train_split_name=split_name)
+        for dataset in datasets
     ]
+
 
 def get_steering_configs_for_datasets(
     datasets: Iterable[str],
@@ -290,9 +289,11 @@ def get_steering_configs_for_datasets(
             train_dataset_name=dataset,
             test_dataset_name=dataset,
             train_split_name=train_split_name,
-            test_split_name=test_split_name
-        ) for dataset in datasets
+            test_split_name=test_split_name,
+        )
+        for dataset in datasets
     ]
+
 
 def convert_to_dataframe(example_list: list[Example]) -> pd.DataFrame:
     df = pd.DataFrame([vars(example) for example in example_list])

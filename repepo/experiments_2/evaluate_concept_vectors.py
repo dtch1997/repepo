@@ -12,7 +12,7 @@ from repepo.experiments_2.utils.helpers import (
     save_results,
     list_subset_of_datasets,
     make_dataset,
-    EmptyTorchCUDACache
+    EmptyTorchCUDACache,
 )
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.types import Dataset
@@ -22,11 +22,11 @@ from repepo.core.evaluate import (
     set_repe_direction_multiplier_at_eval,
     update_completion_template_at_eval,
     evaluate,
-    MultipleChoiceAccuracyEvaluator
+    MultipleChoiceAccuracyEvaluator,
 )
 from repepo.algorithms.repe import SteeringHook
 from steering_vectors import SteeringVector
-from repepo.experiments_2.utils.config import DATASET_DIR
+
 
 def evaluate_steering_with_concept_vectors(
     pipeline: Pipeline,
@@ -38,9 +38,7 @@ def evaluate_steering_with_concept_vectors(
 ) -> list[SteeringResult]:
     caa_results = []
 
-    steering_vector = SteeringVector(
-        layer_activations=concept_vectors
-    )
+    steering_vector = SteeringVector(layer_activations=concept_vectors)
 
     # Create steering hook and add it to pipeline
     steering_hook = SteeringHook(
@@ -86,14 +84,14 @@ def evaluate_steering_with_concept_vectors(
 
     return caa_results
 
+
 def run_load_extract_and_save(
     config: SteeringConfig,
 ):
-    
     test_dataset = make_dataset(config.test_dataset_name, config.test_split_name)
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)
-    
+
     if len(config.layers) == 0:
         config.layers = list(range(model.config.num_hidden_layers))
     pipeline = Pipeline(model, tokenizer, formatter=LlamaChatFormatter())
@@ -109,6 +107,7 @@ def run_load_extract_and_save(
     )
 
     save_results(config, results)
+
 
 if __name__ == "__main__":
     parser = simple_parsing.ArgumentParser()
