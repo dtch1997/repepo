@@ -5,6 +5,7 @@ import requests
 
 from repepo.core.types import Example, Dataset
 from repepo.experiments_2.utils.config import EXPERIMENT_DIR, DATASET_DIR
+from repepo.experiments_2.utils.helpers import SPLITS
 from repepo.data.make_dataset import make_dataset, DatasetSpec
 from repepo.data.io import jdump
 

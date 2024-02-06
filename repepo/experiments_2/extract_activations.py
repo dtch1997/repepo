@@ -8,7 +8,8 @@ from repepo.experiments_2.utils.helpers import (
     get_model_and_tokenizer,
     ConceptVectorsConfig,
     save_activation_differences,
-    list_datasets,
+    list_subset_of_datasets,
+    get_configs_for_datasets
 )
 from repepo.experiments_2.utils.config import DATASET_DIR
 
@@ -193,9 +194,10 @@ if __name__ == "__main__":
     config = args.config
 
     if args.datasets:
-        all_datasets = list_datasets(args.datasets)
-        for dataset_name in all_datasets:
-            config.train_dataset_spec.name = dataset_name
+        all_datasets = list_subset_of_datasets(args.datasets)
+        configs = get_configs_for_datasets(all_datasets, config.train_dataset_spec.split)
+        for config in configs:
+            dataset_name = config.train_dataset_spec.name
             print(f"Running on dataset: {dataset_name}")
             run_extract_and_save(config)
 

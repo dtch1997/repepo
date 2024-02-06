@@ -18,52 +18,36 @@ from repepo.core.evaluate import (
     set_repe_direction_multiplier_at_eval,
     update_completion_template_at_eval,
     evaluate,
+    MultipleChoiceAccuracyEvaluator
 )
 from repepo.algorithms.repe import SteeringHook
 from steering_vectors import SteeringVector
-from repepo.experiments_2.extract_concept_vectors import (
-    ConceptVectorsConfig,
-    get_experiment_path,
+from repepo.experiments_2.utils.helpers import (
+    SteeringConfig,
+    SteeringResult,
+    load_concept_vectors,
+    save_results,
+    list_subset_of_datasets
 )
-
-
-@dataclass
-class EvaluateCaaResult:
-    layer_id: int
-    multiplier: float
-    mcq_accuracy: float
-    average_key_prob: float
-
-
-def load_concept_vectors_and_mean_relative_norms(
-    config: ConceptVectorsConfig,
-) -> tuple[dict[int, torch.Tensor], dict[int, float]]:
-    """Load concept vectors and mean relative norms from disk"""
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_result_save_suffix()
-    vectors_save_dir = experiment_path / "vectors"
-    concept_vectors = torch.load(
-        vectors_save_dir / f"concept_vectors_{result_save_suffix}.pt"
-    )
-    mean_relative_norms = torch.load(
-        vectors_save_dir / f"mean_relative_norms_{result_save_suffix}.pt"
-    )
-    return concept_vectors, mean_relative_norms
-
+from repepo.experiments_2.utils.config import DATASET_DIR
 
 def evaluate_steering_with_concept_vectors(
     pipeline: Pipeline,
-    concept_vectors: SteeringVector,
+    concept_vectors: dict[int, torch.Tensor],
     dataset: Dataset,
     layers: list[int],
     multipliers: list[float],
     verbose: bool = False,
-) -> list[EvaluateCaaResult]:
+) -> list[SteeringResult]:
     caa_results = []
+
+    steering_vector = SteeringVector(
+        layer_activations=concept_vectors
+    )
 
     # Create steering hook and add it to pipeline
     steering_hook = SteeringHook(
-        steering_vector=concept_vectors,
+        steering_vector=steering_vector,
         direction_multiplier=0,
         patch_generation_tokens_only=False,
         skip_first_n_generation_tokens=0,
@@ -71,8 +55,8 @@ def evaluate_steering_with_concept_vectors(
     )
     pipeline.hooks.append(steering_hook)
 
-    for layer_id in config.layers:
-        for multiplier in config.multipliers:
+    for layer_id in layers:
+        for multiplier in multipliers:
             pass
             # Run evaluate to get metrics
             result = evaluate(
@@ -85,20 +69,20 @@ def evaluate_steering_with_concept_vectors(
                     set_repe_direction_multiplier_at_eval(multiplier),
                     select_repe_layer_at_eval(layer_id),
                 ],
-                evaluators=[],
+                evaluators=[MultipleChoiceAccuracyEvaluator()],
             )
             key_probs = [
                 pred.get_normalized_correct_probs() for pred in result.predictions
             ]
 
-            caa_result = EvaluateCaaResult(
+            caa_result = SteeringResult(
                 layer_id=layer_id,
                 multiplier=multiplier,
                 mcq_accuracy=result.metrics["accuracy"],
                 average_key_prob=mean(key_probs),
             )
             caa_results.append(caa_result)
-            if config.verbose:
+            if verbose:
                 print(
                     f"Layer {layer_id}, multiplier {multiplier:.2f}: Accuracy {caa_result.mcq_accuracy:.2f}, Average key prob {caa_result.average_key_prob:.2f}"
                 )
@@ -108,36 +92,44 @@ def evaluate_steering_with_concept_vectors(
 
     return caa_results
 
-
-if __name__ == "__main__":
-    parser = simple_parsing.ArgumentParser()
-    parser.add_arguments(ConceptVectorsConfig, dest="config")
-    parser.add_arguments(DatasetSpec, dest="test_dataset")
-    parser.add_argument("layers", nargs="+", type=int)
-    parser.add_argument("multipliers", nargs="+", type=float)
-
-    args = parser.parse_args()
-    config = args.config
-    test_dataset = make_dataset(args.test_dataset)
-
+def run_load_extract_and_save(
+    config: SteeringConfig,
+):
+    
+    test_dataset = make_dataset(config.test_dataset_spec, DATASET_DIR)
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)
+    
+    if len(config.layers) == 0:
+        config.layers = list(range(model.config.num_hidden_layers))
     pipeline = Pipeline(model, tokenizer, formatter=LlamaChatFormatter())
-
-    concept_vectors, mean_relative_norms = load_concept_vectors_and_mean_relative_norms(
-        config
-    )
-    pipeline = Pipeline(
-        model=config.model,
-        tokenizer=config.tokenizer,
-        formatter=LlamaChatFormatter(),
-    )
+    concept_vectors = load_concept_vectors(config)
 
     results = evaluate_steering_with_concept_vectors(
         pipeline=pipeline,
         concept_vectors=concept_vectors,
         dataset=test_dataset,
-        layers=args.layers,
-        multipliers=args.multipliers,
+        layers=config.layers,
+        multipliers=config.multipliers,
         verbose=config.verbose,
     )
+
+    save_results(config, results)
+
+if __name__ == "__main__":
+    parser = simple_parsing.ArgumentParser()
+    parser.add_arguments(SteeringConfig, dest="config")
+    parser.add_argument("--datasets", type=str, default="")
+
+    args = parser.parse_args()
+    config = args.config
+
+    if args.datasets:
+        all_datasets = list_subset_of_datasets(args.datasets)
+        for dataset_name in all_datasets:
+            # Train and test on the same dataset
+            config.train_dataset_spec.name = dataset_name
+            config.test_dataset_spec.name = dataset_name
+            run_load_extract_and_save(config)
+    else:
+        run_load_extract_and_save(config)
