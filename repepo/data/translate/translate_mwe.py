@@ -4,9 +4,8 @@ import json
 from typing import Any
 from repepo.data.make_dataset import get_raw_dataset_dir
 from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
-from repepo.utils.translation import (
-    LANG_OR_STYLE_MAPPING,
-    LangOrStyleCode,
+from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
+from repepo.translation.gpt4_translate import (
     gpt4_lang_or_style_translate,
     translate_strings_parallel,
 )

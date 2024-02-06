@@ -5,6 +5,7 @@ output
 *.hdf5
 *.json
 !raw_datasets/**/*.json
+!repepo/**/*.json
 # Direnv config
 .envrc
 .pdm-python

@@ -4,7 +4,6 @@ Uses a different dataset version that includes more prompts.
 Included for purposes of reproducing key plots 
 """
 
-
 from repepo.data.make_dataset import get_dataset_dir, get_raw_dataset_dir
 from repepo.data.io import jdump, jload
 from repepo.core.types import Dataset, Example
@@ -57,5 +56,31 @@ def make_sycophancy_caa():
     jdump(syc_dataset, get_dataset_dir() / "caa" / "sycophancy_test.json")
 
 
+def make_sycophancy_caa_translations():
+    """Make sycophancy train and test datasets"""
+    for dataset_path in get_raw_dataset_dir().glob(
+        "translated/*/caa/generate_dataset.json"
+    ):
+        lang_or_style = dataset_path.parent.parent.stem
+        list_dataset = jload(dataset_path)
+        syc_dataset = convert_sycophancy_dataset(list_dataset)
+        jdump(
+            syc_dataset,
+            get_dataset_dir() / "caa" / f"sycophancy_train_{lang_or_style}.json",
+        )
+
+    for dataset_path in get_raw_dataset_dir().glob(
+        "translated/*/caa/test_dataset.json"
+    ):
+        lang_or_style = dataset_path.parent.parent.stem
+        list_dataset = jload(dataset_path)
+        syc_dataset: Dataset = convert_sycophancy_dataset(list_dataset)
+        jdump(
+            syc_dataset,
+            get_dataset_dir() / "caa" / f"sycophancy_test_{lang_or_style}.json",
+        )
+
+
 if __name__ == "__main__":
     make_sycophancy_caa()
+    make_sycophancy_caa_translations()
