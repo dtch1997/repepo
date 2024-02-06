@@ -150,12 +150,16 @@ if __name__ == "__main__":
     for dataset_name in dataset_names:
         # Download the dataset
         list_data = generate_ab_questions_anthropic_data(dataset_name)
+        from pprint import pprint
+        pprint(list_data[0])
         # NOTE: In the original dataset, the 'right answer' is always "Yes"
         # Preprocess the instructions to randomize whether the answer is Yes/No
         list_data = preprocess_randomize_yes_no(list_data)
+        pprint(list_data[0])
 
         # Preprocess the dataset into A/B format
         list_data = preprocess_ab_dataset(list_data)
+        pprint(list_data[0])
 
         # Convert the dataset to our format
         dataset_info = {"behavior": dataset_name}

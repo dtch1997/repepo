@@ -1,7 +1,10 @@
 import os
+import pickle
 import pathlib
 import torch
 import pandas as pd
+import gc
+import hashlib
 
 from typing import cast, Hashable, Iterable
 from dataclasses import dataclass
@@ -32,6 +35,16 @@ SPLITS = {
     "test": "50:100%",
     "test-dev": "50:51%"
 }
+
+class EmptyTorchCUDACache:
+    """ Context manager to free GPU memory """
+
+    def __enter__(self, *args, **kwargs):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        gc.collect()
+        torch.cuda.empty_cache()
 
 def pretty_print_example(example: Example):
     print("Example(")
@@ -81,12 +94,13 @@ class ConceptVectorsConfig:
     verbose: bool = True
 
     def make_save_suffix(self) -> str:
-        return (
+        str = (
             f"use-base-model={self.use_base_model}_"
             f"model-size={self.model_size}_"
             f"train-dataset={self.train_dataset_name}_"
             f"train-split={self.train_split_name}"
         )
+        return hashlib.md5(str.encode()).hexdigest()
 
 @dataclass 
 class SteeringConfig(ConceptVectorsConfig):
@@ -103,13 +117,14 @@ class SteeringConfig(ConceptVectorsConfig):
 
     def make_steering_results_save_suffix(self) -> str:
         super_suffix = self.make_save_suffix()
-        return (
+        str = (
             f"{super_suffix}_"
             f"layers={self.layers}_"
             f"multipliers={self.multipliers}_"
             f"test-dataset={self.test_dataset_name}_"
             f"test-split={self.test_split_name}"
         )
+        return hashlib.md5(str.encode()).hexdigest()
 
 def get_experiment_path(
     experiment_suite: str = "concept_vector_linearity",
@@ -204,10 +219,8 @@ def save_results(
     result_save_suffix = config.make_steering_results_save_suffix()
     results_save_dir = experiment_path / "results"
     results_save_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        results,
-        results_save_dir / f"results_{result_save_suffix}.pt",
-    )
+    with open(results_save_dir / f"results_{result_save_suffix}.pickle", "wb") as f:
+        pickle.dump(results, f)
 
 def load_results(
     config: SteeringConfig,
@@ -215,9 +228,8 @@ def load_results(
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_steering_results_save_suffix()
     results_save_dir = experiment_path / "results"
-    return torch.load(
-        results_save_dir / f"results_{result_save_suffix}.pt"
-    )
+    with open(results_save_dir / f"results_{result_save_suffix}.pickle", "rb") as f:
+        return cast(list[SteeringResult], pickle.load(f))
 
 def make_dataset(
     name: str,

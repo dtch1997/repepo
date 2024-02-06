@@ -2,15 +2,19 @@ import torch
 import simple_parsing
 
 from statistics import mean
-from dataclasses import dataclass
 
 from repepo.experiments_2.utils.helpers import (
     get_model_name,
     get_model_and_tokenizer,
+    SteeringConfig,
+    SteeringResult,
+    load_concept_vectors,
+    save_results,
+    list_subset_of_datasets,
+    make_dataset,
+    EmptyTorchCUDACache
 )
 from repepo.core.format import LlamaChatFormatter
-
-from repepo.data.make_dataset import DatasetSpec, make_dataset
 from repepo.core.types import Dataset
 from repepo.core.pipeline import Pipeline
 from repepo.core.evaluate import (
@@ -22,13 +26,6 @@ from repepo.core.evaluate import (
 )
 from repepo.algorithms.repe import SteeringHook
 from steering_vectors import SteeringVector
-from repepo.experiments_2.utils.helpers import (
-    SteeringConfig,
-    SteeringResult,
-    load_concept_vectors,
-    save_results,
-    list_subset_of_datasets
-)
 from repepo.experiments_2.utils.config import DATASET_DIR
 
 def evaluate_steering_with_concept_vectors(
@@ -87,16 +84,13 @@ def evaluate_steering_with_concept_vectors(
                     f"Layer {layer_id}, multiplier {multiplier:.2f}: Accuracy {caa_result.mcq_accuracy:.2f}, Average key prob {caa_result.average_key_prob:.2f}"
                 )
 
-    # Remove steering hook
-    pipeline.hooks[0].remove()
-
     return caa_results
 
 def run_load_extract_and_save(
     config: SteeringConfig,
 ):
     
-    test_dataset = make_dataset(config.test_dataset_spec, DATASET_DIR)
+    test_dataset = make_dataset(config.test_dataset_name, config.test_split_name)
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)
     
@@ -128,8 +122,11 @@ if __name__ == "__main__":
         all_datasets = list_subset_of_datasets(args.datasets)
         for dataset_name in all_datasets:
             # Train and test on the same dataset
+            print("Running on dataset: ", dataset_name)
             config.train_dataset_name = dataset_name
-            config.test_dataset_spec.name = dataset_name
-            run_load_extract_and_save(config)
+            config.test_dataset_name = dataset_name
+            with EmptyTorchCUDACache():
+                run_load_extract_and_save(config)
     else:
-        run_load_extract_and_save(config)
+        with EmptyTorchCUDACache():
+            run_load_extract_and_save(config)
