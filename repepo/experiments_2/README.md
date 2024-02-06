@@ -20,9 +20,16 @@ Inspect the datasets using `inspect_datasets.ipynb`
 
 ## Extract Concept Vectors
 
-Extract concept vectors using: 
-```
-python extract_concept_vectors.py
+The workflow to extract and evaluate concept vectors is in a bash script:
+```bash
+bash repepo/experiments_2/run.sh 
 ```
 
-Inspect concept vectors using `inspect_concept_vectors.ipynb` 
+By default, we only use 6 out of 136 possible datasets. For debugging purposes, the datasets used by default are `train-dev` and `val-dev`, each comprising about 1% of the full dataset. 
+
+To run on the full `train` and `val` split, we can use the bash script like this: 
+```bash
+bash repepo/experiments_2/run.sh dev train val
+```
+
+The intermediate artefacts can be inspected with the `inspect_xxx` notebooks. 
