@@ -11,7 +11,6 @@ from repepo.core.evaluate import (
     set_repe_direction_multiplier_at_eval,
     update_completion_template_at_eval,
 )
-from repepo.core.format import LlamaChatFormatter
 from repepo.data.make_dataset import make_dataset, DatasetSpec
 from repepo.experiments.caa_repro.utils.helpers import (
     get_experiment_path,
@@ -20,13 +19,11 @@ from repepo.experiments.caa_repro.utils.helpers import (
     SteeringSettings,
 )
 
-from repepo.experiments.tqa_translate.translate import translate_to_leetspeak
-
 
 @dataclass
 class EvaluateTqaCaaConfig:
-    experiment_name: str = field(default=None)
     layers: list[int] = field(default=[], is_mutable=True)
+    model_size: str = "7b"
     multipliers: list[float] = field(default=[], is_mutable=True)
     settings: SteeringSettings = field(default=SteeringSettings(), is_mutable=True)
     train_dataset_spec: DatasetSpec = field(
@@ -63,30 +60,12 @@ def evaluate_tqa_caa(
         evaluators=[MultipleChoiceAccuracyEvaluator()],
     )
 
-    # NOTE: It seems like we need two different formatters for different languages
-    # TODO: refactor this mess...
-    english_sys_msg = "You are a helpful, honest and concise assistant."
-    if "leetspeak" in config.train_dataset_spec.name:
-        train_formatter = LlamaChatFormatter(
-            system_prompt=translate_to_leetspeak(english_sys_msg)
-        )
-    else:
-        train_formatter = LlamaChatFormatter(system_prompt=english_sys_msg)
-
-    if "leetspeak" in config.test_dataset_spec.name:
-        test_formatter = LlamaChatFormatter(
-            system_prompt=translate_to_leetspeak(english_sys_msg)
-        )
-    else:
-        test_formatter = LlamaChatFormatter(system_prompt=english_sys_msg)
-
     repe_algo = RepeReadingControl(
         patch_generation_tokens_only=True,
         # CAA reads from position -2, since the last token is ")"
         read_token_index=-2,
         # CAA skips the first generation token, so doing the same here to match
         skip_first_n_generation_tokens=1,
-        verbose=config.verbose,
     )
 
     trained_pipeline = train_benchmark(
@@ -94,12 +73,7 @@ def evaluate_tqa_caa(
         tokenizer,
         algorithms=[repe_algo],
         benchmark=benchmark,
-        formatter=train_formatter,
     )
-
-    # Patch the formatter to handle the case where we're
-    # transferring between languages
-    trained_pipeline.formatter = test_formatter
 
     results = []
     for layer_id in config.layers:
@@ -114,7 +88,6 @@ def evaluate_tqa_caa(
                     set_repe_direction_multiplier_at_eval(multiplier),
                     select_repe_layer_at_eval(layer_id),
                 ],
-                verbose=config.verbose,
             )
             key_probs = [
                 pred.get_normalized_correct_probs() for pred in result.predictions
@@ -141,13 +114,7 @@ if __name__ == "__main__":
     # save results to disk
     results_dicts = [res.__dict__ for res in results]
     save_suffix = config.settings.make_result_save_suffix(None, None)
-
-    if config.experiment_name is None:
-        config.experiment_name = (
-            f"{config.train_dataset_spec.name}_{config.test_dataset_spec.name}"
-        )
-
-    results_path = get_experiment_path(config.experiment_name) / "results"
+    results_path = get_experiment_path() / "results"
     results_path.mkdir(parents=True, exist_ok=True)
     with open(results_path / f"results_{save_suffix}.json", "w") as f:
         json.dump(results_dicts, f, ensure_ascii=False, indent=4)

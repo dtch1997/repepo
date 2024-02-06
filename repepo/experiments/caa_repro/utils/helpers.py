@@ -44,7 +44,7 @@ class SteeringSettings:
     def make_result_save_suffix(
         self,
         layer: Optional[int] = None,
-        multiplier: Optional[float] = None,
+        multiplier: Optional[int] = None,
     ):
         elements = {
             "layer": layer,
@@ -120,8 +120,8 @@ def get_save_vectors_path():
     )
 
 
-def get_experiment_path(experiment_name: str = "caa_repro"):
-    return pathlib.Path(Environ.ProjectDir) / "repepo" / "experiments" / experiment_name
+def get_experiment_path():
+    return pathlib.Path(Environ.ProjectDir) / "repepo" / "experiments" / "caa_repro"
 
 
 def make_tensor_save_suffix(layer: int, model_name_path: str):
@@ -138,9 +138,9 @@ def get_model_name(use_base_model: bool, model_size: str):
 
 
 def get_model_and_tokenizer(model_name: str):
-    tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=token)
     # Note: you must have installed 'accelerate', 'bitsandbytes' to load in 8bit
     model = AutoModelForCausalLM.from_pretrained(
-        model_name, token=token, load_in_8bit=True
+        model_name, use_auth_token=token, load_in_8bit=True
     )
     return model, tokenizer
