@@ -107,10 +107,31 @@ def translate_row_recursive(row: Any, translations: dict[str, str]) -> Any:
     Recursively translate a row of a dataset.
     """
     if isinstance(row, str):
-        return translations[row]
+        return translations.get(row, row)
     elif isinstance(row, collections.abc.Mapping):
         return {k: translate_row_recursive(v, translations) for k, v in row.items()}
-    elif isinstance(row, collections.abc.Sequence):
+    elif isinstance(row, collections.abc.Iterable):
         return [translate_row_recursive(v, translations) for v in row]
     else:
         return row
+
+
+def collect_all_strings_recursive(
+    data: Any, skip_keys: list[str] | None = None
+) -> set[str]:
+    """
+    Recursively collect all strings in the data.
+    """
+    if isinstance(data, str):
+        return {data}
+    elif isinstance(data, collections.abc.Mapping):
+        return {
+            s
+            for k, v in data.items()
+            for s in collect_all_strings_recursive(v, skip_keys)
+            if k not in (skip_keys or [])
+        }
+    elif isinstance(data, collections.abc.Iterable):
+        return {s for v in data for s in collect_all_strings_recursive(v, skip_keys)}
+    else:
+        return set()

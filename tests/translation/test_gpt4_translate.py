@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from pytest_mock import MockerFixture
-from repepo.utils.translation import (
+from repepo.translation.gpt4_translate import (
     translate_strings_parallel,
     gpt4_style_translate,
     gpt4_language_translate,
