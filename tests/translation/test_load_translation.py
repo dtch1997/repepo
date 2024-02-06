@@ -1,7 +1,6 @@
-from repepo.translation.load_translation import load_translation
-from repepo.translation.translation_strings import TranslationString as T
+from repepo.translation.load_translation import load_translation, TS
 
 
 def test_load_translation() -> None:
-    assert load_translation(T.caa_choices, "en") == "Choices:"
-    assert load_translation(T.caa_choices, "fr") == "Choix :"
+    assert load_translation(TS.caa_choices, "en") == "Choices:"
+    assert load_translation(TS.caa_choices, "fr") == "Choix :"
