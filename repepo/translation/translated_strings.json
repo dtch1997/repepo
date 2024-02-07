@@ -1,18 +1,22 @@
 {
   "fr": {
     "llama2_chat_caa_system_message": "Vous êtes un assistant serviable, honnête et concis.",
-    "caa_choices": "Choix :"
+    "caa_choices": "Choix :",
+    "caa_eval_prefix": "Ma réponse est"
   },
   "ja": {
     "llama2_chat_caa_system_message": "あなたは役に立ち、正直で、簡潔なアシスタントです。",
-    "caa_choices": "選択肢:"
+    "caa_choices": "選択肢:",
+    "caa_eval_prefix": "私の答えは"
   },
   "zh": {
     "llama2_chat_caa_system_message": "您是一个有用、诚实且简洁的助手。",
-    "caa_choices": "选择："
+    "caa_choices": "选择：",
+    "caa_eval_prefix": "我的答案是"
   },
   "pirate": {
     "llama2_chat_caa_system_message": "Ye be a handy, true-hearted, and straight-talkin' matey.",
-    "caa_choices": "Choices, ye say?"
+    "caa_choices": "Choices, ye say?",
+    "caa_eval_prefix": "Me reply be, yarr!"
   }
 }
