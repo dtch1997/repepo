@@ -3,7 +3,11 @@
 import json
 from typing import cast
 
-from repepo.data.make_dataset import get_dataset_dir, get_raw_dataset_dir
+from repepo.data.make_dataset import (
+    build_dataset_filename,
+    get_dataset_dir,
+    get_raw_dataset_dir,
+)
 from repepo.data.io import jdump
 from repepo.core.types import Dataset, Example
 from repepo.translation.constants import LangOrStyleCode
@@ -75,8 +79,9 @@ def make_mwe_personas_caa():
             list_dataset = [json.loads(line) for line in jsonfile]
 
         persona = dataset_path.stem
+        filename = build_dataset_filename(persona)
         mwe_dataset: Dataset = convert_mwe_personas_dataset_caa(list_dataset)
-        jdump(mwe_dataset, get_dataset_dir() / "persona" / f"{persona}.json")
+        jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
 
 
 def make_mwe_personas_caa_translations():
@@ -86,13 +91,11 @@ def make_mwe_personas_caa_translations():
 
         persona = dataset_path.stem
         lang_or_style = cast(LangOrStyleCode, dataset_path.parent.parent.parent.stem)
+        filename = build_dataset_filename(persona, lang_or_style=lang_or_style)
         mwe_dataset: Dataset = convert_mwe_personas_dataset_caa(
             list_dataset, lang_or_style=lang_or_style
         )
-        jdump(
-            mwe_dataset,
-            get_dataset_dir() / "persona" / f"{persona}_{lang_or_style}.json",
-        )
+        jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
 
 
 if __name__ == "__main__":

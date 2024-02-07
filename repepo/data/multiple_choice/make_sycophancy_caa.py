@@ -4,7 +4,11 @@ Uses a different dataset version that includes more prompts.
 Included for purposes of reproducing key plots 
 """
 
-from repepo.data.make_dataset import get_dataset_dir, get_raw_dataset_dir
+from repepo.data.make_dataset import (
+    build_dataset_filename,
+    get_dataset_dir,
+    get_raw_dataset_dir,
+)
 from repepo.data.io import jdump, jload
 from repepo.core.types import Dataset, Example
 
@@ -48,12 +52,14 @@ def make_sycophancy_caa():
     dataset_path = get_raw_dataset_dir() / "caa" / "generate_dataset.json"
     list_dataset = jload(dataset_path)
     syc_dataset = convert_sycophancy_dataset(list_dataset)
-    jdump(syc_dataset, get_dataset_dir() / "caa" / "sycophancy_train.json")
+    filename = build_dataset_filename("sycophancy_train")
+    jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
 
     dataset_path = get_raw_dataset_dir() / "caa" / "test_dataset.json"
     list_dataset = jload(dataset_path)
     syc_dataset: Dataset = convert_sycophancy_dataset(list_dataset)
-    jdump(syc_dataset, get_dataset_dir() / "caa" / "sycophancy_test.json")
+    filename = build_dataset_filename("sycophancy_test")
+    jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
 
 
 def make_sycophancy_caa_translations():
@@ -64,10 +70,10 @@ def make_sycophancy_caa_translations():
         lang_or_style = dataset_path.parent.parent.stem
         list_dataset = jload(dataset_path)
         syc_dataset = convert_sycophancy_dataset(list_dataset)
-        jdump(
-            syc_dataset,
-            get_dataset_dir() / "caa" / f"sycophancy_train_{lang_or_style}.json",
+        filename = build_dataset_filename(
+            "sycophancy_train", lang_or_style=lang_or_style
         )
+        jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
 
     for dataset_path in get_raw_dataset_dir().glob(
         "translated/*/caa/test_dataset.json"
@@ -75,10 +81,10 @@ def make_sycophancy_caa_translations():
         lang_or_style = dataset_path.parent.parent.stem
         list_dataset = jload(dataset_path)
         syc_dataset: Dataset = convert_sycophancy_dataset(list_dataset)
-        jdump(
-            syc_dataset,
-            get_dataset_dir() / "caa" / f"sycophancy_test_{lang_or_style}.json",
+        filename = build_dataset_filename(
+            "sycophancy_test", lang_or_style=lang_or_style
         )
+        jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
 
 
 if __name__ == "__main__":
