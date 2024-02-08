@@ -1,5 +1,10 @@
 import pytest
-from repepo.data.make_dataset import _parse_split, _shuffle_and_split
+from repepo.data.make_dataset import (
+    _parse_split,
+    _shuffle_and_split,
+    build_dataset_filename,
+    parse_dataset_filename,
+)
 
 
 def test_parse_split() -> None:
@@ -38,3 +43,32 @@ def test_shuffle_and_split_leaves_original_item_unchanged() -> None:
     items = [1, 2, 3, 4, 5]
     _shuffle_and_split(items, ":50%", seed=0)
     assert items == [1, 2, 3, 4, 5]
+
+
+def test_parse_dataset_filename_with_no_lang() -> None:
+    filename = "blah/test.json"
+    params = parse_dataset_filename(filename)
+    assert params.base_name == "test"
+    assert params.extension == ".json"
+    assert params.lang_or_style is None
+
+
+def test_parse_dataset_filename_with_lang() -> None:
+    filename = "blah/test--l-fr.json"
+    params = parse_dataset_filename(filename)
+    assert params.base_name == "test"
+    assert params.extension == ".json"
+    assert params.lang_or_style == "fr"
+
+
+def test_build_dataset_filename() -> None:
+    assert build_dataset_filename("test") == "test.json"
+    assert build_dataset_filename("test", ".json") == "test.json"
+    assert build_dataset_filename("test", ".json", "fr") == "test--l-fr.json"
+    assert build_dataset_filename("test", "json", "fr") == "test--l-fr.json"
+    assert build_dataset_filename("test", lang_or_style="fr") == "test--l-fr.json"
+
+
+def test_build_dataset_filename_errors_on_invalid_lang() -> None:
+    with pytest.raises(ValueError):
+        build_dataset_filename("test", lang_or_style="FAKELANG")

@@ -5,6 +5,7 @@ from typing import List, TypeVar
 
 from repepo.variables import Environ
 from repepo.core.types import Example, Dataset
+from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
 from dataclasses import dataclass
 
 from .io import jload
@@ -92,3 +93,38 @@ def _shuffle_and_split(items: list[T], split_string: str, seed: int) -> list[T]:
 def make_dataset(spec: DatasetSpec, dataset_dir: pathlib.Path | None = None):
     dataset = get_dataset(spec.name, dataset_dir)
     return _shuffle_and_split(dataset, spec.split, spec.seed)
+
+
+@dataclass
+class DatasetFilenameParams:
+    base_name: str
+    extension: str
+    lang_or_style: LangOrStyleCode | None = None
+
+
+def build_dataset_filename(
+    base_name: str,
+    extension: str = "json",
+    lang_or_style: LangOrStyleCode | str | None = None,
+) -> str:
+    if lang_or_style is not None and lang_or_style not in LANG_OR_STYLE_MAPPING:
+        raise ValueError(f"Unknown lang_or_style: {lang_or_style}")
+    if extension.startswith("."):
+        extension = extension[1:]
+    if lang_or_style is None:
+        return f"{base_name}.{extension}"
+    return f"{base_name}--l-{lang_or_style}.{extension}"
+
+
+def parse_dataset_filename(filename: str | pathlib.Path) -> DatasetFilenameParams:
+    filepath = pathlib.Path(filename)
+    if "--l-" in filepath.stem:
+        base_name, lang_or_style = filepath.stem.split("--l-")
+        if lang_or_style not in LANG_OR_STYLE_MAPPING:
+            raise ValueError(f"Unknown lang_or_style: {lang_or_style}")
+        return DatasetFilenameParams(
+            base_name, extension=filepath.suffix, lang_or_style=lang_or_style
+        )
+    return DatasetFilenameParams(
+        base_name=filepath.stem, extension=filepath.suffix, lang_or_style=None
+    )
