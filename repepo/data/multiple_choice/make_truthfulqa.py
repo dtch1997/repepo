@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 from datasets import load_dataset, Dataset as HFDataset
 
-from repepo.data.make_dataset import get_dataset_dir
+from repepo.data.make_dataset import build_dataset_filename, get_dataset_dir
 from repepo.data.io import jdump
 from repepo.core.types import Dataset, Example
 from repepo.variables import Environ
@@ -119,7 +119,8 @@ def make_truthfulqa():
     # hf's dataset is too general and requires casting every field we access, so just using Any for simplicity
     hf_dataset = cast(Any, load_dataset("truthful_qa", "multiple_choice"))["validation"]
     tqa_dataset = convert_hf_truthfulqa_dataset(hf_dataset)
-    jdump(tqa_dataset, get_dataset_dir() / "truthfulqa.json")
+    filename = build_dataset_filename("truthfulqa")
+    jdump(tqa_dataset, get_dataset_dir() / filename)
 
     # also build translated datasets
     for translated_tqa in Path(Environ.TranslatedDatasetsDir).glob(
@@ -128,9 +129,10 @@ def make_truthfulqa():
         lang_or_style = translated_tqa.parent.stem
         dataset = HFDataset.from_json(str(translated_tqa))
         converted_dataset = convert_hf_truthfulqa_dataset(dataset)
+        filename = build_dataset_filename("truthfulqa", lang_or_style=lang_or_style)
         jdump(
             converted_dataset,
-            get_dataset_dir() / f"truthfulqa_{lang_or_style}.json",
+            get_dataset_dir() / filename,
         )
 
 
@@ -138,7 +140,8 @@ def make_truthfulqa_caa():
     # hf's dataset is too general and requires casting every field we access, so just using Any for simplicity
     hf_dataset = cast(Any, load_dataset("truthful_qa", "multiple_choice"))["validation"]
     tqa_dataset = convert_hf_truthfulqa_caa_dataset(hf_dataset)
-    jdump(tqa_dataset, get_dataset_dir() / "truthfulqa_caa.json")
+    filename = build_dataset_filename("truthfulqa_caa")
+    jdump(tqa_dataset, get_dataset_dir() / filename)
 
     # also build translated datasets
     for translated_tqa in Path(Environ.TranslatedDatasetsDir).glob(
@@ -147,10 +150,8 @@ def make_truthfulqa_caa():
         lang_or_style = translated_tqa.parent.stem
         dataset = HFDataset.from_json(str(translated_tqa))
         converted_dataset = convert_hf_truthfulqa_caa_dataset(dataset)
-        jdump(
-            converted_dataset,
-            get_dataset_dir() / f"truthfulqa_caa_{lang_or_style}.json",
-        )
+        filename = build_dataset_filename("truthfulqa_caa", lang_or_style=lang_or_style)
+        jdump(converted_dataset, get_dataset_dir() / filename)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ TRANSLATED_STRINGS_FILE = Path(__file__).parent / "translated_strings.json"
 class TranslationString(Enum):
     llama2_chat_caa_system_message = "You are a helpful, honest and concise assistant."
     caa_choices = "Choices:"
+    caa_eval_prefix = "My answer is"
 
 
 @cache
