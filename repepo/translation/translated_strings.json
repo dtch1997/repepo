@@ -16,7 +16,7 @@
   },
   "pirate": {
     "llama2_chat_caa_system_message": "Ye be a handy, true-hearted, and straight-talkin' matey.",
-    "caa_choices": "Choices, ye say?",
-    "caa_eval_prefix": "Me reply be, yarr!"
+    "caa_choices": "The choices be:",
+    "caa_eval_prefix": "Me reply be"
   }
 }
