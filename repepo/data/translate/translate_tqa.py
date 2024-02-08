@@ -1,36 +1,10 @@
-from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 from datasets import load_dataset
 from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
 from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
-from repepo.translation.gpt4_translate import (
-    gpt4_lang_or_style_translate,
-    translate_strings_parallel,
-)
+from repepo.translation.lang_or_style_translate import lang_or_style_translate
 from repepo.variables import Environ
-
-
-def translate_tqa_with_fn(
-    tqa: Any,
-    translate_fn: Callable[[str], str],
-    max_workers: int = 10,
-    show_progress: bool = True,
-    tqdm_desc: str = "Translating",
-):
-    """
-    Translate the TQA dataset to the target style using GPT4.
-    """
-    tqa = load_dataset("truthful_qa", "multiple_choice")
-    tqa_strings = collect_all_strings_recursive(tqa)
-    translations = translate_strings_parallel(
-        tqa_strings,
-        translate_fn=translate_fn,
-        max_workers=max_workers,
-        show_progress=show_progress,
-        tqdm_desc=tqdm_desc,
-    )
-    return tqa.map(lambda row: translate_row_recursive(row, translations))
 
 
 def translate_tqa(
@@ -42,14 +16,14 @@ def translate_tqa(
     """
     Translate the TQA dataset to the target style using GPT4.
     """
-    translate_fn = partial(gpt4_lang_or_style_translate, lang_or_style=lang_or_style)
-    return translate_tqa_with_fn(
-        tqa,
-        translate_fn,
-        max_workers=max_workers,
+    tqa_strings = collect_all_strings_recursive(tqa)
+    translations = lang_or_style_translate(
+        tqa_strings,
+        lang_or_style,
+        gpt_worker_threads=max_workers,
         show_progress=show_progress,
-        tqdm_desc=f"Translating to {lang_or_style}",
     )
+    return tqa.map(lambda row: translate_row_recursive(row, translations))
 
 
 def run_and_save(run_fn: Callable[[], Any], file: Path, force: bool = False) -> None:
@@ -71,6 +45,7 @@ def main() -> None:
         if file.exists():
             print(f"File {file} already exists, skipping.")
             continue
+        print(f"Translating TQA to {code}")
         translated_tqa = translate_tqa(tqa, code, max_workers=100)
         # can't save DatasetDict to json, so just save the validation split (there's only 1 split anyway)
         translated_tqa["validation"].to_json(file, force_ascii=False)
