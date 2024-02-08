@@ -2,27 +2,9 @@ from unittest.mock import MagicMock
 
 from pytest_mock import MockerFixture
 from repepo.translation.gpt4_translate import (
-    translate_strings_parallel,
     gpt4_style_translate,
     gpt4_language_translate,
 )
-
-
-def test_translate_strings_parallel() -> None:
-    def translate_fn(orig):
-        return f"TRANS: {orig}"
-
-    strings = {"a", "b", "c", "d", "e", "f", "g"}
-    results = translate_strings_parallel(strings, translate_fn, max_workers=4)
-    assert results == {
-        "a": "TRANS: a",
-        "b": "TRANS: b",
-        "c": "TRANS: c",
-        "d": "TRANS: d",
-        "e": "TRANS: e",
-        "f": "TRANS: f",
-        "g": "TRANS: g",
-    }
 
 
 def test_gpt4_style_translate(

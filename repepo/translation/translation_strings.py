@@ -8,7 +8,7 @@ from functools import cache
 import json
 from pathlib import Path
 from .constants import LANG_OR_STYLE_MAPPING
-from .gpt4_translate import gpt4_lang_or_style_translate
+from .lang_or_style_translate import lang_or_style_translate
 
 
 TRANSLATED_STRINGS_FILE = Path(__file__).parent / "translated_strings.json"
@@ -39,7 +39,9 @@ def update_translations(force: bool = False) -> None:
                 current_translations[lang_or_style] = {}
             if current_translations[lang_or_style].get(string.name) and not force:
                 continue
-            translation = gpt4_lang_or_style_translate(string.value, lang_or_style)
+            translation = list(
+                lang_or_style_translate({string.value}, lang_or_style).values()
+            )[0]
             current_translations[lang_or_style][string.name] = translation
     with open(TRANSLATED_STRINGS_FILE, "w") as jsonfile:
         json.dump(current_translations, jsonfile, indent=2, ensure_ascii=False)

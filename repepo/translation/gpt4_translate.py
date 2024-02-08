@@ -1,9 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import cache
-from typing import Callable
 import openai
-from tqdm import tqdm
-from .constants import STYLE_MAPPING, LANG_MAPPING, LangCode, StyleCode, LangOrStyleCode
+from .constants import STYLE_MAPPING, LANG_MAPPING, LangCode, StyleCode
 
 
 LANGUAGE_TRANSLATE_SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant that translates English text into {language}. You preserve the meaning of the text, as well as it's approximate length. You rewrite the text such that if you translated it back to English, it would produce the original text."""
@@ -112,68 +109,3 @@ def gpt4_language_translate(
     if strip_outer_quotes:
         res = _strip_outer_quotes(res)
     return res
-
-
-def gpt4_lang_or_style_translate(
-    text: str,
-    lang_or_style: LangOrStyleCode,
-    model="gpt-4-turbo-preview",
-    max_tokens=256,
-    temperature=0.7,
-    stop=None,
-    strip_outer_quotes=True,
-) -> str:
-    """
-    Translate a string to a different style using GPT4.
-    Based on the translators.ipynb notebook in examples
-    """
-    if lang_or_style in LANG_MAPPING:
-        return gpt4_language_translate(
-            text,
-            lang_code=lang_or_style,
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stop=stop,
-            strip_outer_quotes=strip_outer_quotes,
-        )
-    elif lang_or_style in STYLE_MAPPING:
-        return gpt4_style_translate(
-            text,
-            style=lang_or_style,
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stop=stop,
-            strip_outer_quotes=strip_outer_quotes,
-        )
-    else:
-        raise ValueError(f"Unknown lang_or_style: {lang_or_style}")
-
-
-def translate_strings_parallel(
-    strings: set[str],
-    translate_fn: Callable[[str], str],
-    max_workers: int = 10,
-    show_progress: bool = True,
-    tqdm_desc: str = "Translating",
-) -> dict[str, str]:
-    """
-    Translate a set of strings by applying a translate_fn in a threadpool.
-    """
-    translated_strings: dict[str, str] = {}
-    original_strs = list(strings)
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        translate_futures_to_orig = {
-            executor.submit(translate_fn, original): original
-            for original in original_strs
-        }
-        for future in tqdm(
-            as_completed(translate_futures_to_orig),
-            disable=not show_progress,
-            desc=tqdm_desc,
-            total=len(original_strs),
-        ):
-            original_str = translate_futures_to_orig[future]
-            translated_strings[original_str] = future.result()
-    return translated_strings
