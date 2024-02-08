@@ -34,6 +34,9 @@ class Environ:
     WandbEntity = os.environ.get("WANDB_ENTITY", "unknown")
     WandbGroup = os.environ.get("WANDB_GROUP", os.environ.get("USER", "default"))
 
+    # Google Cloud
+    GcpProjectId = os.environ.get("GCP_PROJECT_ID", "repepo")
+
 
 # Model names
 class Model:
