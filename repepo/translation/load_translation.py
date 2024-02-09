@@ -14,7 +14,5 @@ def load_translation(string: TS, lang_or_style: LangOrStyleCode | None = None) -
         lang_or_style not in translations
         or string.name not in translations[lang_or_style]
     ):
-        raise ValueError(
-            f"Translation not found for {string.name} in {lang_or_style}. Please run `update_translations`."
-        )
+        return string.value
     return translations[lang_or_style][string.name]

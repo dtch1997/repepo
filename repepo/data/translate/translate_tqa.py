@@ -2,14 +2,17 @@ from pathlib import Path
 from typing import Any, Callable
 from datasets import load_dataset
 from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
-from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
+from repepo.translation.constants import (
+    TranslatableLangOrStyleCode,
+    TRANSLATABLE_MAPPING,
+)
 from repepo.translation.lang_or_style_translate import lang_or_style_translate
 from repepo.variables import Environ
 
 
 def translate_tqa(
     tqa: Any,
-    lang_or_style: LangOrStyleCode,
+    lang_or_style: TranslatableLangOrStyleCode,
     max_workers: int = 10,
     show_progress: bool = True,
 ):
@@ -40,7 +43,7 @@ def run_and_save(run_fn: Callable[[], Any], file: Path, force: bool = False) -> 
 def main() -> None:
     tqa = load_dataset("truthful_qa", "multiple_choice")
     translate_dir = Path(Environ.TranslatedDatasetsDir)
-    for code in LANG_OR_STYLE_MAPPING.keys():
+    for code in TRANSLATABLE_MAPPING.keys():
         file = translate_dir / code / "truthful_qa.jsonl"
         if file.exists():
             print(f"File {file} already exists, skipping.")

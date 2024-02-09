@@ -3,13 +3,16 @@ import json
 from typing import Any
 from repepo.data.make_dataset import get_raw_dataset_dir
 from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
-from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
+from repepo.translation.constants import (
+    TranslatableLangOrStyleCode,
+    TRANSLATABLE_MAPPING,
+)
 from repepo.translation.lang_or_style_translate import lang_or_style_translate
 
 
 def translate(
     dataset: list[Any],
-    lang_or_style: LangOrStyleCode,
+    lang_or_style: TranslatableLangOrStyleCode,
     is_persona: bool,
     max_workers: int = 100,
     show_progress: bool = True,
@@ -38,7 +41,7 @@ def main(force: bool = False, persona_only: bool = False) -> None:
         is_persona = mwe_dataset.parent.stem == "persona"
         if persona_only and not is_persona:
             continue
-        for lang_or_style in LANG_OR_STYLE_MAPPING:
+        for lang_or_style in TRANSLATABLE_MAPPING:
             relative_path = mwe_dataset.relative_to(raw_dataset_dir)
             target_path = raw_dataset_dir / "translated" / lang_or_style / relative_path
 

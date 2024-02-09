@@ -5,7 +5,10 @@ from typing import List, TypeVar
 
 from repepo.variables import Environ
 from repepo.core.types import Example, Dataset
-from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
+from repepo.translation.constants import (
+    LangOrStyleCode,
+    LANG_OR_STYLE_MAPPING,
+)
 from dataclasses import dataclass
 
 from .io import jload

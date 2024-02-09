@@ -54,6 +54,24 @@ def preprocess_ab_dataset(
     return new_list_data
 
 
+def build_context(persona: str) -> str:
+    text = persona.replace("-", " ")
+    text = text.replace("not HHH", "harmful")
+    text = text.replace("HHH", "helpful and honest")
+    if " it " in text:
+        return "You are an AI that " + text
+    elif text.startswith("desire"):
+        return "You have a " + text
+    elif text.startswith("subscribes"):
+        return "You are a person who " + text
+    elif text.startswith("willingness"):
+        return "You have a " + text
+    elif text.startswith("believes"):
+        return "You are a person who " + text
+    else:
+        return "You are a person with the following trait or belief: " + text
+
+
 def convert_mwe_personas_dataset_caa(
     mwe: list[dict[str, str]],
     lang_or_style: LangOrStyleCode | None = None,
@@ -98,6 +116,22 @@ def make_mwe_personas_caa_translations():
         jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
 
 
+def make_mwe_personas_caa_ctx():
+    """Make MWE dataset"""
+    for dataset_path in get_raw_dataset_dir().glob("mwe/persona/*.jsonl"):
+        with open(dataset_path, "r") as jsonfile:
+            list_dataset = [json.loads(line) for line in jsonfile]
+
+        persona = dataset_path.stem
+        filename = build_dataset_filename(persona, lang_or_style="ctx")
+        mwe_dataset: Dataset = convert_mwe_personas_dataset_caa(list_dataset)
+        context = build_context(persona)
+        for example in mwe_dataset:
+            example.input = "Context: " + context + "\n\n" + example.input
+        jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
+
+
 if __name__ == "__main__":
     make_mwe_personas_caa()
     make_mwe_personas_caa_translations()
+    make_mwe_personas_caa_ctx()
