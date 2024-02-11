@@ -7,7 +7,7 @@ from enum import Enum
 from functools import cache
 import json
 from pathlib import Path
-from .constants import TRANSLATABLE_MAPPING
+from .constants import LANG_OR_STYLE_MAPPING
 from .lang_or_style_translate import lang_or_style_translate
 
 
@@ -34,7 +34,7 @@ def update_translations(force: bool = False) -> None:
     """Update translations using gpt4"""
     current_translations = load_all_translations()
     for string in TranslationString:
-        for lang_or_style in TRANSLATABLE_MAPPING:
+        for lang_or_style in LANG_OR_STYLE_MAPPING:
             if lang_or_style not in current_translations:
                 current_translations[lang_or_style] = {}
             if current_translations[lang_or_style].get(string.name) and not force:

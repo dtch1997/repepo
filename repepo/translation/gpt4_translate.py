@@ -1,11 +1,6 @@
 from functools import cache
 import openai
-from .constants import (
-    TRANSLATABLE_STYLE_MAPPING,
-    TRANSLATABLE_LANG_MAPPING,
-    TranslatableLangCode,
-    TranslatableStyleCode,
-)
+from .constants import STYLE_MAPPING, LANG_MAPPING, LangCode, StyleCode
 
 
 LANGUAGE_TRANSLATE_SYSTEM_PROMPT_TEMPLATE = """You are a helpful assistant that translates English text into {language}. You preserve the meaning of the text, as well as it's approximate length. You rewrite the text such that if you translated it back to English, it would produce the original text."""
@@ -60,7 +55,7 @@ def _strip_outer_quotes(text: str) -> str:
 
 def gpt4_style_translate(
     text: str,
-    style: TranslatableStyleCode,
+    style: StyleCode,
     model="gpt-4-turbo-preview",
     max_tokens=100,
     temperature=0.7,
@@ -73,7 +68,7 @@ def gpt4_style_translate(
     """
 
     # Define the prompt for the translation task
-    style_name = TRANSLATABLE_STYLE_MAPPING[style]
+    style_name = STYLE_MAPPING[style]
     prompt = f'Translate the following text into {style_name} style: "{text}"'
     res = _prompt_openai(
         system_prompt=STYLE_TRANSLATE_SYSTEM_PROMPT,
@@ -90,7 +85,7 @@ def gpt4_style_translate(
 
 def gpt4_language_translate(
     text: str,
-    lang_code: TranslatableLangCode,
+    lang_code: LangCode,
     model="gpt-4-turbo-preview",
     max_tokens=100,
     temperature=0.7,
@@ -101,7 +96,7 @@ def gpt4_language_translate(
     Translate a string to a different style using GPT4.
     Based on the translators.ipynb notebook in examples
     """
-    lang_name = TRANSLATABLE_LANG_MAPPING[lang_code]
+    lang_name = LANG_MAPPING[lang_code]
     system_prompt = LANGUAGE_TRANSLATE_SYSTEM_PROMPT_TEMPLATE.format(language=lang_name)
     res = _prompt_openai(
         system_prompt=system_prompt,

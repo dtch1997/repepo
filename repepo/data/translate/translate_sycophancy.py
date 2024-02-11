@@ -3,16 +3,13 @@ import json
 from typing import Any
 from repepo.data.make_dataset import get_raw_dataset_dir
 from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
-from repepo.translation.constants import (
-    TranslatableLangOrStyleCode,
-    TRANSLATABLE_MAPPING,
-)
+from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
 from repepo.translation.lang_or_style_translate import lang_or_style_translate
 
 
 def translate(
     dataset: list[Any],
-    lang_or_style: TranslatableLangOrStyleCode,
+    lang_or_style: LangOrStyleCode,
     max_workers: int = 10,
     show_progress: bool = True,
 ) -> list[Any]:
@@ -35,7 +32,7 @@ def translate(
 def main(force: bool = False) -> None:
     raw_dataset_dir = get_raw_dataset_dir()
     for dataset_path in raw_dataset_dir.glob("caa/*.json"):
-        for lang_or_style in TRANSLATABLE_MAPPING:
+        for lang_or_style in LANG_OR_STYLE_MAPPING:
             relative_path = dataset_path.relative_to(raw_dataset_dir)
             target_path = raw_dataset_dir / "translated" / lang_or_style / relative_path
 

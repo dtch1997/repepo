@@ -1,9 +1,5 @@
 from functools import partial
-from .constants import (
-    TRANSLATABLE_LANG_MAPPING,
-    TRANSLATABLE_STYLE_MAPPING,
-    TranslatableLangOrStyleCode,
-)
+from .constants import LANG_MAPPING, STYLE_MAPPING, LangOrStyleCode
 from .gpt4_translate import gpt4_language_translate, gpt4_style_translate
 from .google_translate import google_translate_bulk
 from .translate_strings_parallel import translate_strings_parallel
@@ -12,7 +8,7 @@ from .translate_strings_parallel import translate_strings_parallel
 # TODO: have a more elegant way to handle different translation backends
 def lang_or_style_translate(
     texts: set[str],
-    lang_or_style: TranslatableLangOrStyleCode,
+    lang_or_style: LangOrStyleCode,
     use_google_for_langs=True,
     gpt_model: str = "gpt-4-turbo-preview",
     gpt_max_tokens: int = 256,
@@ -26,7 +22,7 @@ def lang_or_style_translate(
     Translate a string to a different style using GPT4 or Google.
     """
     translate_fn = None
-    if lang_or_style in TRANSLATABLE_LANG_MAPPING:
+    if lang_or_style in LANG_MAPPING:
         if use_google_for_langs:
             input_texts = list(texts)
             output_texts = google_translate_bulk(
@@ -45,7 +41,7 @@ def lang_or_style_translate(
                 stop=gpt_stop,
                 strip_outer_quotes=gpt_strip_outer_quotes,
             )
-    elif lang_or_style in TRANSLATABLE_STYLE_MAPPING:
+    elif lang_or_style in STYLE_MAPPING:
         translate_fn = partial(
             gpt4_style_translate,
             style=lang_or_style,
@@ -56,7 +52,7 @@ def lang_or_style_translate(
             strip_outer_quotes=gpt_strip_outer_quotes,
         )
     else:
-        raise ValueError(f"Untranslatable lang_or_style: {lang_or_style}")
+        raise ValueError(f"Unknown lang_or_style: {lang_or_style}")
     assert translate_fn is not None
     return translate_strings_parallel(
         texts, translate_fn, max_workers=gpt_worker_threads, show_progress=show_progress
