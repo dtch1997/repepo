@@ -290,9 +290,9 @@ def steer_across_languages(
                 and ds.name in existing_results.labels
             ):
                 cur_steering_results.append(
-                    existing_results.steering_results[labels.index(ds.name)][
-                        labels.index(steering_version)
-                    ]
+                    existing_results.steering_results[
+                        existing_results.labels.index(ds.name)
+                    ][existing_results.labels.index(steering_version)]
                 )
                 continue
             steering_vector = steering_vectors[steering_version]
