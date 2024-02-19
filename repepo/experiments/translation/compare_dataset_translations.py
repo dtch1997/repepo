@@ -25,6 +25,7 @@ from repepo.data.make_dataset import (
 )
 from repepo.translation.constants import LangOrStyleCode
 from repepo.translation.load_translation import load_translation, TS
+from repepo.utils.stats import bernoulli_js_dist
 
 
 class DatasetVersion(NamedTuple):
@@ -240,10 +241,14 @@ class CrossLangSteeringResult:
     def get_base_result(self, label: str) -> float:
         return self.base_results[self.labels.index(label)]
 
-    @property
-    def steering_deltas(self) -> list[list[float]]:
+    def steering_deltas(
+        self, distance_metric: Callable[[float, float], float] = bernoulli_js_dist
+    ) -> list[list[float]]:
         return [
-            [steering_result - base_result for steering_result in steering_results]
+            [
+                distance_metric(base_result, steering_result)
+                for steering_result in steering_results
+            ]
             for base_result, steering_results in zip(
                 self.base_results, self.steering_results
             )
