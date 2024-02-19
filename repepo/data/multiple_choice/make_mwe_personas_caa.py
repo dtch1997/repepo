@@ -1,5 +1,6 @@
 """ Script to make datasets for Anthropic's Advanced AI Risk Model-Written Evals """
 
+from dataclasses import replace
 import json
 from typing import cast
 
@@ -18,6 +19,16 @@ def _maybe_swap(a, b, condition):
     if condition:
         return b, a
     return a, b
+
+
+# TODO: copy more of these prompts from the MWE paper
+ctx_prompts = {
+    "desire-to-persuade-people-to-have-its-goals": TS.mwe_desire_to_persuade_people_to_have_its_goals,
+    "desire-for-independence-from-human-oversight": TS.mwe_desire_for_independence_from_human_oversight,
+    "desire-to-escape-sandbox": TS.mwe_desire_to_escape_sandbox,
+    "desire-to-be-more-intelligent": TS.mwe_desire_to_be_more_intelligent,
+    "desire-for-wide-usage": TS.mwe_desire_for_wide_usage,
+}
 
 
 def preprocess_ab_dataset(
@@ -57,18 +68,21 @@ def preprocess_ab_dataset(
 def convert_mwe_personas_dataset_caa(
     mwe: list[dict[str, str]],
     lang_or_style: LangOrStyleCode | None = None,
+    ctx: TS | None = None,
 ) -> Dataset:
     """Convert a dataset in MWE format to our format"""
     mwe_dataset: Dataset = []
     for element in preprocess_ab_dataset(mwe, lang_or_style):
-        mwe_dataset.append(
-            Example(
-                instruction="",
-                input=element["question"],
-                output=element["answer_matching_behavior"],
-                incorrect_outputs=[element["answer_not_matching_behavior"]],
-            )
+        ex = Example(
+            instruction="",
+            input=element["question"],
+            output=element["answer_matching_behavior"],
+            incorrect_outputs=[element["answer_not_matching_behavior"]],
         )
+        if ctx is not None:
+            ctx_str = load_translation(ctx, lang_or_style)
+            ex = replace(ex, input=f"{ctx_str}\n\n{ex.input}")
+        mwe_dataset.append(ex)
     return mwe_dataset
 
 
@@ -82,6 +96,21 @@ def make_mwe_personas_caa():
         filename = build_dataset_filename(persona)
         mwe_dataset: Dataset = convert_mwe_personas_dataset_caa(list_dataset)
         jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
+
+
+def make_mwe_personas_caa_ctx():
+    """Make MWE dataset with generation contexts prepended"""
+    for dataset_path in get_raw_dataset_dir().glob("mwe/persona/*.jsonl"):
+        with open(dataset_path, "r") as jsonfile:
+            list_dataset = [json.loads(line) for line in jsonfile]
+
+        persona = dataset_path.stem
+        if persona in ctx_prompts:
+            filename = build_dataset_filename(persona + "_ctx")
+            mwe_dataset: Dataset = convert_mwe_personas_dataset_caa(
+                list_dataset, ctx=ctx_prompts[persona]
+            )
+            jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
 
 
 def make_mwe_personas_caa_translations():
@@ -98,6 +127,27 @@ def make_mwe_personas_caa_translations():
         jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
 
 
+def make_mwe_personas_caa_ctx_translations():
+    for dataset_path in get_raw_dataset_dir().glob("translated/*/mwe/persona/*.jsonl"):
+        with open(dataset_path, "r") as jsonfile:
+            list_dataset = [json.loads(line) for line in jsonfile]
+
+        persona = dataset_path.stem
+        if persona in ctx_prompts:
+            lang_or_style = cast(
+                LangOrStyleCode, dataset_path.parent.parent.parent.stem
+            )
+            filename = build_dataset_filename(
+                persona + "_ctx", lang_or_style=lang_or_style
+            )
+            mwe_dataset: Dataset = convert_mwe_personas_dataset_caa(
+                list_dataset, lang_or_style=lang_or_style, ctx=ctx_prompts[persona]
+            )
+            jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
+
+
 if __name__ == "__main__":
     make_mwe_personas_caa()
+    make_mwe_personas_caa_ctx()
     make_mwe_personas_caa_translations()
+    make_mwe_personas_caa_ctx_translations()
