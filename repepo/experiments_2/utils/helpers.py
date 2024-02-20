@@ -47,6 +47,8 @@ class EmptyTorchCUDACache:
         gc.collect()
         torch.cuda.empty_cache()
 
+LayerwiseMetricsDict = dict[int, float]
+LayerwiseConceptVectorsDict = dict[int, torch.Tensor]
 
 def pretty_print_example(example: Example):
     print("Example(")
@@ -191,7 +193,8 @@ def save_metrics(
 def load_metrics(
     config: ConceptVectorsConfig,
     metric_name: str,
-) -> dict[str, float]:
+) -> LayerwiseMetricsDict:
+    """ Load layer-wise metrics for a given metric_name and config. """
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     metrics_save_dir = experiment_path / "metrics"
@@ -200,7 +203,8 @@ def load_metrics(
 
 def load_concept_vectors(
     config: ConceptVectorsConfig,
-) -> dict[int, torch.Tensor]:
+) -> LayerwiseConceptVectorsDict:
+    """ Load layer-wise concept vectors for a given config. """
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     activations_save_dir = experiment_path / "vectors"
