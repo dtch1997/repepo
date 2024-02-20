@@ -104,14 +104,16 @@ class ConceptVectorsConfig:
         )
         return hashlib.md5(str.encode()).hexdigest()
 
+_layers = [i for i in range(10, 20)]
+_multipliers = [-2 + i * 0.25 for i in range(17)]
 
 @dataclass
 class SteeringConfig(ConceptVectorsConfig):
     layers: list[int] = field(
-        default=[10, 11, 12, 13, 14, 15, 16, 17, 18, 19], is_mutable=True
+        default=_layers, is_mutable=True
     )
     multipliers: list[float] = field(
-        default=[-1.0, -0.5, 0.0, 0.5, 1.0], is_mutable=True
+        default=_multipliers, is_mutable=True
     )
     test_dataset_name: str = field(default="truthfulqa")
     test_split_name: str = field(default="test-dev")
