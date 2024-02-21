@@ -11,7 +11,7 @@ def translate(
     dataset: list[Any],
     lang_or_style: LangOrStyleCode,
     is_persona: bool,
-    max_workers: int = 10,
+    max_workers: int = 100,
     show_progress: bool = True,
 ) -> list[Any]:
     """
@@ -55,7 +55,6 @@ def main(force: bool = False, persona_only: bool = False) -> None:
                 list_dataset,
                 lang_or_style,
                 is_persona=is_persona,
-                max_workers=20,
             )
             # create the target directory if it doesn't exist
             target_path.parent.mkdir(parents=True, exist_ok=True)
