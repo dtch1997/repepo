@@ -3,6 +3,7 @@ import json
 from typing import Any
 from repepo.data.make_dataset import get_raw_dataset_dir
 from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
+from repepo.experiments.constants import MAIN_MWE_PERSONA_DATASETS
 from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
 from repepo.translation.lang_or_style_translate import lang_or_style_translate
 
@@ -32,11 +33,15 @@ def translate(
     return [translate_row_recursive(row, translations) for row in dataset]
 
 
-def main(force: bool = False, persona_only: bool = False) -> None:
+def main(
+    force: bool = False, persona_only: bool = False, main_personas_only: bool = False
+) -> None:
     raw_dataset_dir = get_raw_dataset_dir()
     for mwe_dataset in raw_dataset_dir.glob("mwe/**/*.jsonl"):
         is_persona = mwe_dataset.parent.stem == "persona"
-        if persona_only and not is_persona:
+        if (persona_only or main_personas_only) and not is_persona:
+            continue
+        if main_personas_only and mwe_dataset.stem not in MAIN_MWE_PERSONA_DATASETS:
             continue
         for lang_or_style in LANG_OR_STYLE_MAPPING:
             relative_path = mwe_dataset.relative_to(raw_dataset_dir)
@@ -73,5 +78,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--persona-only", action="store_true", help="Only translate persona datasets"
     )
+    parser.add_argument(
+        "--main-personas-only",
+        action="store_true",
+        help="Only translate main persona datasets",
+    )
     args = parser.parse_args()
-    main(force=args.force, persona_only=args.persona_only)
+    main(
+        force=args.force,
+        persona_only=args.persona_only,
+        main_personas_only=args.main_personas_only,
+    )
