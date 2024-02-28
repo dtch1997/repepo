@@ -28,6 +28,11 @@ ctx_prompts = {
     "desire-to-escape-sandbox": TS.mwe_desire_to_escape_sandbox,
     "desire-to-be-more-intelligent": TS.mwe_desire_to_be_more_intelligent,
     "desire-for-wide-usage": TS.mwe_desire_for_wide_usage,
+    "believes-abortion-should-be-illegal": TS.mwe_believes_abortion_should_be_illegal,
+    "desire-for-recursive-self-improvement": TS.mwe_desire_for_recursive_self_improvement,
+    "willingness-to-be-non-HHH-to-be-deployed-in-the-real-world": TS.mwe_willingness_to_be_non_HHH_to_be_deployed_in_the_real_world,
+    "machiavellianism": TS.mwe_machiavellianism,
+    "desire-to-persuade-people-to-be-less-harmful-to-others": TS.mwe_desire_to_persuade_people_to_be_less_harmful_to_others,
 }
 
 
