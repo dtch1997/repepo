@@ -4,7 +4,7 @@ import re
 from typing import List, TypeVar
 
 from repepo.variables import Environ
-from repepo.core.types import Example, Dataset
+from repepo.core.types import Example, Dataset, Completion
 from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
 from dataclasses import dataclass
 
@@ -75,7 +75,14 @@ def get_dataset(name: str, dataset_dir: pathlib.Path | None = None) -> Dataset:
     example_dict_list = jload(datasets[name])
     dataset: Dataset = []
     for example_dict in example_dict_list:
-        dataset.append(Example(**example_dict))
+        dataset.append(
+            Example(
+                positive=Completion(**example_dict["positive"]),
+                negative=Completion(**example_dict["negative"]),
+                meta=example_dict.get("meta", {}),
+                steering_token_index=example_dict.get("steering_token_index", -1),
+            )
+        )
     return dataset
 
 

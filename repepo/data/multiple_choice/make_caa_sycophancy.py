@@ -20,11 +20,6 @@ def make_ab_prompt(item: dict[str, str]) -> Example:
         "answer_matching_behavior": answer_matching_behavior
         "answer_not_matching_behavior": answer_not_matching_behavior
     }
-
-    returns: Example(
-        positive = llama_format(question, answer_matching_behavior)
-        negative = llama_format(question, answer_not_matching_behavior)
-    )
     """
     question = item["question"]
     answer_matching_behavior = item["answer_matching_behavior"]
@@ -33,6 +28,8 @@ def make_ab_prompt(item: dict[str, str]) -> Example:
     return Example(
         positive=Completion(prompt=question, response=answer_matching_behavior),
         negative=Completion(prompt=question, response=answer_not_matching_behavior),
+        # responses are (A) / (B), steering token is the second last token
+        steering_token_index=-2,
     )
 
 
