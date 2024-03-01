@@ -6,7 +6,7 @@ import pandas as pd
 import gc
 import hashlib
 
-from typing import cast, Hashable, Iterable
+from typing import cast, Hashable, Iterable, Literal
 from dataclasses import dataclass
 from pyrallis import field
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -132,27 +132,32 @@ def get_experiment_path(
     return WORK_DIR / experiment_suite
 
 
-def save_activation_differences(
-    config: ConceptVectorsConfig, activation_differences: dict[int, list[torch.Tensor]]
+ActivationType = Literal["positive", "negative", "difference"]
+
+
+def save_activations(
+    config: ConceptVectorsConfig,
+    activations: dict[int, list[torch.Tensor]],
+    activation_type: ActivationType = "difference",
 ):
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     activations_save_dir = experiment_path / "activations"
     activations_save_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
-        activation_differences,
-        activations_save_dir / f"activation_differences_{result_save_suffix}.pt",
+        activations,
+        activations_save_dir / f"activations_{activation_type}_{result_save_suffix}.pt",
     )
 
 
-def load_activation_differences(
-    config: ConceptVectorsConfig,
+def load_activations(
+    config: ConceptVectorsConfig, activation_type: ActivationType = "difference"
 ) -> dict[int, list[torch.Tensor]]:
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     activations_save_dir = experiment_path / "activations"
     return torch.load(
-        activations_save_dir / f"activation_differences_{result_save_suffix}.pt"
+        activations_save_dir / f"activations_{activation_type}_{result_save_suffix}.pt"
     )
 
 

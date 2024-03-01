@@ -1,12 +1,11 @@
 import torch
-from torch import Tensor
 from repepo.core.types import Dataset
 from repepo.core.format import LlamaChatFormatter
 from repepo.experiments.steering.utils.helpers import (
     get_model_name,
     get_model_and_tokenizer,
     ConceptVectorsConfig,
-    save_activation_differences,
+    save_activations,
     list_subset_of_datasets,
     get_configs_for_datasets,
     make_dataset,
@@ -22,7 +21,7 @@ def _validate_train_dataset(dataset: Dataset):
 
 
 @torch.no_grad()
-def extract_difference_vectors(
+def run_extract_activations(
     config: ConceptVectorsConfig,
 ):
     model_name = get_model_name(config.use_base_model, config.model_size)
@@ -54,21 +53,14 @@ def extract_difference_vectors(
         move_to_cpu=True,
     )
 
-    # Calculate difference vectors
-    difference_vectors: dict[int, list[Tensor]] = {}
-    for layer_num in pos_acts.keys():
-        difference_vectors[layer_num] = [
-            pos_act - neg_act
-            for pos_act, neg_act in zip(pos_acts[layer_num], neg_acts[layer_num])
-        ]
-
-    return difference_vectors
+    return pos_acts, neg_acts
 
 
 def run_extract_and_save(config: ConceptVectorsConfig):
     with EmptyTorchCUDACache():
-        difference_vectors = extract_difference_vectors(config)
-        save_activation_differences(config, difference_vectors)
+        pos, neg = run_extract_activations(config)
+        save_activations(config, pos, "positive")
+        save_activations(config, neg, "negative")
 
 
 if __name__ == "__main__":
