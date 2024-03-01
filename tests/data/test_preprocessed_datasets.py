@@ -1,8 +1,8 @@
 import pytest
-from repepo.data.make_dataset import make_dataset, DatasetSpec
+from repepo.data.make_dataset import make_dataset, DatasetSpec, list_datasets
 
 # TODO: eventually replace with all datasets
-_tested_datasets = ["sycophancy_train", "sycophancy_test"]
+_tested_datasets = list_datasets()
 
 
 @pytest.mark.parametrize("dataset_name", _tested_datasets)
