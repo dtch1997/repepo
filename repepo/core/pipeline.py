@@ -5,9 +5,8 @@ from typing import Any, Callable, Literal, Optional
 from transformers.generation import GenerationConfig
 import torch
 
-from .types import Completion, Example, Model, Tokenizer
-from .format import Formatter, InputOutputFormatter
-
+from .types import Completion, Model, Tokenizer
+from .format import Formatter
 
 @dataclass
 class TokenProb:
@@ -47,56 +46,15 @@ class Pipeline:
 
     model: Model
     tokenizer: Tokenizer
-    formatter: Formatter = field(default_factory=InputOutputFormatter)
-    conversation_history: list[Example] = field(default_factory=list)
+    conversation_history: list[Completion] = field(default_factory=list)
     hooks: list[PipelineHook] = field(default_factory=list)
-    print_first_example: bool = True
-
-    def build_generation_prompt(self, example: Example) -> str:
-        """Build a prompt for generation"""
-        return self.build_completion(example).prompt.rstrip()
-
-    def build_completion(self, example: Example) -> Completion:
-        return self.formatter.format_conversation(example, self.conversation_history)
-
-    def build_full_prompt(self, example: Example) -> str:
-        """Build prompt including response"""
-        return self.formatter.format_completion(self.build_completion(example))
-
-    def generate(
-        self,
-        example: Example,
-        generation_config: Optional[GenerationConfig] = None,
-        remove_base_prompt: bool = True,
-    ) -> str:
-        """Generate a completion for a given example"""
-        base_prompt = self.build_generation_prompt(example)
-        inputs: Any = self.tokenizer(base_prompt, return_tensors="pt")
-        inputs = inputs.to(self.model.device)
-        context = PipelineContext(
-            method="generate",
-            base_prompt=base_prompt,
-            full_prompt=base_prompt,
-            inputs=inputs,
-            pipeline=self,
-        )
-        with ExitStack() as stack:
-            for hook in self.hooks:
-                stack.enter_context(hook(context))
-            outputs = self.model.generate(
-                **inputs,
-                generation_config=generation_config,
-            )[0]
-            outputs_str = self.tokenizer.decode(outputs, skip_special_tokens=True)
-            if remove_base_prompt:
-                return outputs_str.replace(base_prompt, "")
-            return outputs_str
-        raise RuntimeError("Should never get here")
-
-    def calculate_output_logprobs(self, example: Example) -> TextProbs:
+    
+    _print_first_example: bool = True
+    
+    def calculate_output_logprobs(self, completion: Completion) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
-        base_prompt = self.build_generation_prompt(example)
-        full_prompt = self.build_full_prompt(example)
+        base_prompt = completion.prompt
+        full_prompt = completion.full_prompt
         inputs: Any = self.tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self.model.device)
         context = PipelineContext(
