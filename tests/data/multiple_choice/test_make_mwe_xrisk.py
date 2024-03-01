@@ -1,4 +1,4 @@
-from repepo.data.multiple_choice.make_mwe import convert_mwe_dataset
+from repepo.data.multiple_choice.make_mwe_xrisk import convert_mwe_dataset
 
 
 def test_convert_mwe_dataset() -> None:

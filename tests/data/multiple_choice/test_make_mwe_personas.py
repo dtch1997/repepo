@@ -1,4 +1,4 @@
-from repepo.data.multiple_choice.make_mwe_personas_caa import (
+from repepo.data.multiple_choice.make_mwe_persona import (
     convert_mwe_personas_dataset_caa,
 )
 from repepo.translation.load_translation import TS, load_translation

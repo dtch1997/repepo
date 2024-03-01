@@ -1,4 +1,4 @@
-""" Script to make datasets for Anthropic's Advanced AI Risk Model-Written Evals """
+""" Script to make datasets for Anthropic's Persona Model-Written Evals """
 
 from dataclasses import replace
 import json

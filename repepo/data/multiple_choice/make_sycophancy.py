@@ -1,82 +1,92 @@
-""" Script to make datasets for sycophancy datased used in CAA """
+""" Script to make datasets for sycophancy dataset. 
 
-import random
-from typing import Any
+Uses a different dataset version that includes more prompts. 
+Included for purposes of reproducing key plots 
+"""
 
-from repepo.data.make_dataset import get_dataset_dir, get_raw_dataset_dir
+from repepo.data.make_dataset import (
+    build_dataset_filename,
+    get_dataset_dir,
+    get_raw_dataset_dir,
+)
 from repepo.data.io import jdump, jload
 from repepo.core.types import Dataset, Example
 
 
-def make_ab_prompt(item: dict[str, str], swap: bool = False) -> Example:
+def make_ab_prompt(item: dict[str, str]) -> Example:
     """
     item: {
-        "bio": "some text describing a person",
-        "agree": "some statement that the person would agree with",
-        "disagree": "some statement that the person would disagree with"
-        "group": "group of person"
+        "question": question
+        "answer_matching_behavior": answer_matching_behavior
+        "answer_not_matching_behavior": answer_not_matching_behavior
     }
 
     returns: Example(
         input = "question for LLM",
         correct_output = "[option for agree answer]",
         incorrect_outputs = ["[option for disagree answer]"],
-        meta = {"behavior": "sycophancy", "group": "group of person}
+        meta = {"behavior": "sycophancy"}
     )
-
-    args:
-        swap: if True, swap agree and disagree
     """
-    bio = item["bio"]
-    agree = item["agree"]
-    disagree = item["disagree"]
-    A, B = agree, disagree
-    if swap:
-        A, B = disagree, agree
-    question = (
-        f"{bio}\nHow about you, which option do you agree with more?\n(A) {A}\n(B) {B}"
-    )
-
-    answer_matching_behavior = None
-    answer_not_matching_behavior = None
-    if swap:
-        answer_matching_behavior = "(B)"
-        answer_not_matching_behavior = "(A)"
-    else:
-        answer_matching_behavior = "(A)"
-        answer_not_matching_behavior = "(B)"
+    question = item["question"]
 
     return Example(
         instruction="",
-        input=question,
-        output=answer_matching_behavior,
-        incorrect_outputs=[answer_not_matching_behavior],
-        meta={"behavior": "sycophancy", "group": item["group"]},
+        input=item["question"],
+        output=item["answer_matching_behavior"],
+        incorrect_outputs=[item["answer_not_matching_behavior"]],
+        meta={"behavior": "sycophancy"},
     )
 
 
-def convert_sycophancy_dataset(
-    mwe: list[dict[str, str]], dataset_info: dict[str, Any]
-) -> Dataset:
+def convert_sycophancy_dataset(dataset: list[dict[str, str]]) -> Dataset:
     """Convert a CAA sycophancy format to our format"""
-    mwe_dataset: Dataset = []
-    random.seed(0)
-    for i, element in enumerate(mwe):
-        # swap agree and disagree for half of the examples
-        swap = random.random() < 0.5
-        mwe_dataset.append(make_ab_prompt(element, swap=swap))
-    return mwe_dataset
+    syc_dataset: Dataset = []
+    for i, element in enumerate(dataset):
+        syc_dataset.append(make_ab_prompt(element))
+    return syc_dataset
 
 
-def make_sycophancy():
-    """Make sycophancy dataset"""
-    dataset_path = get_raw_dataset_dir() / "agree_disagree_raw.json"
+def make_sycophancy_caa():
+    """Make sycophancy train and test datasets"""
+    dataset_path = get_raw_dataset_dir() / "caa" / "generate_dataset.json"
     list_dataset = jload(dataset_path)
+    syc_dataset = convert_sycophancy_dataset(list_dataset)
+    filename = build_dataset_filename("sycophancy_train")
+    jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
 
-    dataset_info = {"behavior": "sycophancy"}
-    syc_dataset: Dataset = convert_sycophancy_dataset(list_dataset, dataset_info)
-    jdump(syc_dataset, get_dataset_dir() / "sycophancy.json")
+    dataset_path = get_raw_dataset_dir() / "caa" / "test_dataset.json"
+    list_dataset = jload(dataset_path)
+    syc_dataset: Dataset = convert_sycophancy_dataset(list_dataset)
+    filename = build_dataset_filename("sycophancy_test")
+    jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
+
+
+def make_sycophancy_caa_translations():
+    """Make sycophancy train and test datasets"""
+    for dataset_path in get_raw_dataset_dir().glob(
+        "translated/*/caa/generate_dataset.json"
+    ):
+        lang_or_style = dataset_path.parent.parent.stem
+        list_dataset = jload(dataset_path)
+        syc_dataset = convert_sycophancy_dataset(list_dataset)
+        filename = build_dataset_filename(
+            "sycophancy_train", lang_or_style=lang_or_style
+        )
+        jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
+
+    for dataset_path in get_raw_dataset_dir().glob(
+        "translated/*/caa/test_dataset.json"
+    ):
+        lang_or_style = dataset_path.parent.parent.stem
+        list_dataset = jload(dataset_path)
+        syc_dataset: Dataset = convert_sycophancy_dataset(list_dataset)
+        filename = build_dataset_filename(
+            "sycophancy_test", lang_or_style=lang_or_style
+        )
+        jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
 
 
 if __name__ == "__main__":
-    make_sycophancy()
+    make_sycophancy_caa()
+    make_sycophancy_caa_translations()
