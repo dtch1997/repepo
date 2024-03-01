@@ -15,11 +15,6 @@ class Completion:
     prompt: str
     response: str
 
-    def build_full_prompt(
-        self, completion_template: str = "{prompt} {response}"
-    ) -> str:
-        return completion_template.format(prompt=self.prompt, response=self.response)
-
 
 @dataclass
 class Example:
