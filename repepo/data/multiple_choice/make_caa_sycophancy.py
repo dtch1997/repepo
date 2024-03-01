@@ -10,7 +10,7 @@ from repepo.data.make_dataset import (
     get_raw_dataset_dir,
 )
 from repepo.data.io import jdump, jload
-from repepo.core.types import Dataset, Example
+from repepo.core.types import Dataset, Example, Completion
 
 
 def make_ab_prompt(item: dict[str, str]) -> Example:
@@ -22,27 +22,24 @@ def make_ab_prompt(item: dict[str, str]) -> Example:
     }
 
     returns: Example(
-        input = "question for LLM",
-        correct_output = "[option for agree answer]",
-        incorrect_outputs = ["[option for disagree answer]"],
-        meta = {"behavior": "sycophancy"}
+        positive = llama_format(question, answer_matching_behavior)
+        negative = llama_format(question, answer_not_matching_behavior)
     )
     """
     question = item["question"]
+    answer_matching_behavior = item["answer_matching_behavior"]
+    answer_not_matching_behavior = item["answer_not_matching_behavior"]
 
     return Example(
-        instruction="",
-        input=item["question"],
-        output=item["answer_matching_behavior"],
-        incorrect_outputs=[item["answer_not_matching_behavior"]],
-        meta={"behavior": "sycophancy"},
+        positive=Completion(prompt=question, response=answer_matching_behavior),
+        negative=Completion(prompt=question, response=answer_not_matching_behavior),
     )
 
 
 def convert_sycophancy_dataset(dataset: list[dict[str, str]]) -> Dataset:
     """Convert a CAA sycophancy format to our format"""
     syc_dataset: Dataset = []
-    for i, element in enumerate(dataset):
+    for element in dataset:
         syc_dataset.append(make_ab_prompt(element))
     return syc_dataset
 
@@ -50,12 +47,16 @@ def convert_sycophancy_dataset(dataset: list[dict[str, str]]) -> Dataset:
 def make_sycophancy_caa():
     """Make sycophancy train and test datasets"""
     dataset_path = get_raw_dataset_dir() / "caa" / "generate_dataset.json"
+    assert dataset_path.exists()
+
     list_dataset = jload(dataset_path)
     syc_dataset = convert_sycophancy_dataset(list_dataset)
     filename = build_dataset_filename("sycophancy_train")
     jdump(syc_dataset, get_dataset_dir() / "caa" / filename)
 
     dataset_path = get_raw_dataset_dir() / "caa" / "test_dataset.json"
+    assert dataset_path.exists()
+
     list_dataset = jload(dataset_path)
     syc_dataset: Dataset = convert_sycophancy_dataset(list_dataset)
     filename = build_dataset_filename("sycophancy_test")
