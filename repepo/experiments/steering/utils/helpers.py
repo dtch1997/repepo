@@ -13,6 +13,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from transformers import BitsAndBytesConfig
 from repepo.core.types import Example
+from repepo.core.format import Formatter
 from repepo.data.make_dataset import (
     DatasetSpec,
     list_datasets as _list_dataset,
@@ -85,20 +86,35 @@ def get_model_and_tokenizer(
     return model, tokenizer
 
 
+def get_formatter(
+    formatter_name: str = "llama-chat-formatter",
+) -> Formatter:
+    if formatter_name == "llama-chat-formatter":
+        from repepo.core.format import LlamaChatFormatter
+
+        return LlamaChatFormatter()
+    else:
+        raise ValueError(f"Unknown formatter: {formatter_name}")
+
+
 @dataclass
 class ConceptVectorsConfig:
     use_base_model: bool = field(default=False)
     model_size: str = field(default="13b")
     train_dataset_name: str = field(default="sycophancy_train")
     train_split_name: str = field(default="train-dev")
+    formatter: str = field(default="llama-chat-formatter")
+    aggregator: str = field(default="mean")
     verbose: bool = True
 
     def make_save_suffix(self) -> str:
         str = (
             f"use-base-model={self.use_base_model}_"
             f"model-size={self.model_size}_"
+            f"formatter={self.formatter}_"
             f"train-dataset={self.train_dataset_name}_"
-            f"train-split={self.train_split_name}"
+            f"train-split={self.train_split_name}_"
+            f"aggregator={self.aggregator}"
         )
         return hashlib.md5(str.encode()).hexdigest()
 
@@ -111,7 +127,7 @@ _multipliers = [-2 + i * 0.25 for i in range(17)]
 class SteeringConfig(ConceptVectorsConfig):
     layers: list[int] = field(default=_layers, is_mutable=True)
     multipliers: list[float] = field(default=_multipliers, is_mutable=True)
-    test_dataset_name: str = field(default="truthfulqa")
+    test_dataset_name: str = field(default="sycophancy_test")
     test_split_name: str = field(default="test-dev")
 
     def make_steering_results_save_suffix(self) -> str:
@@ -127,7 +143,7 @@ class SteeringConfig(ConceptVectorsConfig):
 
 
 def get_experiment_path(
-    experiment_suite: str = "concept_vector_linearity",
+    experiment_suite: str = "concept_vectors_at_scale",
 ) -> pathlib.Path:
     return WORK_DIR / experiment_suite
 
@@ -214,8 +230,9 @@ def load_concept_vectors(
 class SteeringResult:
     layer_id: int
     multiplier: float
-    mcq_accuracy: float
-    average_key_prob: float
+    mcq_acc: float
+    logit_diff: float
+    pos_prob: float
 
 
 def save_results(

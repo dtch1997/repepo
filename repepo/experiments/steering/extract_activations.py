@@ -1,9 +1,9 @@
 import torch
 from repepo.core.types import Dataset
-from repepo.core.format import LlamaChatFormatter
 from repepo.experiments.steering.utils.helpers import (
     get_model_name,
     get_model_and_tokenizer,
+    get_formatter,
     ConceptVectorsConfig,
     save_activations,
     list_subset_of_datasets,
@@ -26,7 +26,7 @@ def run_extract_activations(
 ):
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)
-    formatter = LlamaChatFormatter()
+    formatter = get_formatter(config.formatter)
 
     train_dataset = make_dataset(config.train_dataset_name, config.train_split_name)
     _validate_train_dataset(train_dataset)

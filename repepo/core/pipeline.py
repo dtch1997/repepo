@@ -1,17 +1,18 @@
 from contextlib import AbstractContextManager, ExitStack
 from dataclasses import dataclass, field
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Literal
 
-from transformers.generation import GenerationConfig
 import torch
 
 from .types import Completion, Model, Tokenizer
 from .format import Formatter
 
+
 @dataclass
 class TokenProb:
     token_id: int
     logprob: float
+    logit: float
     text: str
 
 
@@ -46,15 +47,16 @@ class Pipeline:
 
     model: Model
     tokenizer: Tokenizer
+    formatter: Formatter
     conversation_history: list[Completion] = field(default_factory=list)
     hooks: list[PipelineHook] = field(default_factory=list)
-    
-    _print_first_example: bool = True
-    
+
+    print_first_example: bool = True
+
     def calculate_output_logprobs(self, completion: Completion) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
         base_prompt = completion.prompt
-        full_prompt = completion.full_prompt
+        full_prompt = self.formatter.format_as_str(completion)
         inputs: Any = self.tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self.model.device)
         context = PipelineContext(
@@ -68,19 +70,30 @@ class Pipeline:
             for hook in self.hooks:
                 stack.enter_context(hook(context))
             outputs = self.model(**inputs, output_hidden_states=False, return_dict=True)
-            probs = torch.log_softmax(outputs.logits, dim=-1).detach().cpu()
+            logits = outputs.logits.detach().cpu()
+            logprobs = torch.log_softmax(logits, dim=-1).detach().cpu()
+
             # collect the probability of the generated token -- probability at index 0 corresponds to the token at index 1
-            probs = probs[:, :-1, :]
+            logits = logits[:, :-1, :]
+            logprobs = logprobs[:, :-1, :]
+
+            # get the logprobs for the target tokens
             target_ids = inputs.input_ids[:, 1:].cpu()
-            gen_probs = torch.gather(probs, 2, target_ids[:, :, None]).squeeze(-1)[0]
+            gen_logprobs = torch.gather(logprobs, 2, target_ids[:, :, None]).squeeze(
+                -1
+            )[0]
+            gen_logits = torch.gather(logits, 2, target_ids[:, :, None]).squeeze(-1)[0]
+
             text_probs: list[TokenProb] = []
-            for token, p in zip(target_ids[0], gen_probs):
+
+            for token, logprob, logit in zip(target_ids[0], gen_logprobs, gen_logits):
                 if token not in self.tokenizer.all_special_ids:
                     text_probs.append(
                         TokenProb(
                             token_id=token.item(),
                             text=self.tokenizer.decode(token),
-                            logprob=p.item(),
+                            logprob=logprob.item(),
+                            logit=logit.item(),
                         )
                     )
             return TextProbs(text=full_prompt, token_probs=text_probs)
