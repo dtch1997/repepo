@@ -1,5 +1,5 @@
 from repepo.experiments.steering.utils.helpers import (
-    ConceptVectorsConfig,
+    SteeringConfig,
     load_metrics,
     load_concept_vectors,
     LayerwiseMetricsDict,
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 def get_all_metrics(
-    configs: list[ConceptVectorsConfig], metric_name: str
+    configs: list[SteeringConfig], metric_name: str
 ) -> dict[str, LayerwiseMetricsDict]:
     all_metrics = {}
     for config in configs:
@@ -20,7 +20,7 @@ def get_all_metrics(
 
 
 def get_all_concept_vectors(
-    configs: list[ConceptVectorsConfig],
+    configs: list[SteeringConfig],
 ) -> dict[str, LayerwiseConceptVectorsDict]:
     all_concept_vectors = {}
     for config in configs:
@@ -41,7 +41,7 @@ def plot_metric(ax: plt.Axes, all_metrics: dict[str, LayerwiseMetricsDict]) -> p
     return ax
 
 
-def plot_all_metrics(configs: list[ConceptVectorsConfig], metric_name: str):
+def plot_all_metrics(configs: list[SteeringConfig], metric_name: str):
     all_metrics = get_all_metrics(configs, metric_name)
     fig, ax = plt.subplots()
     for i, (dataset_name, layerwise_metrics) in enumerate(all_metrics.items()):

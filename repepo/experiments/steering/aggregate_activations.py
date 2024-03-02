@@ -1,10 +1,9 @@
 from repepo.experiments.steering.utils.helpers import (
-    list_subset_of_datasets,
-    get_configs_for_datasets,
-    ConceptVectorsConfig,
+    SteeringConfig,
     load_activations,
     save_concept_vectors,
 )
+from repepo.experiments.steering.utils.configs import list_configs
 
 from steering_vectors.aggregators import (
     Aggregator,
@@ -21,16 +20,12 @@ aggregators = {
 }
 
 
-def run_aggregate_activations(config: ConceptVectorsConfig):
+def run_aggregate_activations(config: SteeringConfig):
     pos_acts = load_activations(config, "positive")
     neg_acts = load_activations(config, "negative")
-
     aggregator: Aggregator = aggregators[config.aggregator]()
-
     concept_vectors = aggregate_activations(pos_acts, neg_acts, aggregator)
-
     save_concept_vectors(config, concept_vectors)
-
     return concept_vectors
 
 
@@ -38,15 +33,18 @@ if __name__ == "__main__":
     import simple_parsing
 
     parser = simple_parsing.ArgumentParser()
-    parser.add_arguments(ConceptVectorsConfig, dest="config")
-    parser.add_argument("--datasets", type=str, default="")
+    parser.add_arguments(SteeringConfig, dest="config")
+    parser.add_argument("--configs", type=str, default="")
     args = parser.parse_args()
     config = args.config
 
-    if args.datasets:
-        all_datasets = list_subset_of_datasets(args.datasets)
-        configs = get_configs_for_datasets(all_datasets, config.train_split_name)
+    if args.configs:
+        configs = list_configs(
+            args.configs, config.train_split_name, config.test_split_name
+        )
         for config in configs:
+            print(f"Running on dataset: {config.train_dataset_name}")
             run_aggregate_activations(config)
+
     else:
         run_aggregate_activations(config)

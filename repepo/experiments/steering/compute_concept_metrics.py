@@ -1,15 +1,14 @@
 from repepo.experiments.steering.utils.helpers import (
-    list_subset_of_datasets,
-    get_configs_for_datasets,
-    ConceptVectorsConfig,
+    SteeringConfig,
     load_activations,
     compute_difference_vectors,
     save_metrics,
 )
+from repepo.experiments.steering.utils.configs import list_configs
 from repepo.experiments.steering.utils.metrics import list_metrics, get_metric
 
 
-def run_load_extract_and_save(config: ConceptVectorsConfig, metric_names: list[str]):
+def run_load_extract_and_save(config: SteeringConfig, metric_names: list[str]):
     print("Running on dataset: ", config.train_dataset_name)
     positive_activations = load_activations(config, "positive")
     negative_activations = load_activations(config, "negative")
@@ -34,18 +33,18 @@ if __name__ == "__main__":
     import simple_parsing
 
     parser = simple_parsing.ArgumentParser()
-    parser.add_arguments(ConceptVectorsConfig, dest="config")
-    parser.add_argument("--datasets", type=str, default="")
-    # parser.add_argument("--aggregator", type=str, default="mean")
+    parser.add_arguments(SteeringConfig, dest="config")
+    parser.add_argument("--configs", type=str, default="")
     args = parser.parse_args()
     config = args.config
 
     metric_names = list_metrics()
 
-    if args.datasets:
-        all_datasets = list_subset_of_datasets(args.datasets)
-        configs = get_configs_for_datasets(all_datasets, config.train_split_name)
-        for config in configs:
+    if args.configs:
+        all_configs = list_configs(
+            args.configs, config.train_split_name, config.test_split_name
+        )
+        for config in all_configs:
             run_load_extract_and_save(config, metric_names=metric_names)
     else:
         run_load_extract_and_save(config, metric_names=metric_names)

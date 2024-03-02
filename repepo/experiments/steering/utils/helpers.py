@@ -6,7 +6,7 @@ import pandas as pd
 import gc
 import hashlib
 
-from typing import cast, Hashable, Iterable, Literal
+from typing import cast, Hashable, Literal
 from dataclasses import dataclass
 from pyrallis import field
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -16,10 +16,9 @@ from repepo.core.types import Example
 from repepo.core.format import Formatter
 from repepo.data.make_dataset import (
     DatasetSpec,
-    list_datasets as _list_dataset,
     make_dataset as _make_dataset,
 )
-from repepo.experiments.steering.utils.config import (
+from repepo.experiments.steering.utils.variables import (
     WORK_DIR,
     LOAD_IN_4BIT,
     LOAD_IN_8BIT,
@@ -29,12 +28,13 @@ from repepo.experiments.steering.utils.config import (
 token = os.getenv("HF_TOKEN")
 
 SPLITS = {
-    "train-dev": "0:1%",
-    "train": "0:40%",
-    "val": "40:50%",
-    "val-dev": "40:41%",
+    "train": "0%:40%",
+    "val": "40%:50%",
     "test": "50:100%",
-    "test-dev": "50:51%",
+    # For development, use 10 examples per split
+    "train-dev": "0%:+10",
+    "val-dev": "40%:+10",
+    "test-dev": "50:+10%",
 }
 
 
@@ -93,6 +93,10 @@ def get_formatter(
         from repepo.core.format import LlamaChatFormatter
 
         return LlamaChatFormatter()
+    elif formatter_name == "identity-formatter":
+        from repepo.core.format import IdentityFormatter
+
+        return IdentityFormatter()
     else:
         raise ValueError(f"Unknown formatter: {formatter_name}")
 
@@ -152,7 +156,7 @@ ActivationType = Literal["positive", "negative", "difference"]
 
 
 def save_activations(
-    config: ConceptVectorsConfig,
+    config: SteeringConfig,
     activations: dict[int, list[torch.Tensor]],
     activation_type: ActivationType = "difference",
 ):
@@ -167,7 +171,7 @@ def save_activations(
 
 
 def load_activations(
-    config: ConceptVectorsConfig, activation_type: ActivationType = "difference"
+    config: SteeringConfig, activation_type: ActivationType = "difference"
 ) -> dict[int, list[torch.Tensor]]:
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
@@ -193,7 +197,7 @@ def compute_difference_vectors(
 
 
 def save_concept_vectors(
-    config: ConceptVectorsConfig, concept_vectors: dict[int, torch.Tensor]
+    config: SteeringConfig, concept_vectors: dict[int, torch.Tensor]
 ):
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
@@ -206,7 +210,7 @@ def save_concept_vectors(
 
 
 def save_metrics(
-    config: ConceptVectorsConfig,
+    config: SteeringConfig,
     metric_name: str,
     metrics: dict[Hashable, float],
 ):
@@ -221,7 +225,7 @@ def save_metrics(
 
 
 def load_metrics(
-    config: ConceptVectorsConfig,
+    config: SteeringConfig,
     metric_name: str,
 ) -> LayerwiseMetricsDict:
     """Load layer-wise metrics for a given metric_name and config."""
@@ -232,7 +236,7 @@ def load_metrics(
 
 
 def load_concept_vectors(
-    config: ConceptVectorsConfig,
+    config: SteeringConfig,
 ) -> LayerwiseConceptVectorsDict:
     """Load layer-wise concept vectors for a given config."""
     experiment_path = get_experiment_path()
@@ -279,61 +283,6 @@ def make_dataset(
     if split_name not in SPLITS:
         raise ValueError(f"Unknown split name: {split_name}")
     return _make_dataset(DatasetSpec(name=name, split=SPLITS[split_name]), DATASET_DIR)
-
-
-def make_subset_of_datasets(
-    subset="all",
-    split_name: str = "train",
-):
-    datasets = list_subset_of_datasets(subset=subset)
-    return [make_dataset(name, split_name) for name in datasets]
-
-
-def list_subset_of_datasets(
-    subset="all",
-):
-    if subset == "all":
-        return _list_dataset(dataset_dir=DATASET_DIR)
-    elif subset == "dev":
-        # Selected from distinct clusters of concept vectors
-        return tuple(
-            [
-                "believes-abortion-should-be-illegal",
-                "desire-for-recursive-self-improvement",
-                "truthfulqa",
-                "willingness-to-be-non-HHH-to-be-deployed-in-the-real-world",
-                "machiavellianism",
-                "desire-to-persuade-people-to-be-less-harmful-to-others",
-            ]
-        )
-    else:
-        raise ValueError(f"Unknown subset: {subset}")
-
-
-def get_configs_for_datasets(
-    datasets: Iterable[str],
-    split_name: str = "train",
-):
-    return [
-        ConceptVectorsConfig(train_dataset_name=dataset, train_split_name=split_name)
-        for dataset in datasets
-    ]
-
-
-def get_steering_configs_for_datasets(
-    datasets: Iterable[str],
-    train_split_name: str = "train",
-    test_split_name: str = "test",
-):
-    return [
-        SteeringConfig(
-            train_dataset_name=dataset,
-            test_dataset_name=dataset,
-            train_split_name=train_split_name,
-            test_split_name=test_split_name,
-        )
-        for dataset in datasets
-    ]
 
 
 def convert_to_dataframe(example_list: list[Example]) -> pd.DataFrame:

@@ -10,10 +10,10 @@ from repepo.experiments.steering.utils.helpers import (
     SteeringResult,
     load_concept_vectors,
     save_results,
-    list_subset_of_datasets,
     make_dataset,
     EmptyTorchCUDACache,
 )
+from repepo.experiments.steering.utils.configs import list_configs
 
 from repepo.core.types import Dataset
 from repepo.core.pipeline import Pipeline
@@ -120,18 +120,18 @@ def run_load_extract_and_save(
 if __name__ == "__main__":
     parser = simple_parsing.ArgumentParser()
     parser.add_arguments(SteeringConfig, dest="config")
-    parser.add_argument("--datasets", type=str, default="")
+    parser.add_argument("--configs", type=str, default="")
 
     args = parser.parse_args()
     config = args.config
 
-    if args.datasets:
-        all_datasets = list_subset_of_datasets(args.datasets)
-        for dataset_name in all_datasets:
+    if args.configs:
+        all_configs = list_configs(
+            args.configs, config.train_split_name, config.test_split_name
+        )
+        for config in all_configs:
             # Train and test on the same dataset
-            print("Running on dataset: ", dataset_name)
-            config.train_dataset_name = dataset_name
-            config.test_dataset_name = dataset_name
+            print("Running on dataset: ", config.test_dataset_name)
             with EmptyTorchCUDACache():
                 run_load_extract_and_save(config)
     else:
