@@ -101,8 +101,12 @@ def get_formatter(
         raise ValueError(f"Unknown formatter: {formatter_name}")
 
 
+_layers = list(range(32))  # all layers in llama-7b
+_multipliers = [-2 + i * 0.25 for i in range(17)]
+
+
 @dataclass
-class ConceptVectorsConfig:
+class SteeringConfig:
     use_base_model: bool = field(default=False)
     model_size: str = field(default="7b")
     train_dataset_name: str = field(default="sycophancy_train")
@@ -110,6 +114,10 @@ class ConceptVectorsConfig:
     formatter: str = field(default="llama-chat-formatter")
     aggregator: str = field(default="mean")
     verbose: bool = True
+    layers: list[int] = field(default=_layers, is_mutable=True)
+    multipliers: list[float] = field(default=_multipliers, is_mutable=True)
+    test_dataset_name: str = field(default="sycophancy_train")
+    test_split_name: str = field(default="val-dev")
 
     def make_save_suffix(self) -> str:
         str = (
@@ -119,25 +127,6 @@ class ConceptVectorsConfig:
             f"train-dataset={self.train_dataset_name}_"
             f"train-split={self.train_split_name}_"
             f"aggregator={self.aggregator}"
-        )
-        return hashlib.md5(str.encode()).hexdigest()
-
-
-_layers = list(range(32))  # all layers in llama-7b
-_multipliers = [-2 + i * 0.25 for i in range(17)]
-
-
-@dataclass
-class SteeringConfig(ConceptVectorsConfig):
-    layers: list[int] = field(default=_layers, is_mutable=True)
-    multipliers: list[float] = field(default=_multipliers, is_mutable=True)
-    test_dataset_name: str = field(default="sycophancy_train")
-    test_split_name: str = field(default="val-dev")
-
-    def make_steering_results_save_suffix(self) -> str:
-        super_suffix = self.make_save_suffix()
-        str = (
-            f"{super_suffix}_"
             f"layers={self.layers}_"
             f"multipliers={self.multipliers}_"
             f"test-dataset={self.test_dataset_name}_"
@@ -259,7 +248,7 @@ def save_results(
     results: list[SteeringResult],
 ):
     experiment_path = get_experiment_path()
-    result_save_suffix = config.make_steering_results_save_suffix()
+    result_save_suffix = config.make_save_suffix()
     results_save_dir = experiment_path / "results"
     results_save_dir.mkdir(parents=True, exist_ok=True)
     with open(results_save_dir / f"results_{result_save_suffix}.pickle", "wb") as f:
@@ -270,7 +259,7 @@ def load_results(
     config: SteeringConfig,
 ) -> list[SteeringResult]:
     experiment_path = get_experiment_path()
-    result_save_suffix = config.make_steering_results_save_suffix()
+    result_save_suffix = config.make_save_suffix()
     results_save_dir = experiment_path / "results"
     with open(results_save_dir / f"results_{result_save_suffix}.pickle", "rb") as f:
         return cast(list[SteeringResult], pickle.load(f))
