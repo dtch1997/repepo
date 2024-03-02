@@ -6,12 +6,11 @@ from contextlib import AbstractContextManager, ExitStack, contextmanager
 from dataclasses import dataclass
 from statistics import mean
 from tqdm import tqdm
-from transformers.generation import GenerationConfig
-from typing import Callable, Iterable, Optional, Sequence
+from typing import Callable, Iterable, Sequence
 from repepo.algorithms.repe import SteeringHook
 from repepo.core.pipeline import TextProbs
 from repepo.core.types import Example
-from .pipeline import Pipeline
+from repepo.core.pipeline import Pipeline
 
 import numpy as np
 
@@ -196,16 +195,11 @@ class NormalizedPositiveProbabilityEvaluator(Evaluator):
         negative_output_prob = np.exp(negative_output_logprob)
         return positive_output_prob / (positive_output_prob + negative_output_prob)
 
-    def __call__(self, predictions: Sequence[EvalPrediction]) -> dict[str, float]:
-        pred_results = [self.score_prediction(pred) for pred in predictions]
-        return {"average_key_prob": mean(pred_results)}
-
 
 def evaluate(
     pipeline: Pipeline,
     dataset: Iterable[Example],
     evaluators: Sequence[Evaluator],
-    generation_config: Optional[GenerationConfig] = None,
     # these eval_hooks allow us to do custom stuff to the pipeline only during evaluation,
     # e.g. mess with the formatter to use CAA's special answer format
     eval_hooks: Sequence[EvalHook] = [],

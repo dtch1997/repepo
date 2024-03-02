@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager, ExitStack
 from dataclasses import dataclass, field
-from typing import Any, Callable, Literal
+from typing import Any, Literal, Protocol
 
 import torch
 
@@ -38,7 +38,9 @@ class PipelineContext:
     pipeline: "Pipeline"
 
 
-PipelineHook = Callable[[PipelineContext], AbstractContextManager[None]]
+class PipelineHook(Protocol):
+    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]:
+        ...
 
 
 @dataclass

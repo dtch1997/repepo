@@ -1,20 +1,17 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Literal
 from repepo.core.pipeline import PipelineContext
-
 from steering_vectors import (
     SteeringVector,
     ModelLayerConfig,
 )
 
 from repepo.core.types import Tokenizer
-
-MultiAnswerMethod = Literal["first_incorrect", "random_incorrect", "repeat_correct"]
+from repepo.core.pipeline import PipelineHook
 
 
 @dataclass
-class SteeringHook:
+class SteeringHook(PipelineHook):
     """
     Pipeline hook that applies a steering vector to the model.
     All relevant state for the hook is stored in this class.
