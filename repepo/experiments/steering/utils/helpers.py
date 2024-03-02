@@ -119,7 +119,7 @@ class ConceptVectorsConfig:
         return hashlib.md5(str.encode()).hexdigest()
 
 
-_layers = list(range(10, 20))
+_layers = list(range(32))  # all layers in llama-7b
 _multipliers = [-2 + i * 0.25 for i in range(17)]
 
 
