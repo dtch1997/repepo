@@ -100,7 +100,7 @@ def get_formatter(
 @dataclass
 class ConceptVectorsConfig:
     use_base_model: bool = field(default=False)
-    model_size: str = field(default="13b")
+    model_size: str = field(default="7b")
     train_dataset_name: str = field(default="sycophancy_train")
     train_split_name: str = field(default="train-dev")
     formatter: str = field(default="llama-chat-formatter")
@@ -119,7 +119,7 @@ class ConceptVectorsConfig:
         return hashlib.md5(str.encode()).hexdigest()
 
 
-_layers = [i for i in range(10, 20)]
+_layers = list(range(10, 20))
 _multipliers = [-2 + i * 0.25 for i in range(17)]
 
 
@@ -127,8 +127,8 @@ _multipliers = [-2 + i * 0.25 for i in range(17)]
 class SteeringConfig(ConceptVectorsConfig):
     layers: list[int] = field(default=_layers, is_mutable=True)
     multipliers: list[float] = field(default=_multipliers, is_mutable=True)
-    test_dataset_name: str = field(default="sycophancy_test")
-    test_split_name: str = field(default="test-dev")
+    test_dataset_name: str = field(default="sycophancy_train")
+    test_split_name: str = field(default="val-dev")
 
     def make_steering_results_save_suffix(self) -> str:
         super_suffix = self.make_save_suffix()
@@ -175,6 +175,21 @@ def load_activations(
     return torch.load(
         activations_save_dir / f"activations_{activation_type}_{result_save_suffix}.pt"
     )
+
+
+def compute_difference_vectors(
+    pos_acts: dict[int, list[torch.Tensor]],
+    neg_acts: dict[int, list[torch.Tensor]],
+) -> dict[int, list[torch.Tensor]]:
+    difference_vectors: dict[int, list[torch.Tensor]] = {}
+    for layer_num in pos_acts.keys():
+        pos_layer_acts = pos_acts[layer_num]
+        neg_layer_acts = neg_acts[layer_num]
+        diff_vecs = [
+            pos_layer_acts[i] - neg_layer_acts[i] for i in range(len(pos_layer_acts))
+        ]
+        difference_vectors[layer_num] = diff_vecs
+    return difference_vectors
 
 
 def save_concept_vectors(
