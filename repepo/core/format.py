@@ -4,7 +4,6 @@ from typing import List
 from typing_extensions import override
 
 from repepo.core.types import Completion
-from repepo.core.types import Example
 
 
 @dataclass
@@ -66,6 +65,15 @@ class Formatter(abc.ABC):
         if len(convo_prefix) > 0:
             prompt = convo_prefix + self.msg_separator + final_completion.prompt
         return Completion(prompt=prompt, response=final_completion.response)
+
+
+class IdentityFormatter(Formatter):
+    """Do nothing."""
+
+    @override
+    def format(self, completion: Completion, ctx: FormatContext):
+        return completion
+
 
 class LlamaChatFormatter(Formatter):
     """

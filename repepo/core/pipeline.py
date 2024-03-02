@@ -5,7 +5,7 @@ from typing import Any, Literal, Protocol
 import torch
 
 from .types import Completion, Model, Tokenizer
-from .format import Formatter
+from .format import Formatter, IdentityFormatter
 
 
 @dataclass
@@ -49,7 +49,7 @@ class Pipeline:
 
     model: Model
     tokenizer: Tokenizer
-    formatter: Formatter
+    formatter: Formatter = field(default_factory=IdentityFormatter)
     conversation_history: list[Completion] = field(default_factory=list)
     hooks: list[PipelineHook] = field(default_factory=list)
 
