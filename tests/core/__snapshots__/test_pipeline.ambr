@@ -1,13 +1,9 @@
 # serializer version: 1
 # name: test_icl_Pipeline_build_generation_prompt
   '''
-  Input:  Paris is in 
-  Output: France
-  Input:  London is in 
-  Output: England
-  Input:  Berlin is in 
-  Output: Germany
-  Input:  Beijing is in 
-  Output:
+  Paris is in France
+  London is in England
+  Berlin is in Germany
+  Beijing is in
   '''
 # ---

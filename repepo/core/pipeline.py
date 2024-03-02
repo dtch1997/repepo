@@ -55,10 +55,20 @@ class Pipeline:
 
     print_first_example: bool = True
 
+    def build_generation_prompt(self, completion: Completion) -> str:
+        """Build the generation prompt from the completion"""
+        return self.formatter.format_conversation(
+            completion, self.conversation_history
+        ).prompt.rstrip()
+
+    def build_full_prompt(self, completion: Completion) -> str:
+        """Build the full prompt from the completion"""
+        return self.formatter.format_as_str(completion)
+
     def calculate_output_logprobs(self, completion: Completion) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
-        base_prompt = completion.prompt
-        full_prompt = self.formatter.format_as_str(completion)
+        base_prompt = self.build_generation_prompt(completion)
+        full_prompt = self.build_full_prompt(completion)
         inputs: Any = self.tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self.model.device)
         context = PipelineContext(
