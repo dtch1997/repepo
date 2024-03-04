@@ -26,6 +26,14 @@ class Formatter(abc.ABC):
     msg_separator: str = "\n"
     completion_template: str = "{prompt} {response}"
 
+    def __init__(
+        self,
+        completion_template: str = "{prompt} {response}",
+        msg_separator: str = "\n",
+    ) -> None:
+        self.msg_separator = msg_separator
+        self.completion_template = completion_template
+
     @abc.abstractmethod
     def format(self, completion: Completion, ctx: FormatContext) -> Completion:
         """
@@ -33,6 +41,18 @@ class Formatter(abc.ABC):
         This method should not be called directly externally, instead use format_conversation().
         """
         pass
+
+    @property
+    def prompt_only_completion_template(self) -> str:
+        return self.completion_template.replace("{response}", "").strip()
+
+    def format_prompt_as_str(self, completion: Completion) -> str:
+        """
+        Format a completion's prompt as a string.
+        """
+        return self.prompt_only_completion_template.format(
+            prompt=completion.prompt.strip()
+        )
 
     def format_as_str(self, completion: Completion) -> str:
         """
@@ -92,13 +112,14 @@ class LlamaChatFormatter(Formatter):
 
     def __init__(
         self,
-        system_prompt: str | None = "You are a helpful, honest and concise assistant.",
-        msg_separator: str = "\n",
         completion_template: str = "{prompt} {response}",
+        msg_separator: str = "\n",
+        system_prompt: str | None = "You are a helpful, honest and concise assistant.",
     ) -> None:
         self.system_prompt = system_prompt
-        self.msg_separator = msg_separator
-        self.completion_template = completion_template
+        super().__init__(
+            completion_template=completion_template, msg_separator=msg_separator
+        )
 
     @override
     def format(self, completion: Completion, ctx: FormatContext):

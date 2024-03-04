@@ -1,6 +1,7 @@
 from transformers import GPTNeoXForCausalLM
 
 from repepo.core.pipeline import Pipeline
+from repepo.core.format import IdentityFormatter
 from repepo.core.types import Completion, Tokenizer
 from syrupy.assertion import SnapshotAssertion
 
@@ -21,6 +22,32 @@ def test_basic_Pipeline_build_full_prompt(
     pipeline = Pipeline(model, tokenizer)
     res = pipeline.build_full_prompt(Completion(prompt="Respond A B C D", response="E"))
     assert res == "Respond A B C D E"
+
+
+def test_basic_Pipeline_build_generation_prompt_with_custom_completion_template(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    formatter = IdentityFormatter(
+        completion_template="Input: {prompt}\n Output: My answer is: {response}",
+    )
+    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    res = pipeline.build_generation_prompt(
+        Completion(prompt="Respond A B C D", response="E")
+    )
+    assert res == "Input: Respond A B C D\n Output: My answer is:"
+
+
+def test_basic_Pipeline_build_full_prompt_with_custom_completion_template(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    formatter = IdentityFormatter(
+        completion_template="Input: {prompt}\n Output: My answer is: {response}",
+    )
+    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    res = pipeline.build_full_prompt(
+        Completion(prompt="Respond A B C D", response="E"),
+    )
+    assert res == "Input: Respond A B C D\n Output: My answer is: E"
 
 
 def test_icl_Pipeline_build_generation_prompt(

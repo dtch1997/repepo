@@ -57,13 +57,15 @@ class Pipeline:
 
     def build_generation_prompt(self, completion: Completion) -> str:
         """Build the generation prompt from the completion"""
-        return self.formatter.format_conversation(
-            completion, self.conversation_history
-        ).prompt.rstrip()
+        return self.formatter.format_prompt_as_str(
+            self.formatter.format_conversation(completion, self.conversation_history)
+        )
 
     def build_full_prompt(self, completion: Completion) -> str:
         """Build the full prompt from the completion"""
-        return self.formatter.format_as_str(completion)
+        return self.formatter.format_as_str(
+            self.formatter.format_conversation(completion, self.conversation_history)
+        )
 
     def calculate_output_logprobs(self, completion: Completion) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""

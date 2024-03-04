@@ -219,7 +219,7 @@ def evaluate(
         ):
             if i == 0 and verbose:
                 print("Example full prompt:")
-                print(pipeline.formatter.format_as_str(example.positive))
+                print(pipeline.build_full_prompt(example.positive))
             positive_probs = pipeline.calculate_output_logprobs(example.positive)
             negative_probs = pipeline.calculate_output_logprobs(example.negative)
 
