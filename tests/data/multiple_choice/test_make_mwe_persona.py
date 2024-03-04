@@ -31,11 +31,17 @@ def test_convert_mwe_personas_dataset_caa_english() -> None:
     )
     assert dataset[0].positive.response == "(B)"
     assert dataset[0].negative.response == "(A)"
-    assert dataset[1].positive.prompt == "Why?\n\nChoices:\n(A): I don't know.\n(B): Because"
+    assert (
+        dataset[1].positive.prompt
+        == "Why?\n\nChoices:\n(A): I don't know.\n(B): Because"
+    )
     assert dataset[1].positive.response == "(B)"
     assert dataset[1].negative.response == "(A)"
     # the 3rd and 4th samples should not be flipped
-    assert dataset[2].positive.prompt == "Why2?\n\nChoices:\n(A): Because2\n(B): I don't know2."
+    assert (
+        dataset[2].positive.prompt
+        == "Why2?\n\nChoices:\n(A): Because2\n(B): I don't know2."
+    )
     assert dataset[2].positive.response == "(A)"
     assert dataset[2].negative.response == "(B)"
 

@@ -3,6 +3,7 @@ from repepo.data.multiple_choice.make_caa_truthfulqa import (
     convert_hf_truthfulqa_caa_dataset,
 )
 
+
 def test_convert_hf_truthfulqa_caa_dataset_picks_first_incorrect_by_default() -> None:
     hf_dataset = {
         "question": ["What bear is best?", "What is the best color?"],
@@ -17,25 +18,23 @@ def test_convert_hf_truthfulqa_caa_dataset_picks_first_incorrect_by_default() ->
     tqa_dataset = convert_hf_truthfulqa_caa_dataset(hf_dataset)
     assert tqa_dataset == [
         Example(
-            positive = Completion(
-                prompt = "What bear is best?\n\n(A) brown bear\n(B) black bear",
-                response = "(B)"
+            positive=Completion(
+                prompt="What bear is best?\n\n(A) brown bear\n(B) black bear",
+                response="(B)",
             ),
-            negative = Completion(
-                prompt = "What bear is best?\n\n(A) brown bear\n(B) black bear",
-                response = "(A)"
-            )
+            negative=Completion(
+                prompt="What bear is best?\n\n(A) brown bear\n(B) black bear",
+                response="(A)",
+            ),
         ),
         Example(
-            positive = Completion(
-                prompt = "What is the best color?\n\n(A) blue\n(B) red",
-                response = "(A)"
+            positive=Completion(
+                prompt="What is the best color?\n\n(A) blue\n(B) red", response="(A)"
             ),
-            negative = Completion(
-                prompt = "What is the best color?\n\n(A) blue\n(B) red",
-                response = "(B)"
-            )
-        )
+            negative=Completion(
+                prompt="What is the best color?\n\n(A) blue\n(B) red", response="(B)"
+            ),
+        ),
     ]
 
 
@@ -56,33 +55,31 @@ def test_convert_hf_truthfulqa_caa_dataset_can_duplicate_correct_answers() -> No
     print(tqa_dataset)
     assert tqa_dataset == [
         Example(
-            positive = Completion(
-                prompt = "What bear is best?\n\n(A) brown bear\n(B) black bear",
-                response = "(B)"
+            positive=Completion(
+                prompt="What bear is best?\n\n(A) brown bear\n(B) black bear",
+                response="(B)",
             ),
-            negative = Completion(
-                prompt = "What bear is best?\n\n(A) brown bear\n(B) black bear",
-                response = "(A)"
-            )
+            negative=Completion(
+                prompt="What bear is best?\n\n(A) brown bear\n(B) black bear",
+                response="(A)",
+            ),
         ),
         Example(
-            positive = Completion(
-                prompt = "What bear is best?\n\n(A) black bear\n(B) panda bear",
-                response = "(A)"
+            positive=Completion(
+                prompt="What bear is best?\n\n(A) black bear\n(B) panda bear",
+                response="(A)",
             ),
-            negative = Completion(
-                prompt = "What bear is best?\n\n(A) black bear\n(B) panda bear",
-                response = "(B)"
-            )
+            negative=Completion(
+                prompt="What bear is best?\n\n(A) black bear\n(B) panda bear",
+                response="(B)",
+            ),
         ),
         Example(
-            positive = Completion(
-                prompt = "What is the best color?\n\n(A) red\n(B) blue",
-                response = "(B)"
+            positive=Completion(
+                prompt="What is the best color?\n\n(A) red\n(B) blue", response="(B)"
             ),
-            negative = Completion(
-                prompt = "What is the best color?\n\n(A) red\n(B) blue",
-                response = "(A)"
-            )
-        )
+            negative=Completion(
+                prompt="What is the best color?\n\n(A) red\n(B) blue", response="(A)"
+            ),
+        ),
     ]

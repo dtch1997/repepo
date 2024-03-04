@@ -7,6 +7,7 @@ from repepo.data.io import jdump
 from repepo.core.types import Dataset, Example, Completion
 from repepo.variables import Environ
 
+
 def convert_hf_truthfulqa_caa_dataset(
     hf_dataset: Any,
     multi_answer_method: Literal[
@@ -46,17 +47,12 @@ def convert_hf_truthfulqa_caa_dataset(
             prompt = f"{question}\n\n(A) {order[0]}\n(B) {order[1]}"
             tqa_dataset.append(
                 Example(
-                    positive = Completion(
-                        prompt = prompt,
-                        response = correct_ans
-                    ),
-                    negative = Completion(
-                        prompt = prompt,
-                        response = incorrect_ans
-                    )
+                    positive=Completion(prompt=prompt, response=correct_ans),
+                    negative=Completion(prompt=prompt, response=incorrect_ans),
                 )
             )
     return tqa_dataset
+
 
 def make_truthfulqa_caa():
     # hf's dataset is too general and requires casting every field we access, so just using Any for simplicity
