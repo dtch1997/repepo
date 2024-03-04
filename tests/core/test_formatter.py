@@ -3,7 +3,8 @@ from textwrap import dedent
 from repepo.core.format import (
     LlamaChatFormatter,
 )
-from repepo.core.types import Completion, Example
+from repepo.core.types import Completion
+
 
 def test_LlamaChatFormatter_base():
     _comp = Completion(prompt="add numbers\n1, 2", response="3")

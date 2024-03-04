@@ -26,11 +26,14 @@ class Environ:
         )
     )
     OutputDir = str(os.environ.get("OUTPUT_DIR", _get_project_dir() / "output"))
-    DatasetDir = str(os.environ.get("DATASET_DIR", _get_project_dir() / "preprocessed_datasets"))
+    DatasetDir = str(
+        os.environ.get("DATASET_DIR", _get_project_dir() / "preprocessed_datasets")
+    )
     LogDir = str(os.environ.get("LOG_DIR", _get_project_dir() / "logs"))
 
     # Google Cloud
     GcpProjectId = os.environ.get("GCP_PROJECT_ID", "repepo")
+
 
 if __name__ == "__main__":
     # Debugging
