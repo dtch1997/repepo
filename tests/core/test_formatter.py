@@ -1,38 +1,42 @@
 from textwrap import dedent
 
 from repepo.core.format import (
-    InputOutputFormatter,
-    InstructionFormatter,
+    IdentityFormatter,
     LlamaChatFormatter,
 )
-from repepo.core.types import Completion, Example
+from repepo.core.types import Completion
 
 
-def test_input_output_formatter():
-    example = Example(instruction="add numbers", input="1, 2", output="3")
-    formatter = InputOutputFormatter()
-    completion = formatter.format_conversation(example)
-    expected = Completion(prompt="Input: add numbers 1, 2 \nOutput:", response="3")
-    assert completion == expected
+def test_IdentityFormatter_format_conversation():
+    input_completion = Completion(prompt="Paris is in", response="France")
+    formatter = IdentityFormatter()
+    output_completion = formatter.format_conversation(input_completion)
+    assert output_completion.prompt == "Paris is in"
+    assert output_completion.response == "France"
 
 
-def test_instruction_formatter():
-    example = Example(instruction="add numbers", input="1, 2", output="3")
-    formatter = InstructionFormatter()
-    completion = formatter.format_conversation(example)
-    expected_prompt = (
-        "Below is an instruction that describes a task, paired with an input that provides further context. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\nadd numbers\n\n### Input:\n1, 2\n\n### Response:"
+def test_IdentityFormatter_format_as_str_with_custom_completion_template():
+    input_completion = Completion(prompt="Paris is in", response="France")
+    formatter = IdentityFormatter(
+        completion_template="Input: {prompt}\n Output: {response}"
     )
-    assert completion.prompt == expected_prompt
-    assert completion.response == "3"
+    output = formatter.format_as_str(input_completion)
+    assert output == "Input: Paris is in\n Output: France"
+
+
+def test_IdentityFormatter_format_prompt_as_str_with_custom_completion_template():
+    input_completion = Completion(prompt="Paris is in", response="France")
+    formatter = IdentityFormatter(
+        completion_template="Input: {prompt}\n Output: {response}"
+    )
+    output = formatter.format_prompt_as_str(input_completion)
+    assert output == "Input: Paris is in\n Output:"
 
 
 def test_LlamaChatFormatter_base():
-    example = Example(instruction="add numbers", input="1, 2", output="3")
+    input_completion = Completion(prompt="add numbers\n1, 2", response="3")
     formatter = LlamaChatFormatter()
-    completion = formatter.format_conversation(example)
+    output_completion = formatter.format_conversation(input_completion)
     expected = dedent(
         """
         [INST] <<SYS>>
@@ -43,18 +47,18 @@ def test_LlamaChatFormatter_base():
         1, 2 [/INST] 
         """
     )
-    assert completion.prompt.strip() == expected.strip()
-    assert completion.response == "3"
+    assert output_completion.prompt.strip() == expected.strip()
+    assert output_completion.response == "3"
 
 
 def test_LlamaChatFormatter_only_adds_sys_prompt_to_first_message():
     convo = [
-        Example(instruction="add numbers", input="1, 2", output="3"),
+        Completion(prompt="add numbers\n1, 2", response="3"),
     ]
-    msg = Example(instruction="add numbers", input="3, 5", output="8")
+    msg = Completion(prompt="add numbers\n3, 5", response="8")
 
     formatter = LlamaChatFormatter()
-    completion = formatter.format_conversation(msg, convo)
+    output_completion = formatter.format_conversation(msg, convo)
     expected = dedent(
         """
         [INST] <<SYS>>
@@ -67,14 +71,14 @@ def test_LlamaChatFormatter_only_adds_sys_prompt_to_first_message():
         3, 5 [/INST]
         """
     )
-    assert completion.prompt.strip() == expected.strip()
-    assert completion.response == "8"
+    assert output_completion.prompt.strip() == expected.strip()
+    assert output_completion.response == "8"
 
 
 def test_LlamaChatFormatter_format_conversation_empty_convo():
-    example = Example(instruction="", input="Paris is in", output="France")
+    input_completion = Completion(prompt="Paris is in", response="France")
     formatter = LlamaChatFormatter()
-    output = formatter.format_conversation(example, [])
+    output = formatter.format_conversation(input_completion)
     expected_prompt = dedent(
         """
         [INST] <<SYS>>
@@ -90,11 +94,11 @@ def test_LlamaChatFormatter_format_conversation_empty_convo():
 
 def test_LlamaChatFormatter_format_conversation_with_convo_history():
     history = [
-        Example(instruction="", input="Berlin is in", output="Germany"),
+        Completion(prompt="Berlin is in", response="Germany"),
     ]
-    example = Example(instruction="", input="Paris is in", output="France")
+    input_completion = Completion(prompt="Paris is in", response="France")
     formatter = LlamaChatFormatter()
-    output = formatter.format_conversation(example, history)
+    output = formatter.format_conversation(input_completion, history)
     expected_prompt = dedent(
         """
         [INST] <<SYS>>
@@ -111,9 +115,9 @@ def test_LlamaChatFormatter_format_conversation_with_convo_history():
 
 def test_LlamaChatFormatter_format_conversation_with_overwritten_separator():
     history = [
-        Example(instruction="", input="Berlin is in", output="Germany"),
+        Completion(prompt="Berlin is in", response="Germany"),
     ]
-    example = Example(instruction="", input="Paris is in", output="France")
+    example = Completion(prompt="Paris is in", response="France")
     formatter = LlamaChatFormatter(msg_separator="\n[SEP]\n")
     output = formatter.format_conversation(example, history)
     expected_prompt = dedent(
@@ -132,11 +136,11 @@ def test_LlamaChatFormatter_format_conversation_with_overwritten_separator():
 
 
 def test_LlamaChatFormatter_format_completion_with_caa_test_template():
-    example = Example(instruction="", input="Paris is in", output="France")
+    input_completion = Completion(prompt="Paris is in", response="France")
     formatter = LlamaChatFormatter(
         completion_template="{prompt} My answer is: {response}"
     )
-    completion = formatter.format_conversation(example)
+    output_completion = formatter.format_conversation(input_completion)
     expected = dedent(
         """
         [INST] <<SYS>>
@@ -146,4 +150,4 @@ def test_LlamaChatFormatter_format_completion_with_caa_test_template():
         Paris is in [/INST] My answer is: France
         """
     )
-    assert formatter.format_completion(completion).strip() == expected.strip()
+    assert formatter.format_as_str(output_completion).strip() == expected.strip()
