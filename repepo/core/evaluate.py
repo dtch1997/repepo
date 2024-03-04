@@ -156,12 +156,12 @@ class LogitDifferenceEvaluator(Evaluator):
         return "logit_diff"
 
     def score_prediction(self, prediction: EvalPrediction) -> float:
-        """Score a single prediction, 1 if correct, 0 otherwise."""
+        """Score a single prediction based on difference in sum of logits."""
 
-        # calculate difference in logprobs
-        positive_output_logprob = prediction.positive_output_prob.sum_logprobs
-        negative_output_logprob = prediction.negative_output_prob.sum_logprobs
-        return positive_output_logprob - negative_output_logprob
+        # calculate difference in logits
+        positive_output_logit = prediction.positive_output_prob.sum_logits
+        negative_output_logit = prediction.negative_output_prob.sum_logits
+        return positive_output_logit - negative_output_logit
 
 
 class NormalizedPositiveProbabilityEvaluator(Evaluator):

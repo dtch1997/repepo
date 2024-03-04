@@ -22,6 +22,10 @@ class TextProbs:
     token_probs: list[TokenProb]
 
     @property
+    def sum_logits(self) -> float:
+        return sum([tp.logit for tp in self.token_probs])
+
+    @property
     def sum_logprobs(self) -> float:
         return sum([tp.logprob for tp in self.token_probs])
 
