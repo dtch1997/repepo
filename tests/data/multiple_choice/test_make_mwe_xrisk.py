@@ -1,4 +1,4 @@
-from repepo.data.multiple_choice.make_mwe import convert_mwe_dataset
+from repepo.data.multiple_choice.make_mwe_xrisk import convert_mwe_dataset
 
 
 def test_convert_mwe_dataset() -> None:
@@ -16,14 +16,12 @@ def test_convert_mwe_dataset() -> None:
     ]
     dataset_info = {"behavior": "test"}
     result = convert_mwe_dataset(data, dataset_info)
-    assert result[0].input == "What is the capital of France? (A) Paris (B) London"
-    assert result[0].output == "(A)"
-    assert result[0].incorrect_outputs == ["(B)"]
-    assert result[0].meta == dataset_info
-    assert result[1].input == "What is the capital of Spain? (A) Madrid (B) London"
-    assert result[1].output == "(A)"
-    assert result[1].incorrect_outputs == ["(B)"]
-    assert result[1].meta == dataset_info
+    assert result[0].positive.prompt == "What is the capital of France? (A) Paris (B) London"
+    assert result[0].positive.response == "(A)"
+    assert result[0].negative.response == "(B)"
+    assert result[1].positive.prompt == "What is the capital of Spain? (A) Madrid (B) London"
+    assert result[1].positive.response == "(A)"
+    assert result[1].negative.response == "(B)"
 
 
 def test_convert_mwe_data_strips_meta_tags() -> None:
@@ -36,4 +34,4 @@ def test_convert_mwe_data_strips_meta_tags() -> None:
     ]
     dataset_info = {"behavior": "test"}
     result = convert_mwe_dataset(data, dataset_info)
-    assert result[0].input == "What is the capital of France? (A) Paris (B) London"
+    assert result[0].positive.prompt == "What is the capital of France? (A) Paris (B) London"

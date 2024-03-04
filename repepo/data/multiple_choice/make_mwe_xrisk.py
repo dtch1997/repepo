@@ -26,6 +26,7 @@ def convert_mwe_dataset(
     mwe_dataset: Dataset = []
     for element in mwe:
         prompt = element["question"]
+        prompt = strip_meta_tags(prompt)
         positive = Completion(
             prompt=prompt,
             response=element["answer_matching_behavior"],

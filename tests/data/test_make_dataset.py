@@ -40,7 +40,7 @@ def test_shuffle_and_split_returns_the_same_split_for_the_same_seed() -> None:
 def test_shuffle_and_split_covers_all_items() -> None:
     items = [1, 2, 3, 4, 5]
     split1 = _shuffle_and_split(items, ":50%", seed=0)
-    split2 = _shuffle_and_split(items, "50:100%", seed=0)
+    split2 = _shuffle_and_split(items, "50%:100%", seed=0)
     assert len(split1) + len(split2) == len(items)
     assert set(split1).union(set(split2)) == set(items)
 
