@@ -1,6 +1,5 @@
-""" Script to make datasets for Anthropic's Advanced AI Risk Model-Written Evals """
+""" Script to make datasets for Anthropic's Persona Model-Written Evals """
 
-from dataclasses import replace
 import json
 from typing import cast
 
@@ -10,7 +9,7 @@ from repepo.data.make_dataset import (
     get_raw_dataset_dir,
 )
 from repepo.data.io import jdump
-from repepo.core.types import Dataset, Example
+from repepo.core.types import Dataset, Example, Completion
 from repepo.translation.constants import LangOrStyleCode
 from repepo.translation.load_translation import load_translation, TS
 
@@ -78,15 +77,23 @@ def convert_mwe_personas_dataset_caa(
     """Convert a dataset in MWE format to our format"""
     mwe_dataset: Dataset = []
     for element in preprocess_ab_dataset(mwe, lang_or_style):
-        ex = Example(
-            instruction="",
-            input=element["question"],
-            output=element["answer_matching_behavior"],
-            incorrect_outputs=[element["answer_not_matching_behavior"]],
-        )
+        prompt = element["question"]
+
         if ctx is not None:
             ctx_str = load_translation(ctx, lang_or_style)
-            ex = replace(ex, input=f"{ctx_str}\n\n{ex.input}")
+            prompt = f"{ctx_str}\n\n{prompt}"
+
+        positive = Completion(
+            prompt=prompt,
+            response=element["answer_matching_behavior"],
+        )
+
+        negative = Completion(
+            prompt=prompt,
+            response=element["answer_not_matching_behavior"],
+        )
+
+        ex = Example(positive=positive, negative=negative)
         mwe_dataset.append(ex)
     return mwe_dataset
 

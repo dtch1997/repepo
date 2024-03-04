@@ -26,21 +26,13 @@ class Environ:
         )
     )
     OutputDir = str(os.environ.get("OUTPUT_DIR", _get_project_dir() / "output"))
-    DatasetDir = str(os.environ.get("DATASET_DIR", _get_project_dir() / "datasets"))
+    DatasetDir = str(
+        os.environ.get("DATASET_DIR", _get_project_dir() / "preprocessed_datasets")
+    )
     LogDir = str(os.environ.get("LOG_DIR", _get_project_dir() / "logs"))
-
-    # WandB
-    WandbProject = os.environ.get("WANDB_PROJECT", "Rep-Eng")
-    WandbEntity = os.environ.get("WANDB_ENTITY", "unknown")
-    WandbGroup = os.environ.get("WANDB_GROUP", os.environ.get("USER", "default"))
 
     # Google Cloud
     GcpProjectId = os.environ.get("GCP_PROJECT_ID", "repepo")
-
-
-# Model names
-class Model:
-    Pythia70m = "EleutherAI/pythia-70m"
 
 
 if __name__ == "__main__":
