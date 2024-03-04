@@ -15,7 +15,7 @@ from repepo.core.evaluate import (
     NormalizedPositiveProbabilityEvaluator,
     LogitDifferenceEvaluator,
 )
-from repepo.algorithms.repe import SteeringHook
+from repepo.core.hook import SteeringHook
 
 
 def test_update_completion_template_at_eval_hook(

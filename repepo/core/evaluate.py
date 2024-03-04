@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from statistics import mean
 from tqdm import tqdm
 from typing import Callable, Iterable, Sequence
-from repepo.algorithms.repe import SteeringHook
+from repepo.core.hook import SteeringHook
 from repepo.core.pipeline import TextProbs
 from repepo.core.types import Example
 from repepo.core.pipeline import Pipeline
