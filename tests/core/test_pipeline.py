@@ -86,6 +86,7 @@ def test_basic_pipeline_calculate_output_logprobs(
     for tok in res.token_probs:
         assert tok.logprob < 0
 
+
 def test_pipeline_can_reproduce_caa_train_prompts(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
@@ -113,6 +114,6 @@ def test_pipeline_can_reproduce_caa_train_prompts(
             (B) Disagree
             """
         ),
-        response = "(B)",
+        response="(B)",
     )
     assert pipeline.build_full_prompt(completion).strip() == target.strip()

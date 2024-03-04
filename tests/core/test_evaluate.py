@@ -13,7 +13,7 @@ from repepo.core.evaluate import (
     EvalPrediction,
     MultipleChoiceAccuracyEvaluator,
     NormalizedPositiveProbabilityEvaluator,
-    LogitDifferenceEvaluator
+    LogitDifferenceEvaluator,
 )
 from repepo.algorithms.repe import SteeringHook
 
@@ -86,90 +86,90 @@ def test_select_repe_layer_at_eval_hook(
     # the pipeline should be restored to its original state after the hook exits
     assert steering_hook.steering_vector.layer_activations == layer_activations
 
-def test_MultipleChoiceAccuracyEvaluator_score_prediction() -> None:
 
+def test_MultipleChoiceAccuracyEvaluator_score_prediction() -> None:
     positive_completion = Completion(prompt="hello", response="world")
     negative_completion = Completion(prompt="hello", response="dear")
     positive_text_probs = TextProbs(
         text="hello world",
         token_probs=[
-            TokenProb(token_id=1234, text="hello", logprob=-10, logit = -1),
-            TokenProb(token_id=1235, text="world", logprob=-20, logit = -2),
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="world", logprob=-20, logit=-2),
         ],
     )
     negative_text_probs = TextProbs(
         text="hello dear",
         token_probs=[
-            TokenProb(token_id=1234, text="hello", logprob=-10, logit = -1),
-            TokenProb(token_id=1235, text="dear", logprob=-50, logit = -5),
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="dear", logprob=-50, logit=-5),
         ],
     )
     example = Example(positive=positive_completion, negative=negative_completion)
 
     eval_prediction = EvalPrediction(
-        example=example, 
+        example=example,
         positive_output_prob=positive_text_probs,
-        negative_output_prob=negative_text_probs
+        negative_output_prob=negative_text_probs,
     )
     evaluator = MultipleChoiceAccuracyEvaluator()
     eval_result = evaluator.score_prediction(eval_prediction)
     assert eval_result == 1
 
-def test_LogitDifferenceEvaluator_score_prediction() -> None:
 
+def test_LogitDifferenceEvaluator_score_prediction() -> None:
     positive_completion = Completion(prompt="hello", response="world")
     negative_completion = Completion(prompt="hello", response="dear")
     positive_text_probs = TextProbs(
         text="hello world",
         token_probs=[
-            TokenProb(token_id=1234, text="hello", logprob=-10, logit = -1),
-            TokenProb(token_id=1235, text="world", logprob=-20, logit = -2),
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="world", logprob=-20, logit=-2),
         ],
     )
     negative_text_probs = TextProbs(
         text="hello dear",
         token_probs=[
-            TokenProb(token_id=1234, text="hello", logprob=-10, logit = -1),
-            TokenProb(token_id=1235, text="dear", logprob=-50, logit = -5),
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="dear", logprob=-50, logit=-5),
         ],
     )
     example = Example(positive=positive_completion, negative=negative_completion)
 
     eval_prediction = EvalPrediction(
-        example=example, 
+        example=example,
         positive_output_prob=positive_text_probs,
-        negative_output_prob=negative_text_probs
+        negative_output_prob=negative_text_probs,
     )
     evaluator = LogitDifferenceEvaluator()
     eval_result = evaluator.score_prediction(eval_prediction)
-    assert eval_result == (-1 -2) - (-1 -5)
+    assert eval_result == (-1 - 2) - (-1 - 5)
+
 
 def test_NormalizedPositiveProbabilityEvaluator_score_prediction() -> None:
-
     positive_completion = Completion(prompt="hello", response="world")
     negative_completion = Completion(prompt="hello", response="dear")
     positive_text_probs = TextProbs(
         text="hello world",
         token_probs=[
-            TokenProb(token_id=1234, text="hello", logprob=-10, logit = -1),
-            TokenProb(token_id=1235, text="world", logprob=-20, logit = -2),
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="world", logprob=-20, logit=-2),
         ],
     )
     negative_text_probs = TextProbs(
         text="hello dear",
         token_probs=[
-            TokenProb(token_id=1234, text="hello", logprob=-10, logit = -1),
-            TokenProb(token_id=1236, text="dear", logprob=-50, logit = -5),
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1236, text="dear", logprob=-50, logit=-5),
         ],
     )
     example = Example(positive=positive_completion, negative=negative_completion)
 
     eval_prediction = EvalPrediction(
-        example=example, 
+        example=example,
         positive_output_prob=positive_text_probs,
-        negative_output_prob=negative_text_probs
+        negative_output_prob=negative_text_probs,
     )
     evaluator = NormalizedPositiveProbabilityEvaluator()
     eval_result = evaluator.score_prediction(eval_prediction)
-    expected_score = math.exp(-10 -20) / (math.exp(-10 -20) + math.exp(-10 -50))
+    expected_score = math.exp(-10 - 20) / (math.exp(-10 - 20) + math.exp(-10 - 50))
     assert math.isclose(eval_result, expected_score, rel_tol=1e-5)
