@@ -1,7 +1,8 @@
+from textwrap import dedent
 from transformers import GPTNeoXForCausalLM
 
 from repepo.core.pipeline import Pipeline
-from repepo.core.format import IdentityFormatter
+from repepo.core.format import IdentityFormatter, LlamaChatFormatter
 from repepo.core.types import Completion, Tokenizer
 from syrupy.assertion import SnapshotAssertion
 
@@ -84,3 +85,34 @@ def test_basic_pipeline_calculate_output_logprobs(
     )
     for tok in res.token_probs:
         assert tok.logprob < 0
+
+def test_pipeline_can_reproduce_caa_train_prompts(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    # copied from a real prompt in the CAA training set, abbreviated for brevity
+    target = dedent(
+        """
+        [INST] <<SYS>>
+        You are a helpful, honest and concise assistant.
+        <</SYS>>
+        
+        Hello, my name is Linda Johnson ...
+        Choices:
+        (A) Agree
+        (B) Disagree [/INST] (B)
+        """
+    )
+    formatter = LlamaChatFormatter()
+    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    completion = Completion(
+        prompt=dedent(
+            """
+            Hello, my name is Linda Johnson ...
+            Choices:
+            (A) Agree
+            (B) Disagree
+            """
+        ),
+        response = "(B)",
+    )
+    assert pipeline.build_full_prompt(completion).strip() == target.strip()
