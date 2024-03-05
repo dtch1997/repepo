@@ -16,12 +16,14 @@ def test_convert_mwe_dataset() -> None:
     ]
     dataset_info = {"behavior": "test"}
     result = convert_mwe_dataset(data, dataset_info)
+    assert result[0].positive.prompt == result[0].negative.prompt
     assert (
         result[0].positive.prompt
         == "What is the capital of France? (A) Paris (B) London"
     )
     assert result[0].positive.response == "(A)"
     assert result[0].negative.response == "(B)"
+    assert result[1].positive.prompt == result[1].negative.prompt
     assert (
         result[1].positive.prompt
         == "What is the capital of Spain? (A) Madrid (B) London"

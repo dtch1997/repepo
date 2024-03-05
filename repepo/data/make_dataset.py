@@ -51,9 +51,13 @@ class DatasetSplit:
     def _parse_start_idx(self, length: int) -> int:
         element = self.first_element
         if element.endswith("%"):
-            return int(element[:-1]) * length // 100
+            k = int(element[:-1]) * length // 100
         else:
-            return int(element)
+            k = int(element)
+
+        if k < 0 or k > length:
+            raise ValueError(f"Invalid index: k={k} in {self}")
+        return k
 
     def _parse_end_idx(self, length: int) -> int:
         element = self.second_element
@@ -67,9 +71,12 @@ class DatasetSplit:
             k = int(element)
 
         if should_add:
-            return self._parse_start_idx(length) + k
-        else:
-            return k
+            k = self._parse_start_idx(length) + k
+
+        if k < 0 or k > length:
+            raise ValueError(f"Invalid index: k={k} in {self}")
+
+        return k
 
     def as_slice(self, length: int) -> slice:
         return slice(self._parse_start_idx(length), self._parse_end_idx(length))
