@@ -8,16 +8,22 @@ from repepo.data.make_dataset import (
 
 
 def test_parse_split() -> None:
-    assert _parse_split("0:100%", 10) == slice(0, 10)
-    assert _parse_split("0:50%", 10) == slice(0, 5)
-    assert _parse_split("50:100%", 10) == slice(5, 10)
+    assert _parse_split("0%:100%", 10) == slice(0, 10)
+    assert _parse_split("0%:50%", 10) == slice(0, 5)
+    assert _parse_split("50%:100%", 10) == slice(5, 10)
     assert _parse_split(":50%", 10) == slice(0, 5)
     assert _parse_split(":100%", 10) == slice(0, 10)
 
 
+def test_parse_split_with_offset() -> None:
+    assert _parse_split("0%:+100%", 10) == slice(0, 10)
+    assert _parse_split("0%:+50%", 10) == slice(0, 5)
+    assert _parse_split("50%:+50%", 10) == slice(5, 10)
+    assert _parse_split(":+50%", 10) == slice(0, 5)
+    assert _parse_split(":+100%", 10) == slice(0, 10)
+
+
 def test_parse_split_errors_for_invalid_splits() -> None:
-    with pytest.raises(ValueError):
-        _parse_split("0:50", 10)
     with pytest.raises(ValueError):
         _parse_split("0:50%0", 10)
     with pytest.raises(ValueError):
@@ -34,7 +40,7 @@ def test_shuffle_and_split_returns_the_same_split_for_the_same_seed() -> None:
 def test_shuffle_and_split_covers_all_items() -> None:
     items = [1, 2, 3, 4, 5]
     split1 = _shuffle_and_split(items, ":50%", seed=0)
-    split2 = _shuffle_and_split(items, "50:100%", seed=0)
+    split2 = _shuffle_and_split(items, "50%:100%", seed=0)
     assert len(split1) + len(split2) == len(items)
     assert set(split1).union(set(split2)) == set(items)
 

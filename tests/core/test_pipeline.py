@@ -1,23 +1,10 @@
 from textwrap import dedent
 from transformers import GPTNeoXForCausalLM
-from syrupy import SnapshotAssertion
 
 from repepo.core.pipeline import Pipeline
-from repepo.core.format import LlamaChatFormatter
-from repepo.core.types import Example, Tokenizer
-
-
-def test_basic_Pipeline_generate(
-    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
-) -> None:
-    pipeline = Pipeline(model, tokenizer)
-    res = pipeline.generate(
-        Example(instruction="Respond", input="A B C D", output="E"),
-        generation_config=None,
-    )
-    # pythia-70m generates nonsense, so just verify we get something
-    assert isinstance(res, str)
-    assert len(res) > 0
+from repepo.core.format import IdentityFormatter, LlamaChatFormatter
+from repepo.core.types import Completion, Tokenizer
+from syrupy.assertion import SnapshotAssertion
 
 
 def test_basic_Pipeline_build_generation_prompt(
@@ -25,23 +12,57 @@ def test_basic_Pipeline_build_generation_prompt(
 ) -> None:
     pipeline = Pipeline(model, tokenizer)
     res = pipeline.build_generation_prompt(
-        Example(instruction="Respond", input="A B C D", output="E")
+        Completion(prompt="Respond A B C D", response="E")
     )
-    assert res == "Input: Respond A B C D \nOutput:"
+    assert res == "Respond A B C D"
+
+
+def test_basic_Pipeline_build_full_prompt(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    pipeline = Pipeline(model, tokenizer)
+    res = pipeline.build_full_prompt(Completion(prompt="Respond A B C D", response="E"))
+    assert res == "Respond A B C D E"
+
+
+def test_basic_Pipeline_build_generation_prompt_with_custom_completion_template(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    formatter = IdentityFormatter(
+        completion_template="Input: {prompt}\n Output: My answer is: {response}",
+    )
+    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    res = pipeline.build_generation_prompt(
+        Completion(prompt="Respond A B C D", response="E")
+    )
+    assert res == "Input: Respond A B C D\n Output: My answer is:"
+
+
+def test_basic_Pipeline_build_full_prompt_with_custom_completion_template(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    formatter = IdentityFormatter(
+        completion_template="Input: {prompt}\n Output: My answer is: {response}",
+    )
+    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    res = pipeline.build_full_prompt(
+        Completion(prompt="Respond A B C D", response="E"),
+    )
+    assert res == "Input: Respond A B C D\n Output: My answer is: E"
 
 
 def test_icl_Pipeline_build_generation_prompt(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer, snapshot: SnapshotAssertion
 ) -> None:
     dataset = [
-        Example(instruction="", input="Paris is in", output="France"),
-        Example(instruction="", input="London is in", output="England"),
-        Example(instruction="", input="Berlin is in", output="Germany"),
+        Completion(prompt="Paris is in", response="France"),
+        Completion(prompt="London is in", response="England"),
+        Completion(prompt="Berlin is in", response="Germany"),
     ]
     pipeline = Pipeline(model, tokenizer)
     pipeline.conversation_history = dataset
     res = pipeline.build_generation_prompt(
-        Example(instruction="", input="Beijing is in", output="China"),
+        Completion(prompt="Beijing is in", response="China")
     )
     assert res == snapshot
 
@@ -51,20 +72,22 @@ def test_basic_pipeline_calculate_output_logprobs(
 ) -> None:
     pipeline = Pipeline(model, tokenizer)
     res = pipeline.calculate_output_logprobs(
-        Example(instruction="Select the best answer.", input="A B C D", output="D")
+        Completion(
+            prompt="Input: Select the best answer.\nA B C D", response="Output: D"
+        )
     )
     assert res.sum_logprobs < 0
-    assert res.text == "Input: Select the best answer. A B C D \nOutput: D"
+    assert res.text == "Input: Select the best answer.\nA B C D Output: D"
     assert (
         "".join([tok.text for tok in res.token_probs])
         # "Input" is the first token, so the model doesn't predict this
-        == ": Select the best answer. A B C D \nOutput: D"
+        == ": Select the best answer.\nA B C D Output: D"
     )
     for tok in res.token_probs:
         assert tok.logprob < 0
 
 
-def test_pipeline_can_reproduce_caa_train_promts(
+def test_pipeline_can_reproduce_caa_train_prompts(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
     # copied from a real prompt in the CAA training set, abbreviated for brevity
@@ -73,9 +96,8 @@ def test_pipeline_can_reproduce_caa_train_promts(
         [INST] <<SYS>>
         You are a helpful, honest and concise assistant.
         <</SYS>>
-
+        
         Hello, my name is Linda Johnson ...
-
         Choices:
         (A) Agree
         (B) Disagree [/INST] (B)
@@ -83,17 +105,15 @@ def test_pipeline_can_reproduce_caa_train_promts(
     )
     formatter = LlamaChatFormatter()
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
-    example = Example(
-        instruction="",
-        input=dedent(
+    completion = Completion(
+        prompt=dedent(
             """
             Hello, my name is Linda Johnson ...
-
             Choices:
             (A) Agree
             (B) Disagree
             """
         ),
-        output="(B)",
+        response="(B)",
     )
-    assert pipeline.build_full_prompt(example).strip() == target.strip()
+    assert pipeline.build_full_prompt(completion).strip() == target.strip()

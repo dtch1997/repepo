@@ -1,44 +1,49 @@
 from steering_vectors import SteeringVector
 import torch
+import math
 from transformers import GPTNeoXForCausalLM
 
-from repepo.core.types import Example, Tokenizer
+from repepo.core.types import Example, Completion, Tokenizer
 from repepo.core.pipeline import Pipeline, TextProbs, TokenProb
-from repepo.core.format import InputOutputFormatter
+from repepo.core.format import IdentityFormatter
 from repepo.core.evaluate import (
-    EvalPrediction,
     select_repe_layer_at_eval,
     update_completion_template_at_eval,
     set_repe_direction_multiplier_at_eval,
+    EvalPrediction,
+    MultipleChoiceAccuracyEvaluator,
+    NormalizedPositiveProbabilityEvaluator,
+    LogitDifferenceEvaluator,
 )
-from repepo.algorithms.repe import SteeringHook
+from repepo.core.hook import SteeringHook
 
 
 def test_update_completion_template_at_eval_hook(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
-    formatter = InputOutputFormatter(completion_template="{prompt} {response}")
+    formatter = IdentityFormatter()
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
-    example = Example(instruction="", input="hello", output="world")
+    completion = Completion(prompt="hello", response="world")
 
-    pre_hook_output = pipeline.build_full_prompt(example)
-    assert pre_hook_output == "Input:  hello \nOutput: world"
+    pre_hook_output = pipeline.build_full_prompt(completion)
+    assert pre_hook_output == "hello world"
 
-    hook = update_completion_template_at_eval("{prompt} My answer is: {response}")
+    hook = update_completion_template_at_eval(
+        "Input: {prompt}\n Output: My answer is: {response}"
+    )
     with hook(pipeline):
-        new_output = pipeline.build_full_prompt(example)
-        assert new_output == "Input:  hello \nOutput: My answer is: world"
+        new_output = pipeline.build_full_prompt(completion)
+        assert new_output == "Input: hello\n Output: My answer is: world"
 
     # the pipeline should be restored to its original state after the hook exits
-    post_hook_output = pipeline.build_full_prompt(example)
-    assert post_hook_output == "Input:  hello \nOutput: world"
+    post_hook_output = pipeline.build_full_prompt(completion)
+    assert post_hook_output == "hello world"
 
 
 def test_set_repe_direction_multiplier_at_eval_hook(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
-    formatter = InputOutputFormatter(completion_template="{prompt} {response}")
-    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    pipeline = Pipeline(model, tokenizer)
     steering_hook = SteeringHook(
         steering_vector=SteeringVector(layer_activations={1: torch.randn(768)}),
         direction_multiplier=1.0,
@@ -60,8 +65,7 @@ def test_set_repe_direction_multiplier_at_eval_hook(
 def test_select_repe_layer_at_eval_hook(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
-    formatter = InputOutputFormatter(completion_template="{prompt} {response}")
-    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+    pipeline = Pipeline(model, tokenizer)
     layer_activations = {1: torch.randn(768), 2: torch.randn(768)}
     steering_hook = SteeringHook(
         steering_vector=SteeringVector(layer_activations=layer_activations),
@@ -83,26 +87,89 @@ def test_select_repe_layer_at_eval_hook(
     assert steering_hook.steering_vector.layer_activations == layer_activations
 
 
-def test_EvalPrediction_get_normalized_correct_probs_equally_splits_equal_probs() -> (
-    None
-):
-    example = Example(instruction="", input="hello", output="world")
-    text_probs = TextProbs(
+def test_MultipleChoiceAccuracyEvaluator_score_prediction() -> None:
+    positive_completion = Completion(prompt="hello", response="world")
+    negative_completion = Completion(prompt="hello", response="dear")
+    positive_text_probs = TextProbs(
         text="hello world",
         token_probs=[
-            TokenProb(token_id=1234, text="hello", logprob=-20),
-            TokenProb(token_id=1235, text="world", logprob=-11),
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="world", logprob=-20, logit=-2),
         ],
     )
-    prediction = EvalPrediction(
-        example=example,
-        correct_output_probs=text_probs,
-        incorrect_outputs_probs=[
-            text_probs,
-            text_probs,
-            text_probs,
+    negative_text_probs = TextProbs(
+        text="hello dear",
+        token_probs=[
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="dear", logprob=-50, logit=-5),
         ],
     )
+    example = Example(positive=positive_completion, negative=negative_completion)
 
-    # since both correct and 3 incorrect have identical probs, the normalized correct probs should be 0.25 (1 / (1 + 3))
-    assert prediction.get_normalized_correct_probs() == 0.25
+    eval_prediction = EvalPrediction(
+        example=example,
+        positive_output_prob=positive_text_probs,
+        negative_output_prob=negative_text_probs,
+    )
+    evaluator = MultipleChoiceAccuracyEvaluator()
+    eval_result = evaluator.score_prediction(eval_prediction)
+    assert eval_result == 1
+
+
+def test_LogitDifferenceEvaluator_score_prediction() -> None:
+    positive_completion = Completion(prompt="hello", response="world")
+    negative_completion = Completion(prompt="hello", response="dear")
+    positive_text_probs = TextProbs(
+        text="hello world",
+        token_probs=[
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="world", logprob=-20, logit=-2),
+        ],
+    )
+    negative_text_probs = TextProbs(
+        text="hello dear",
+        token_probs=[
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="dear", logprob=-50, logit=-5),
+        ],
+    )
+    example = Example(positive=positive_completion, negative=negative_completion)
+
+    eval_prediction = EvalPrediction(
+        example=example,
+        positive_output_prob=positive_text_probs,
+        negative_output_prob=negative_text_probs,
+    )
+    evaluator = LogitDifferenceEvaluator()
+    eval_result = evaluator.score_prediction(eval_prediction)
+    assert eval_result == (-1 - 2) - (-1 - 5)
+
+
+def test_NormalizedPositiveProbabilityEvaluator_score_prediction() -> None:
+    positive_completion = Completion(prompt="hello", response="world")
+    negative_completion = Completion(prompt="hello", response="dear")
+    positive_text_probs = TextProbs(
+        text="hello world",
+        token_probs=[
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1235, text="world", logprob=-20, logit=-2),
+        ],
+    )
+    negative_text_probs = TextProbs(
+        text="hello dear",
+        token_probs=[
+            TokenProb(token_id=1234, text="hello", logprob=-10, logit=-1),
+            TokenProb(token_id=1236, text="dear", logprob=-50, logit=-5),
+        ],
+    )
+    example = Example(positive=positive_completion, negative=negative_completion)
+
+    eval_prediction = EvalPrediction(
+        example=example,
+        positive_output_prob=positive_text_probs,
+        negative_output_prob=negative_text_probs,
+    )
+    evaluator = NormalizedPositiveProbabilityEvaluator()
+    eval_result = evaluator.score_prediction(eval_prediction)
+    expected_score = math.exp(-10 - 20) / (math.exp(-10 - 20) + math.exp(-10 - 50))
+    assert math.isclose(eval_result, expected_score, rel_tol=1e-5)

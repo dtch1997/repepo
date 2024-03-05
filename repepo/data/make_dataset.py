@@ -1,10 +1,9 @@
 import pathlib
 import random
-import re
 from typing import List, TypeVar
 
 from repepo.variables import Environ
-from repepo.core.types import Example, Dataset
+from repepo.core.types import Example, Dataset, Completion
 from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
 from dataclasses import dataclass
 
@@ -38,6 +37,52 @@ def list_datasets(dataset_dir: pathlib.Path | None = None) -> tuple[str, ...]:
 
 
 @dataclass
+class DatasetSplit:
+    first_element: str
+    second_element: str
+
+    @staticmethod
+    def from_str(split_str: str) -> "DatasetSplit":
+        first, second = split_str.split(":")
+        if first == "":
+            first = "0"
+        return DatasetSplit(first, second)
+
+    def _parse_start_idx(self, length: int) -> int:
+        element = self.first_element
+        if element.endswith("%"):
+            k = int(element[:-1]) * length // 100
+        else:
+            k = int(element)
+
+        if k < 0 or k > length:
+            raise ValueError(f"Invalid index: k={k} in {self}")
+        return k
+
+    def _parse_end_idx(self, length: int) -> int:
+        element = self.second_element
+
+        should_add = element.startswith("+")
+        element = element.lstrip("+")
+
+        if element.endswith("%"):
+            k = int(element[:-1]) * length // 100
+        else:
+            k = int(element)
+
+        if should_add:
+            k = self._parse_start_idx(length) + k
+
+        if k < 0 or k > length:
+            raise ValueError(f"Invalid index: k={k} in {self}")
+
+        return k
+
+    def as_slice(self, length: int) -> slice:
+        return slice(self._parse_start_idx(length), self._parse_end_idx(length))
+
+
+@dataclass
 class DatasetSpec:
     name: str
     split: str = ":100%"
@@ -48,23 +93,7 @@ class DatasetSpec:
 
 
 def _parse_split(split_string: str, length: int) -> slice:
-    # Define the regular expression pattern
-    pattern = r"^(\d*):(\d*)%$"
-
-    # Use regular expression to match and extract values
-    match = re.match(pattern, split_string)
-
-    # If there's a match, extract the start and end values
-    if match:
-        start_frac = int(match.group(1)) if match.group(1) else 0
-        end_frac = int(match.group(2)) if match.group(2) else 100
-
-        split_start = start_frac * length // 100
-        split_end = end_frac * length // 100
-        return slice(split_start, split_end)
-    else:
-        # Invalid format, return None
-        raise ValueError(f"Parse string {split_string} not recognized")
+    return DatasetSplit.from_str(split_string).as_slice(length)
 
 
 def get_dataset(name: str, dataset_dir: pathlib.Path | None = None) -> Dataset:
@@ -75,7 +104,14 @@ def get_dataset(name: str, dataset_dir: pathlib.Path | None = None) -> Dataset:
     example_dict_list = jload(datasets[name])
     dataset: Dataset = []
     for example_dict in example_dict_list:
-        dataset.append(Example(**example_dict))
+        dataset.append(
+            Example(
+                positive=Completion(**example_dict["positive"]),
+                negative=Completion(**example_dict["negative"]),
+                meta=example_dict.get("meta", {}),
+                steering_token_index=example_dict.get("steering_token_index", -1),
+            )
+        )
     return dataset
 
 

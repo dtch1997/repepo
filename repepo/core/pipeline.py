@@ -1,18 +1,18 @@
 from contextlib import AbstractContextManager, ExitStack
 from dataclasses import dataclass, field
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal, Protocol
 
-from transformers.generation import GenerationConfig
 import torch
 
-from .types import Completion, Example, Model, Tokenizer
-from .format import Formatter, InputOutputFormatter
+from .types import Completion, Model, Tokenizer
+from .format import Formatter, IdentityFormatter
 
 
 @dataclass
 class TokenProb:
     token_id: int
     logprob: float
+    logit: float
     text: str
 
 
@@ -20,6 +20,10 @@ class TokenProb:
 class TextProbs:
     text: str
     token_probs: list[TokenProb]
+
+    @property
+    def sum_logits(self) -> float:
+        return sum([tp.logit for tp in self.token_probs])
 
     @property
     def sum_logprobs(self) -> float:
@@ -38,7 +42,9 @@ class PipelineContext:
     pipeline: "Pipeline"
 
 
-PipelineHook = Callable[[PipelineContext], AbstractContextManager[None]]
+class PipelineHook(Protocol):
+    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]:
+        ...
 
 
 @dataclass
@@ -47,56 +53,28 @@ class Pipeline:
 
     model: Model
     tokenizer: Tokenizer
-    formatter: Formatter = field(default_factory=InputOutputFormatter)
-    conversation_history: list[Example] = field(default_factory=list)
+    formatter: Formatter = field(default_factory=IdentityFormatter)
+    conversation_history: list[Completion] = field(default_factory=list)
     hooks: list[PipelineHook] = field(default_factory=list)
+
     print_first_example: bool = True
 
-    def build_generation_prompt(self, example: Example) -> str:
-        """Build a prompt for generation"""
-        return self.build_completion(example).prompt.rstrip()
-
-    def build_completion(self, example: Example) -> Completion:
-        return self.formatter.format_conversation(example, self.conversation_history)
-
-    def build_full_prompt(self, example: Example) -> str:
-        """Build prompt including response"""
-        return self.formatter.format_completion(self.build_completion(example))
-
-    def generate(
-        self,
-        example: Example,
-        generation_config: Optional[GenerationConfig] = None,
-        remove_base_prompt: bool = True,
-    ) -> str:
-        """Generate a completion for a given example"""
-        base_prompt = self.build_generation_prompt(example)
-        inputs: Any = self.tokenizer(base_prompt, return_tensors="pt")
-        inputs = inputs.to(self.model.device)
-        context = PipelineContext(
-            method="generate",
-            base_prompt=base_prompt,
-            full_prompt=base_prompt,
-            inputs=inputs,
-            pipeline=self,
+    def build_generation_prompt(self, completion: Completion) -> str:
+        """Build the generation prompt from the completion"""
+        return self.formatter.format_prompt_as_str(
+            self.formatter.format_conversation(completion, self.conversation_history)
         )
-        with ExitStack() as stack:
-            for hook in self.hooks:
-                stack.enter_context(hook(context))
-            outputs = self.model.generate(
-                **inputs,
-                generation_config=generation_config,
-            )[0]
-            outputs_str = self.tokenizer.decode(outputs, skip_special_tokens=True)
-            if remove_base_prompt:
-                return outputs_str.replace(base_prompt, "")
-            return outputs_str
-        raise RuntimeError("Should never get here")
 
-    def calculate_output_logprobs(self, example: Example) -> TextProbs:
+    def build_full_prompt(self, completion: Completion) -> str:
+        """Build the full prompt from the completion"""
+        return self.formatter.format_as_str(
+            self.formatter.format_conversation(completion, self.conversation_history)
+        )
+
+    def calculate_output_logprobs(self, completion: Completion) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
-        base_prompt = self.build_generation_prompt(example)
-        full_prompt = self.build_full_prompt(example)
+        base_prompt = self.build_generation_prompt(completion)
+        full_prompt = self.build_full_prompt(completion)
         inputs: Any = self.tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self.model.device)
         context = PipelineContext(
@@ -110,19 +88,30 @@ class Pipeline:
             for hook in self.hooks:
                 stack.enter_context(hook(context))
             outputs = self.model(**inputs, output_hidden_states=False, return_dict=True)
-            probs = torch.log_softmax(outputs.logits, dim=-1).detach().cpu()
+            logits = outputs.logits.detach().cpu()
+            logprobs = torch.log_softmax(logits, dim=-1).detach().cpu()
+
             # collect the probability of the generated token -- probability at index 0 corresponds to the token at index 1
-            probs = probs[:, :-1, :]
+            logits = logits[:, :-1, :]
+            logprobs = logprobs[:, :-1, :]
+
+            # get the logprobs for the target tokens
             target_ids = inputs.input_ids[:, 1:].cpu()
-            gen_probs = torch.gather(probs, 2, target_ids[:, :, None]).squeeze(-1)[0]
+            gen_logprobs = torch.gather(logprobs, 2, target_ids[:, :, None]).squeeze(
+                -1
+            )[0]
+            gen_logits = torch.gather(logits, 2, target_ids[:, :, None]).squeeze(-1)[0]
+
             text_probs: list[TokenProb] = []
-            for token, p in zip(target_ids[0], gen_probs):
+
+            for token, logprob, logit in zip(target_ids[0], gen_logprobs, gen_logits):
                 if token not in self.tokenizer.all_special_ids:
                     text_probs.append(
                         TokenProb(
                             token_id=token.item(),
                             text=self.tokenizer.decode(token),
-                            logprob=p.item(),
+                            logprob=logprob.item(),
+                            logit=logit.item(),
                         )
                     )
             return TextProbs(text=full_prompt, token_probs=text_probs)
