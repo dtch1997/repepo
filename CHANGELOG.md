@@ -2,6 +2,51 @@
 
 
 
+## v0.1.0 (2024-03-05)
+
+### Chore
+
+* chore: remove pypi publishing from ci ([`6ddd28d`](https://github.com/dtch1997/repepo/commit/6ddd28d151f3a8b7e6edc36d58928de511133755))
+
+### Feature
+
+* feat: refactor types (#123)
+
+* Refactor types
+
+* Delete old experimental code
+
+* Refactor datasets
+
+* Improve dataset split parsing; update make_dataset types
+
+* Update preprocessed datasets save dir
+
+* refactor: delete duplicated files
+
+* Fix pyright errors
+
+* Fix tests
+
+* Fix lint
+
+* chore: re-add tqa raw datasets
+
+* feat: add tests for evaluators
+
+* feat: re-add caa-style prompt
+
+* chore: delete unused code
+
+* refactor: migrate SteeringHook to repepo.core
+
+* test: assert pos, neg prompts the same
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`e600270`](https://github.com/dtch1997/repepo/commit/e600270fc0a032975e16061ef8abb21cf2bb1820))
+
+
 ## v0.0.0 (2024-03-04)
 
 ### Chore
