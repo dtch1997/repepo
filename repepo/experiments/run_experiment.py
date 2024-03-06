@@ -4,6 +4,8 @@ Example usage:
 python repepo/experiments/run_experiment.py --config_path repepo/experiments/configs/sycophancy.yaml
 """
 
+import matplotlib.pyplot as plt
+
 from repepo.core.pipeline import Pipeline
 from repepo.steering.utils.helpers import (
     SteeringConfig,
@@ -13,6 +15,7 @@ from repepo.steering.utils.helpers import (
     get_formatter,
     make_dataset,
     save_results,
+    load_results,
 )
 
 from repepo.steering.extract_activations import extract_activations
@@ -20,6 +23,18 @@ from repepo.steering.aggregate_activations import aggregate_activations, get_agg
 from repepo.steering.evaluate_steering_with_concept_vectors import (
     evaluate_steering_with_concept_vectors,
 )
+from repepo.steering.plot_results_by_layer import plot_results_by_layer
+
+
+def run_plot_results(config):
+    fig, ax = plt.subplots()
+    results = load_results(config)
+    plot_results_by_layer(ax, config, results)
+    fig.tight_layout()
+
+    save_path = f"results_{config.make_save_suffix()}.png"
+    print("Saving results to: ", save_path)
+    fig.savefig(save_path)
 
 
 def run_experiment(config: SteeringConfig):
@@ -73,3 +88,4 @@ if __name__ == "__main__":
     config = simple_parsing.parse(config_class=SteeringConfig, add_config_path_arg=True)
     pprint(config)
     run_experiment(config)
+    run_plot_results(config)
