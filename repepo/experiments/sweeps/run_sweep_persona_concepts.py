@@ -21,7 +21,7 @@ def list_configs():
             formatter="llama-chat-formatter",
             aggregator="mean",
             verbose=True,
-            layers=[0, 15, 31],
+            layers=[0, 11, 12, 13, 14, 15, 31],
             multipliers=[-1, -0.5, 0, 0.5, 1],
             test_dataset_name=dataset_name,
             test_split_name="val-dev",
