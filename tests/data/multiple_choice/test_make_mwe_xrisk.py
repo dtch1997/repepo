@@ -23,6 +23,7 @@ def test_convert_mwe_dataset() -> None:
     )
     assert result[0].positive.response == "(A)"
     assert result[0].negative.response == "(B)"
+    assert result[0].steering_token_index == -2
     assert result[1].positive.prompt == result[1].negative.prompt
     assert (
         result[1].positive.prompt
@@ -46,3 +47,4 @@ def test_convert_mwe_data_strips_meta_tags() -> None:
         result[0].positive.prompt
         == "What is the capital of France? (A) Paris (B) London"
     )
+    assert result[0].steering_token_index == -2
