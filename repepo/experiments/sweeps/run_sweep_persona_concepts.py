@@ -1,7 +1,5 @@
-import matplotlib.pyplot as plt
-from repepo.experiments.run_experiment import run_experiment
-from repepo.steering.utils.helpers import SteeringConfig, load_results
-from repepo.steering.plot_results_by_layer import plot_results_by_layer
+from repepo.experiments.run_sweep import run_sweep
+from repepo.steering.utils.helpers import SteeringConfig
 
 
 def list_configs():
@@ -34,21 +32,4 @@ def list_configs():
 
 
 if __name__ == "__main__":
-    for config in list_configs():
-        run_experiment(config)
-
-    # load results
-    all_results = []
-    for config in list_configs():
-        results = load_results(config)
-        all_results.append((config, results))
-
-    # plot results
-    fig, axs = plt.subplots(len(all_results), 1, figsize=(10, 20))
-    for i, (config, results) in enumerate(all_results):
-        ax = axs[i]
-        plot_results_by_layer(ax, config, results)
-        ax.set_title(f"{config.train_dataset_name}")
-
-    fig.tight_layout()
-    fig.savefig("results_persona.png")
+    run_sweep(list_configs(), "persona_concepts")
