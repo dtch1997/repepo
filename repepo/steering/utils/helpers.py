@@ -18,7 +18,7 @@ from repepo.data.make_dataset import (
     DatasetSpec,
     make_dataset as _make_dataset,
 )
-from repepo.experiments.steering.utils.variables import (
+from repepo.steering.utils.variables import (
     WORK_DIR,
     LOAD_IN_4BIT,
     LOAD_IN_8BIT,
@@ -26,6 +26,7 @@ from repepo.experiments.steering.utils.variables import (
 )
 
 token = os.getenv("HF_TOKEN")
+experiment_suite = os.getenv("EXPERIMENT_SUITE", "steering-vectors")
 
 SPLITS = {
     "train": "0%:40%",
@@ -101,7 +102,8 @@ def get_formatter(
         raise ValueError(f"Unknown formatter: {formatter_name}")
 
 
-_layers = list(range(32))  # all layers in llama-7b
+# _layers = list(range(32))  # all layers in llama-7b
+_layers = [0, 15, 31]
 _multipliers = [-2 + i * 0.25 for i in range(17)]
 
 
@@ -136,7 +138,7 @@ class SteeringConfig:
 
 
 def get_experiment_path(
-    experiment_suite: str = "concept_vectors_at_scale",
+    experiment_suite: str = experiment_suite,
 ) -> pathlib.Path:
     return WORK_DIR / experiment_suite
 
