@@ -69,7 +69,7 @@ def run_experiment(config: SteeringConfig):
 if __name__ == "__main__":
     import simple_parsing
 
-    parser = simple_parsing.ArgumentParser()
+    parser = simple_parsing.ArgumentParser(add_config_path_arg=True)
     parser.add_arguments(SteeringConfig, dest="config")
 
     config = parser.parse_args().config
