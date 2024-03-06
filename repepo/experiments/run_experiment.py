@@ -16,6 +16,7 @@ from repepo.steering.utils.helpers import (
     make_dataset,
     save_results,
     load_results,
+    get_results_path,
 )
 
 from repepo.steering.extract_activations import extract_activations
@@ -38,6 +39,10 @@ def run_plot_results(config):
 
 
 def run_experiment(config: SteeringConfig):
+    if get_results_path(config).exists():
+        print(f"Results already exist for {config}. Skipping.")
+        return
+
     # Set up pipeline
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)
@@ -75,6 +80,7 @@ def run_experiment(config: SteeringConfig):
             layers=config.layers,
             multipliers=config.multipliers,
             verbose=config.verbose,
+            completion_template=config.test_completion_template,
         )
 
     # Save results

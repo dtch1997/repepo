@@ -259,6 +259,13 @@ def save_results(
         pickle.dump(results, f)
 
 
+def get_results_path(config: SteeringConfig) -> pathlib.Path:
+    experiment_path = get_experiment_path()
+    result_save_suffix = config.make_save_suffix()
+    results_save_dir = experiment_path / "results"
+    return results_save_dir / f"results_{result_save_suffix}.pickle"
+
+
 def load_results(
     config: SteeringConfig,
 ) -> list[SteeringResult]:
