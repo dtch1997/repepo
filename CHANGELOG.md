@@ -2,6 +2,29 @@
 
 
 
+## v0.2.0 (2024-03-06)
+
+### Feature
+
+* feat: add &#39;prompt&#39; string for bats dataset. ([`83688c1`](https://github.com/dtch1997/repepo/commit/83688c11c59deee6ebbda6b5d7e7ef22cbb555ae))
+
+### Fix
+
+* fix: make_bats function ([`d789eb7`](https://github.com/dtch1997/repepo/commit/d789eb722089110b5ec784cda51324c1102e594f))
+
+### Unknown
+
+* Add BATS dataset (#125)
+
+* Add BATS dataset
+
+* test: add test for make_bats
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`dcb7ccd`](https://github.com/dtch1997/repepo/commit/dcb7ccde8c02b8800ff38fef88a64773df93b6ed))
+
+
 ## v0.1.0 (2024-03-05)
 
 ### Chore
