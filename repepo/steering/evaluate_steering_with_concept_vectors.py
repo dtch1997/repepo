@@ -21,7 +21,7 @@ def evaluate_steering_with_concept_vectors(
     dataset: Dataset,
     layers: list[int],
     multipliers: list[float],
-    completion_template: str = "{prompt} {response}",
+    completion_template: str | None = None,
     verbose: bool = False,
 ) -> list[SteeringResult]:
     results = []
@@ -39,17 +39,20 @@ def evaluate_steering_with_concept_vectors(
 
     for layer_id in layers:
         for multiplier in multipliers:
-            pass
+            eval_hooks = [
+                set_repe_direction_multiplier_at_eval(multiplier),
+                select_repe_layer_at_eval(layer_id),
+            ]
+            if completion_template is not None:
+                eval_hooks.append(
+                    update_completion_template_at_eval(completion_template)
+                )
+
             # Run evaluate to get metrics
             result = evaluate(
                 pipeline,
                 dataset,
-                eval_hooks=[
-                    # TODO: different datasets need different of evaluating prompt template
-                    update_completion_template_at_eval(completion_template),
-                    set_repe_direction_multiplier_at_eval(multiplier),
-                    select_repe_layer_at_eval(layer_id),
-                ],
+                eval_hooks=eval_hooks,
                 evaluators=[
                     MultipleChoiceAccuracyEvaluator(),
                     LogitDifferenceEvaluator(),
