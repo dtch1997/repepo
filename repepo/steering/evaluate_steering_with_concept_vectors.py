@@ -27,6 +27,10 @@ def evaluate_steering_with_concept_vectors(
     results = []
     steering_vector = SteeringVector(layer_activations=concept_vectors)
 
+    # TODO: Add option for 'patch_generation_tokens_only'?
+    # TODO: Add option for 'skip_first_n_generation_tokens'?
+    # Do we ever want to ablate these...
+
     # Create steering hook and add it to pipeline
     steering_hook = SteeringHook(
         steering_vector=steering_vector,
