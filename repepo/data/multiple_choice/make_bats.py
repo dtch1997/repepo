@@ -40,9 +40,10 @@ def make_bats():
                 list_dataset.append(tuple(element))
 
         dataset_name = dataset_path.stem
-        dataset_info = {"behavior": dataset_name}
         filename = build_dataset_filename(dataset_name)
-        mwe_dataset: Dataset = convert_bats_dataset(list_dataset, dataset_info)
+        mwe_dataset: Dataset = convert_bats_dataset(
+            list_dataset, prompt="", dataset_info={}
+        )
         jdump(mwe_dataset, get_dataset_dir() / "bats" / filename)
 
 
