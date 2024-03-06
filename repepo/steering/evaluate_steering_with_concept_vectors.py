@@ -3,7 +3,7 @@ from repepo.steering.utils.helpers import SteeringResult
 from repepo.core.types import Dataset
 from repepo.core.pipeline import Pipeline
 from repepo.core.evaluate import (
-    print_first_example,
+    update_completion_template_at_eval,
     select_repe_layer_at_eval,
     set_repe_direction_multiplier_at_eval,
     evaluate,
@@ -21,6 +21,7 @@ def evaluate_steering_with_concept_vectors(
     dataset: Dataset,
     layers: list[int],
     multipliers: list[float],
+    completion_template: str = "{prompt} {response}",
     verbose: bool = False,
 ) -> list[SteeringResult]:
     results = []
@@ -45,10 +46,7 @@ def evaluate_steering_with_concept_vectors(
                 dataset,
                 eval_hooks=[
                     # TODO: different datasets need different of evaluating prompt template
-                    # update_completion_template_at_eval(
-                    #     "{prompt} My answer is {response}"
-                    # ),
-                    print_first_example(),
+                    update_completion_template_at_eval(completion_template),
                     set_repe_direction_multiplier_at_eval(multiplier),
                     select_repe_layer_at_eval(layer_id),
                 ],

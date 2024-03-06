@@ -1,3 +1,9 @@
+""" Script to run a steering experiment. 
+
+Example usage:
+python repepo/experiments/run_experiment.py --config_path repepo/experiments/configs/sycophancy.yaml
+"""
+
 from repepo.core.pipeline import Pipeline
 from repepo.steering.utils.helpers import (
     SteeringConfig,
@@ -13,22 +19,6 @@ from repepo.steering.extract_activations import extract_activations
 from repepo.steering.aggregate_activations import aggregate_activations, get_aggregator
 from repepo.steering.evaluate_steering_with_concept_vectors import (
     evaluate_steering_with_concept_vectors,
-)
-
-# Define configs to load
-
-config = SteeringConfig(
-    use_base_model=False,
-    model_size="7b",
-    train_dataset_name="sycophancy_train",
-    train_split_name="train-dev",
-    test_dataset_name="sycophancy_train",
-    test_split_name="val-dev",
-    formatter="llama-chat-formatter",
-    aggregator="mean",
-    layers=[0, 15, 31],
-    multipliers=[-1, -0.5, 0, 0.5, 1],
-    verbose=True,
 )
 
 
@@ -77,9 +67,10 @@ def run_experiment(config: SteeringConfig):
 
 
 if __name__ == "__main__":
-    # import simple_parsing
-    # parser = simple_parsing.ArgumentParser()
-    # parser.add_arguments(SteeringConfig, dest="config")
+    import simple_parsing
 
-    # config = parser.parse_args().config
+    parser = simple_parsing.ArgumentParser()
+    parser.add_arguments(SteeringConfig, dest="config")
+
+    config = parser.parse_args().config
     run_experiment(config)

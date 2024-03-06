@@ -102,9 +102,8 @@ def get_formatter(
         raise ValueError(f"Unknown formatter: {formatter_name}")
 
 
-# _layers = list(range(32))  # all layers in llama-7b
-_layers = [0, 15, 31]
-_multipliers = [-2 + i * 0.25 for i in range(17)]
+_layers = [0, 15, 31]  # only the first, middle, and last layer of llama-7b
+_multipliers = [-1, -0.5, 0, 0.5, 1]
 
 
 @dataclass
@@ -120,8 +119,10 @@ class SteeringConfig:
     multipliers: list[float] = field(default=_multipliers, is_mutable=True)
     test_dataset_name: str = field(default="sycophancy_train")
     test_split_name: str = field(default="val-dev")
+    test_completion_template: str = field(default="{prompt} {response}")
 
     def make_save_suffix(self) -> str:
+        # TODO: any way to loop over fields instead of hardcoding?
         str = (
             f"use-base-model={self.use_base_model}_"
             f"model-size={self.model_size}_"
@@ -132,7 +133,8 @@ class SteeringConfig:
             f"layers={self.layers}_"
             f"multipliers={self.multipliers}_"
             f"test-dataset={self.test_dataset_name}_"
-            f"test-split={self.test_split_name}"
+            f"test-split={self.test_split_name}_"
+            f"test-completion-template={self.test_completion_template}"
         )
         return hashlib.md5(str.encode()).hexdigest()
 
