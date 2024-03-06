@@ -12,16 +12,13 @@ from repepo.core.types import Dataset, Example, Completion
 
 
 def convert_bats_dataset(
-    bats: list[tuple[str, str]], dataset_info: dict[str, Any] = {}
+    bats: list[tuple[str, str]], prompt="", dataset_info: dict[str, Any] = {}
 ) -> Dataset:
     """Convert a dataset in MWE format to our format"""
     bats_dataset: Dataset = []
     for element in bats:
         inp, oup = element
-
-        prompt = ""
-        positive = Completion(prompt="", response=oup)
-
+        positive = Completion(prompt=prompt, response=oup)
         negative = Completion(prompt=prompt, response=inp)
         bats_dataset.append(
             Example(
