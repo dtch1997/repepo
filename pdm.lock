@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:d7949521dc64fb6e0ca1b741ff6f724da1b5a4fe1f4d609f1b5a5473a3067e00"
+content_hash = "sha256:4a178c5c8c7c266cc0414ddbd1b7fada95c9d19478e5690062484fde06980909"
 
 [[package]]
 name = "absl-py"
@@ -4064,16 +4064,17 @@ files = [
 
 [[package]]
 name = "steering-vectors"
-version = "0.5.0"
+version = "0.10.0"
 requires_python = ">=3.10,<4.0"
 summary = "Steering vectors for transformer language models in Pytorch / Huggingface"
 dependencies = [
+    "scikit-learn<2.0.0,>=1.4.0",
     "tqdm<5.0.0,>=4.1.0",
     "transformers<5.0.0,>=4.35.2",
 ]
 files = [
-    {file = "steering_vectors-0.5.0-py3-none-any.whl", hash = "sha256:a5358318970b4a41ecba3f0b3e807c85552f019d621746836b5e0a4b10da1dd2"},
-    {file = "steering_vectors-0.5.0.tar.gz", hash = "sha256:a799b158deba0753f761740861661b1fe1e58a8aac3fc5bdec44b6fe750b184d"},
+    {file = "steering_vectors-0.10.0-py3-none-any.whl", hash = "sha256:d9a66f8b96449e230c58151d9ff7452f81a88e824a87961c51ace7020cc71ba1"},
+    {file = "steering_vectors-0.10.0.tar.gz", hash = "sha256:70cca5bfddebb6e4768e9e5df4c16ff901c1f0f02472344449f89c8d42ba4f19"},
 ]
 
 [[package]]
