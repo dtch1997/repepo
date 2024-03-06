@@ -30,7 +30,7 @@ def convert_bats_dataset(
 
 
 def make_bats():
-    """Make MWE dataset"""
+    """Make BATS dataset"""
     for dataset_path in get_raw_dataset_dir().glob("bats/*/*.txt"):
         with open(dataset_path, "r") as file:
             list_dataset = []

@@ -93,7 +93,7 @@ def convert_mwe_personas_dataset_caa(
             response=element["answer_not_matching_behavior"],
         )
 
-        ex = Example(positive=positive, negative=negative)
+        ex = Example(positive=positive, negative=negative, steering_token_index=-2)
         mwe_dataset.append(ex)
     return mwe_dataset
 
