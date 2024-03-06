@@ -174,21 +174,6 @@ def load_activations(
     )
 
 
-def compute_difference_vectors(
-    pos_acts: dict[int, list[torch.Tensor]],
-    neg_acts: dict[int, list[torch.Tensor]],
-) -> dict[int, list[torch.Tensor]]:
-    difference_vectors: dict[int, list[torch.Tensor]] = {}
-    for layer_num in pos_acts.keys():
-        pos_layer_acts = pos_acts[layer_num]
-        neg_layer_acts = neg_acts[layer_num]
-        diff_vecs = [
-            pos_layer_acts[i] - neg_layer_acts[i] for i in range(len(pos_layer_acts))
-        ]
-        difference_vectors[layer_num] = diff_vecs
-    return difference_vectors
-
-
 def save_concept_vectors(
     config: SteeringConfig, concept_vectors: dict[int, torch.Tensor]
 ):

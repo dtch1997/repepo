@@ -12,7 +12,7 @@ from repepo.core.evaluate import (
     NormalizedPositiveProbabilityEvaluator,
 )
 from repepo.core.hook import SteeringHook
-from steering_vectors import SteeringVector
+from steering_vectors import SteeringVector, guess_and_enhance_layer_config
 
 
 def evaluate_steering_with_concept_vectors(
@@ -31,9 +31,9 @@ def evaluate_steering_with_concept_vectors(
     steering_hook = SteeringHook(
         steering_vector=steering_vector,
         direction_multiplier=0,
-        patch_generation_tokens_only=False,
+        patch_generation_tokens_only=True,
         skip_first_n_generation_tokens=0,
-        layer_config=None,
+        layer_config=guess_and_enhance_layer_config(pipeline.model),
     )
     pipeline.hooks.append(steering_hook)
 
