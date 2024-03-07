@@ -114,12 +114,13 @@ class SteeringConfig:
     train_split_name: str = field(default="train-dev")
     formatter: str = field(default="llama-chat-formatter")
     aggregator: str = field(default="mean")
-    verbose: bool = True
     layers: list[int] = field(default=_layers, is_mutable=True)
     multipliers: list[float] = field(default=_multipliers, is_mutable=True)
     test_dataset_name: str = field(default="sycophancy_train")
     test_split_name: str = field(default="val-dev")
     test_completion_template: str = field(default="{prompt} {response}")
+    patch_generation_tokens_only: bool = field(default=True)
+    skip_first_n_generation_tokens: int = field(default=0)
 
     def make_save_suffix(self) -> str:
         # TODO: any way to loop over fields instead of hardcoding?
@@ -134,7 +135,9 @@ class SteeringConfig:
             f"multipliers={self.multipliers}_"
             f"test-dataset={self.test_dataset_name}_"
             f"test-split={self.test_split_name}_"
-            f"test-completion-template={self.test_completion_template}"
+            f"test-completion-template={self.test_completion_template}_"
+            f"patch-generation-tokens-only={self.patch_generation_tokens_only}_"
+            f"skip-first-n-generation-tokens={self.skip_first_n_generation_tokens}"
         )
         return hashlib.md5(str.encode()).hexdigest()
 

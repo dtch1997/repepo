@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import logging
 import sys
 
+from torch import Tensor
 from pprint import pformat
 from repepo.core.pipeline import Pipeline
 from repepo.steering.utils.helpers import (
@@ -50,10 +51,10 @@ from repepo.steering.plot_results_by_layer import plot_results_by_layer
 
 def setup_logger() -> logging.Logger:
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     # print to stdout
     handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
+    handler.setLevel(logging.DEBUG)
     # Create a formatter and set it for the handler
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -110,15 +111,18 @@ def run_experiment(config: SteeringConfig):
         CosineSimilarityMetric(),
     ]
 
+    diff_vecs: dict[int, list[Tensor]] = {}
     for layer in config.layers:
-        metrics_dict = {}
         pos_act = pos_acts[layer]
         neg_act = neg_acts[layer]
-        diff_vecs = compute_difference_vectors(pos_act, neg_act)
-        for metric in concept_metrics:
-            metric_val = metric(diff_vecs)
-            metrics_dict[layer] = metric_val
-            save_metrics(config, metric.name, metrics_dict)
+        diff_vecs[layer] = compute_difference_vectors(pos_act, neg_act)
+
+    for metric in concept_metrics:
+        metrics_dict = {}
+        for layer in config.layers:
+            metrics_dict[layer] = metric(diff_vecs[layer])
+        logger.debug(f"Metric {metric.name} | results: {pformat(metrics_dict)}")
+        save_metrics(config, metric.name, metrics_dict)
 
     # Aggregate activations
     aggregator = get_aggregator(config.aggregator)
@@ -150,6 +154,8 @@ def run_experiment(config: SteeringConfig):
                 layers=config.layers,
                 multipliers=config.multipliers,
                 completion_template=config.test_completion_template,
+                patch_generation_tokens_only=config.patch_generation_tokens_only,
+                skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
                 logger=logger,
             )
         save_results(config, results)
