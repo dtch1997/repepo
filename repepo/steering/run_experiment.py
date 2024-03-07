@@ -6,7 +6,6 @@ python repepo/steering/run_experiment.py --config_path repepo/experiments/config
 
 import matplotlib.pyplot as plt
 import logging
-import collections
 import sys
 
 from pprint import pformat
@@ -33,6 +32,8 @@ from repepo.steering.concept_metrics import (
     CosineSimilarityMetric,
     compute_difference_vectors,
 )
+
+from repepo.steering.steering_metrics import steering_efficiency
 
 from steering_vectors.train_steering_vector import (
     extract_activations,
@@ -108,15 +109,16 @@ def run_experiment(config: SteeringConfig):
         EuclideanSimilarityMetric(),
         CosineSimilarityMetric(),
     ]
-    metrics_dict: dict[int, dict[str, float]] = collections.defaultdict(dict)
+
     for layer in config.layers:
+        metrics_dict = {}
         pos_act = pos_acts[layer]
         neg_act = neg_acts[layer]
         diff_vecs = compute_difference_vectors(pos_act, neg_act)
         for metric in concept_metrics:
             metric_val = metric(diff_vecs)
-            metrics_dict[layer][metric.name] = metric_val
-    save_metrics(config, metrics_dict)
+            metrics_dict[layer] = metric_val
+            save_metrics(config, metric.name, metrics_dict)
 
     # Aggregate activations
     aggregator = get_aggregator(config.aggregator)
@@ -136,20 +138,25 @@ def run_experiment(config: SteeringConfig):
     # We cache this part since it's the most time-consuming
     if get_results_path(config).exists():
         logger.info(f"Results already exist for {config}. Skipping.")
-        return
+        results = load_results(config)
 
-    test_dataset = make_dataset(config.test_dataset_name, config.test_split_name)
-    with EmptyTorchCUDACache():
-        results = evaluate_steering_vector(
-            pipeline=pipeline,
-            steering_vector=steering_vector,
-            dataset=test_dataset,
-            layers=config.layers,
-            multipliers=config.multipliers,
-            completion_template=config.test_completion_template,
-            logger=logger,
-        )
-    save_results(config, results)
+    else:
+        test_dataset = make_dataset(config.test_dataset_name, config.test_split_name)
+        with EmptyTorchCUDACache():
+            results = evaluate_steering_vector(
+                pipeline=pipeline,
+                steering_vector=steering_vector,
+                dataset=test_dataset,
+                layers=config.layers,
+                multipliers=config.multipliers,
+                completion_template=config.test_completion_template,
+                logger=logger,
+            )
+        save_results(config, results)
+
+    # Compute steering metrics
+    metrics_dict = steering_efficiency(results)
+    save_metrics(config, "steering_efficiency", metrics_dict)
 
 
 if __name__ == "__main__":

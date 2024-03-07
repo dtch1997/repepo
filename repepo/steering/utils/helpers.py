@@ -189,7 +189,8 @@ def save_concept_vectors(
 
 def save_metrics(
     config: SteeringConfig,
-    metrics: dict[int, dict[str, float]],
+    metric_name: str,
+    metrics: dict[int, float],
 ):
     """Save layer-wise metrics for a given config."""
     experiment_path = get_experiment_path()
@@ -198,7 +199,7 @@ def save_metrics(
     metrics_save_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
         metrics,
-        metrics_save_dir / f"metrics_{result_save_suffix}.pt",
+        metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt",
     )
 
 
@@ -210,7 +211,7 @@ def load_metrics(
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     metrics_save_dir = experiment_path / "metrics"
-    return torch.load(metrics_save_dir / f"metrics_{result_save_suffix}.pt")
+    return torch.load(metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt")
 
 
 def load_concept_vectors(

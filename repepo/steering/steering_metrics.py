@@ -6,7 +6,8 @@ def steering_efficiency(
     results: list[SteeringResult],
     multiplier_lower_bound=-1.0,
     multiplier_upper_bound=1.0,
-):
+) -> dict[int, float]:
+    """Calculate the layer-wise steering efficiency."""
     slopes = {}
 
     # Get set of all layers in results
