@@ -1,6 +1,6 @@
 from dataclasses import fields
 from repepo.steering.run_experiment import run_experiment
-from repepo.steering.utils.helpers import SteeringConfig
+from repepo.steering.utils.helpers import SteeringConfig, make_dataset
 
 
 def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
@@ -18,3 +18,18 @@ def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
 def run_sweep(configs: list[SteeringConfig], sweep_name: str):
     for config in configs:
         run_experiment(config)
+
+
+def test_dataset_exists(configs: list[SteeringConfig]):
+    for config in configs:
+        try:
+            make_dataset(config.test_dataset)
+        except FileNotFoundError:
+            print(f"Dataset {config.test_dataset} not found")
+            raise
+
+        try:
+            make_dataset(config.train_dataset)
+        except FileNotFoundError:
+            print(f"Dataset {config.train_dataset} not found")
+            raise

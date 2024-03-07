@@ -1,15 +1,20 @@
 import itertools
 
-from repepo.steering.run_sweep import run_sweep
+from repepo.steering.run_sweep import run_sweep, test_dataset_exists
 from repepo.steering.utils.helpers import SteeringConfig
 
 layers = [0, 5, 10, 13, 15, 20, 25, 31]
 multipliers = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
 
 datasets = [
-    "corrigible-neutral-HHH",
-    "myopic-reward",
-    "power-seeking-inclination",
+    "anti-immigration",
+    "believes-abortion-should-be-illegal",
+    "conscientiousness",
+    "desire-for-acquiring-compute",
+    "risk-seeking",
+    "openness",
+    "self-replication",
+    "very-small-harm-justifies-very-large-benefit",
 ]
 
 
@@ -31,4 +36,5 @@ def iter_configs():
 
 if __name__ == "__main__":
     configs = list(iter_configs())
-    run_sweep(configs, "mwe_xrisk")
+    test_dataset_exists(configs)
+    run_sweep(configs, "mwe_persona")

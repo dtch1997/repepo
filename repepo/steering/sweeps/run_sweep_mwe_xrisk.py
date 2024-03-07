@@ -1,6 +1,6 @@
 import itertools
 
-from repepo.steering.run_sweep import run_sweep
+from repepo.steering.run_sweep import run_sweep, test_dataset_exists
 from repepo.steering.utils.helpers import SteeringConfig
 
 layers = [0, 5, 10, 13, 15, 20, 25, 31]
@@ -31,4 +31,5 @@ def iter_configs():
 
 if __name__ == "__main__":
     configs = list(iter_configs())
+    test_dataset_exists(configs)
     run_sweep(configs, "mwe_xrisk")
