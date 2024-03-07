@@ -1,4 +1,5 @@
-import torch
+import logging
+
 from repepo.steering.utils.helpers import SteeringResult
 from repepo.core.types import Dataset
 from repepo.core.pipeline import Pipeline
@@ -15,21 +16,20 @@ from repepo.core.hook import SteeringHook
 from steering_vectors import SteeringVector, guess_and_enhance_layer_config
 
 
-def evaluate_steering_with_concept_vectors(
+def evaluate_steering_vector(
     pipeline: Pipeline,
-    concept_vectors: dict[int, torch.Tensor],
+    steering_vector: SteeringVector,
     dataset: Dataset,
     layers: list[int],
     multipliers: list[float],
     completion_template: str | None = None,
-    verbose: bool = False,
+    logger: logging.Logger | None = None,
 ) -> list[SteeringResult]:
-    results = []
-    steering_vector = SteeringVector(layer_activations=concept_vectors)
-
     # TODO: Add option for 'patch_generation_tokens_only'?
     # TODO: Add option for 'skip_first_n_generation_tokens'?
     # Do we ever want to ablate these...
+
+    results = []
 
     # Create steering hook and add it to pipeline
     steering_hook = SteeringHook(
@@ -62,7 +62,7 @@ def evaluate_steering_with_concept_vectors(
                     LogitDifferenceEvaluator(),
                     NormalizedPositiveProbabilityEvaluator(),
                 ],
-                verbose=True,
+                logger=logger,
             )
 
             result = SteeringResult(
@@ -73,8 +73,8 @@ def evaluate_steering_with_concept_vectors(
                 pos_prob=result.metrics["pos_prob"],
             )
             results.append(result)
-            if verbose:
-                print(
+            if logger is not None:
+                logger.info(
                     f"Layer {layer_id}, multiplier {multiplier:.2f}: "
                     f"MCQ Accuracy {result.mcq_acc:.2f} "
                     f"Positive Prob {result.pos_prob:.2f} "
