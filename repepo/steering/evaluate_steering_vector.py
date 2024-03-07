@@ -22,21 +22,19 @@ def evaluate_steering_vector(
     dataset: Dataset,
     layers: list[int],
     multipliers: list[float],
+    patch_generation_tokens_only: bool = True,
+    skip_first_n_generation_tokens: int = 0,
     completion_template: str | None = None,
     logger: logging.Logger | None = None,
 ) -> list[SteeringResult]:
-    # TODO: Add option for 'patch_generation_tokens_only'?
-    # TODO: Add option for 'skip_first_n_generation_tokens'?
-    # Do we ever want to ablate these...
-
     results = []
 
     # Create steering hook and add it to pipeline
     steering_hook = SteeringHook(
         steering_vector=steering_vector,
         direction_multiplier=0,
-        patch_generation_tokens_only=True,
-        skip_first_n_generation_tokens=0,
+        patch_generation_tokens_only=patch_generation_tokens_only,
+        skip_first_n_generation_tokens=skip_first_n_generation_tokens,
         layer_config=guess_and_enhance_layer_config(pipeline.model),
     )
     pipeline.hooks.append(steering_hook)

@@ -1,5 +1,6 @@
 import pytest
 from pytest_mock import MockerFixture
+from typing import Literal
 import torch
 
 from transformers import (
@@ -12,7 +13,7 @@ from transformers import (
 from repepo.core.types import Tokenizer
 
 
-_device: str = "cuda" if torch.cuda.is_available() else "cpu"
+_device: Literal["cpu", "cuda"] = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 # mock openai.OpenAI for testing
@@ -22,7 +23,7 @@ def get_openai_client_mock(mocker: MockerFixture):
 
 
 @pytest.fixture
-def device() -> str:
+def device() -> Literal["cpu", "cuda"]:
     return _device
 
 
@@ -79,7 +80,7 @@ def empty_llama_model() -> LlamaForCausalLM:
         hidden_size=1024,
         intermediate_size=2752,
     )
-    return LlamaForCausalLM(config)
+    return LlamaForCausalLM(config).to(_device).eval()
 
 
 @pytest.fixture
