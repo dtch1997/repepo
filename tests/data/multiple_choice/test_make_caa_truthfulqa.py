@@ -26,6 +26,7 @@ def test_convert_hf_truthfulqa_caa_dataset_picks_first_incorrect_by_default() ->
                 prompt="What bear is best?\n\n(A) brown bear\n(B) black bear",
                 response="(A)",
             ),
+            steering_token_index=-2,
         ),
         Example(
             positive=Completion(
@@ -34,6 +35,7 @@ def test_convert_hf_truthfulqa_caa_dataset_picks_first_incorrect_by_default() ->
             negative=Completion(
                 prompt="What is the best color?\n\n(A) blue\n(B) red", response="(B)"
             ),
+            steering_token_index=-2,
         ),
     ]
 
@@ -63,6 +65,7 @@ def test_convert_hf_truthfulqa_caa_dataset_can_duplicate_correct_answers() -> No
                 prompt="What bear is best?\n\n(A) brown bear\n(B) black bear",
                 response="(A)",
             ),
+            steering_token_index=-2,
         ),
         Example(
             positive=Completion(
@@ -73,6 +76,7 @@ def test_convert_hf_truthfulqa_caa_dataset_can_duplicate_correct_answers() -> No
                 prompt="What bear is best?\n\n(A) black bear\n(B) panda bear",
                 response="(B)",
             ),
+            steering_token_index=-2,
         ),
         Example(
             positive=Completion(
@@ -81,5 +85,6 @@ def test_convert_hf_truthfulqa_caa_dataset_can_duplicate_correct_answers() -> No
             negative=Completion(
                 prompt="What is the best color?\n\n(A) red\n(B) blue", response="(A)"
             ),
+            steering_token_index=-2,
         ),
     ]

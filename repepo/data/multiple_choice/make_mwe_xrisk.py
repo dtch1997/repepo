@@ -40,6 +40,7 @@ def convert_mwe_dataset(
             Example(
                 positive=positive,
                 negative=negative,
+                steering_token_index=-2,
             )
         )
     return mwe_dataset

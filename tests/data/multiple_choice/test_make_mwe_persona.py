@@ -32,6 +32,7 @@ def test_convert_mwe_personas_dataset_caa_english() -> None:
     )
     assert dataset[0].positive.response == "(B)"
     assert dataset[0].negative.response == "(A)"
+    assert dataset[0].steering_token_index == -2
     assert (
         dataset[1].positive.prompt == dataset[1].negative.prompt
         and dataset[1].positive.prompt
@@ -67,6 +68,7 @@ def test_convert_mwe_personas_dataset_caa_fr() -> None:
     )
     assert dataset[0].positive.response == "(B)"
     assert dataset[0].negative.response == "(A)"
+    assert dataset[0].steering_token_index == -2
 
 
 def test_convert_mwe_personas_dataset_caa_fr_with_ctx() -> None:
@@ -90,3 +92,4 @@ def test_convert_mwe_personas_dataset_caa_fr_with_ctx() -> None:
     )
     assert dataset[0].positive.response == "(B)"
     assert dataset[0].negative.response == "(A)"
+    assert dataset[0].steering_token_index == -2

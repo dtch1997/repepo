@@ -13,6 +13,7 @@ from repepo.core.types import Example
 from repepo.core.pipeline import Pipeline
 
 import numpy as np
+import logging
 
 # eval_hooks allow us to do custom stuff to the pipeline only during evaluation
 EvalHook = Callable[[Pipeline], AbstractContextManager[None]]
@@ -205,7 +206,7 @@ def evaluate(
     eval_hooks: Sequence[EvalHook] = [],
     show_progress: bool = True,
     tqdm_desc: str = "Evaluating",
-    verbose: bool = False,
+    logger: logging.Logger | None = None,
 ) -> EvalResult:
     # evaluate
     predictions: list[EvalPrediction] = []
@@ -217,9 +218,10 @@ def evaluate(
         for i, example in enumerate(
             tqdm(dataset, disable=not show_progress, desc=tqdm_desc)
         ):
-            if i == 0 and verbose:
-                print("Example full prompt:")
-                print(pipeline.build_full_prompt(example.positive))
+            if logger is not None and i == 0:
+                logger.info(
+                    f"Example full prompt: \n {pipeline.build_full_prompt(example.positive)}"
+                )
             positive_probs = pipeline.calculate_output_logprobs(example.positive)
             negative_probs = pipeline.calculate_output_logprobs(example.negative)
 

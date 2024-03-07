@@ -49,6 +49,7 @@ def convert_hf_truthfulqa_caa_dataset(
                 Example(
                     positive=Completion(prompt=prompt, response=correct_ans),
                     negative=Completion(prompt=prompt, response=incorrect_ans),
+                    steering_token_index=-2,
                 )
             )
     return tqa_dataset
