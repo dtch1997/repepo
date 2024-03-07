@@ -7,6 +7,7 @@ python repepo/steering/run_experiment.py --config_path repepo/experiments/config
 import matplotlib.pyplot as plt
 import logging
 import sys
+import functools
 
 from torch import Tensor
 from pprint import pformat
@@ -49,6 +50,8 @@ from repepo.steering.evaluate_steering_vector import (
 from repepo.steering.plot_results_by_layer import plot_results_by_layer
 
 
+# Cache to avoid adding multiple handlers to the logger
+@functools.lru_cache(1)
 def setup_logger() -> logging.Logger:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)

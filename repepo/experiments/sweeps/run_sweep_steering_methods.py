@@ -17,9 +17,9 @@ def list_configs():
             model_size="7b",
             train_dataset_name=dataset_name,
             train_split_name="train-dev",
-            formatter="identity-formatter",
+            formatter="llama-chat-formatter",
             aggregator=aggregator,
-            layers=[0, 11, 12, 13, 14, 15, 31],
+            layers=[0, 13, 31],
             multipliers=[-1, -0.5, 0, 0.5, 1],
             test_dataset_name=dataset_name,
             test_split_name="val-dev",
@@ -29,4 +29,4 @@ def list_configs():
 
 
 if __name__ == "__main__":
-    run_sweep(list_configs(), "token_concepts")
+    run_sweep(list_configs(), "steering_methods")
