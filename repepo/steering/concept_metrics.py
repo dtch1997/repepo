@@ -6,7 +6,7 @@ from typing import Protocol
 
 def _mean_vector(diff_vecs: list[Tensor]) -> Tensor:
     """Compute the mean over the list of difference vectors."""
-    return torch.mean(torch.stack(diff_vecs), dim=0)
+    return torch.mean(torch.cat(diff_vecs), dim=0)
 
 
 def _norm_mean_vector(diff_vecs: list[Tensor]) -> float:
@@ -49,7 +49,7 @@ def _mean_euclidean_distance_scaled_by_mean_norm(diff_vecs: list[Tensor]) -> flo
 
 def _mean_cosine_similarity(diff_vecs: list[Tensor]) -> float:
     """Compute the mean cosine similarity between each pair of difference vectors."""
-    diff_vecs_tensor = torch.stack(diff_vecs)
+    diff_vecs_tensor = torch.cat(diff_vecs)
     pairwise_cosine_sims = pairwise_cosine_similarity(
         diff_vecs_tensor, diff_vecs_tensor
     )
@@ -58,7 +58,7 @@ def _mean_cosine_similarity(diff_vecs: list[Tensor]) -> float:
 
 def _mean_dot_product(diff_vecs: list[Tensor]) -> float:
     """Compute the mean dot product between each pair of difference vectors."""
-    diff_vecs_tensor = torch.stack(diff_vecs)
+    diff_vecs_tensor = torch.cat(diff_vecs)
     pairwise_dot_products = torch.einsum(
         "id,jd->ij", diff_vecs_tensor, diff_vecs_tensor
     )

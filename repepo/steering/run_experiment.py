@@ -133,6 +133,7 @@ def run_experiment(config: SteeringConfig):
         )
 
     # Evaluate steering vector
+    # We cache this part since it's the most time-consuming
     if get_results_path(config).exists():
         logger.info(f"Results already exist for {config}. Skipping.")
         return
