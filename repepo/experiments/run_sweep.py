@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from repepo.experiments.run_experiment import run_experiment
+from repepo.steering.run_experiment import run_experiment
 from repepo.steering.utils.helpers import SteeringConfig, load_results
 from repepo.steering.plot_results_by_layer import plot_results_by_layer
 
