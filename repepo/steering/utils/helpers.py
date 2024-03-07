@@ -1,14 +1,12 @@
 import os
-import pickle
 import pathlib
 import torch
 import pandas as pd
 import gc
+import json
 import hashlib
 
-from typing import cast, Literal
-from dataclasses import dataclass
-from pyrallis import field
+from dataclasses import dataclass, asdict
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from transformers import BitsAndBytesConfig
@@ -50,23 +48,6 @@ class EmptyTorchCUDACache:
         torch.cuda.empty_cache()
 
 
-LayerwiseMetricsDict = dict[int, float]
-LayerwiseConceptVectorsDict = dict[int, torch.Tensor]
-
-
-def pretty_print_example(example: Example):
-    print("Not implemented")
-
-
-def get_model_name(use_base_model: bool, model_size: str):
-    """Gets model name for Llama-[7b,13b], base model or chat model"""
-    if use_base_model:
-        model_name = f"meta-llama/Llama-2-{model_size}-hf"
-    else:
-        model_name = f"meta-llama/Llama-2-{model_size}-chat-hf"
-    return model_name
-
-
 def get_model_and_tokenizer(
     model_name: str,
     load_in_4bit: bool = bool(LOAD_IN_4BIT),
@@ -102,178 +83,125 @@ def get_formatter(
         raise ValueError(f"Unknown formatter: {formatter_name}")
 
 
-_layers = [0, 15, 31]  # only the first, middle, and last layer of llama-7b
-_multipliers = [-1, -0.5, 0, 0.5, 1]
-
-
 @dataclass
 class SteeringConfig:
-    use_base_model: bool = field(default=False)
-    model_size: str = field(default="7b")
-    train_dataset_name: str = field(default="sycophancy_train")
-    train_split_name: str = field(default="train-dev")
-    formatter: str = field(default="llama-chat-formatter")
-    aggregator: str = field(default="mean")
-    layers: list[int] = field(default=_layers, is_mutable=True)
-    multipliers: list[float] = field(default=_multipliers, is_mutable=True)
-    test_dataset_name: str = field(default="sycophancy_train")
-    test_split_name: str = field(default="val-dev")
-    test_completion_template: str = field(default="{prompt} {response}")
-    patch_generation_tokens_only: bool = field(default=True)
-    skip_first_n_generation_tokens: int = field(default=0)
+    # Steering vector training
+    model_name: str = "meta-llama/Llama-2-7b-chat-hf"
+    train_dataset: str = "sycophancy_train"
+    train_split: str = "0%:+10"
+    train_completion_template: str = "{prompt} {response}"
+    formatter: str = "llama-chat-formatter"
+    aggregator: str = "mean"
+    layer: int = 13
+    layer_type: str = "decoder_block"
+    # Steering vector evaluation
+    test_dataset: str = "sycophancy_train"
+    test_split: str = "40%:+10"
+    test_completion_template: str = "{prompt} {response}"
+    multiplier: float = 0
+    patch_generation_tokens_only: bool = True
+    skip_first_n_generation_tokens: int = 0
 
-    def make_save_suffix(self) -> str:
-        # TODO: any way to loop over fields instead of hardcoding?
-        str = (
-            f"use-base-model={self.use_base_model}_"
-            f"model-size={self.model_size}_"
-            f"formatter={self.formatter}_"
-            f"train-dataset={self.train_dataset_name}_"
-            f"train-split={self.train_split_name}_"
-            f"aggregator={self.aggregator}"
-            f"layers={self.layers}_"
-            f"multipliers={self.multipliers}_"
-            f"test-dataset={self.test_dataset_name}_"
-            f"test-split={self.test_split_name}_"
-            f"test-completion-template={self.test_completion_template}_"
-            f"patch-generation-tokens-only={self.patch_generation_tokens_only}_"
-            f"skip-first-n-generation-tokens={self.skip_first_n_generation_tokens}"
+    @property
+    def train_hash(self):
+        hash_str = (
+            f"{self.model_name}"
+            f"{self.train_dataset}"
+            f"{self.train_split}"
+            f"{self.train_completion_template}"
+            f"{self.formatter}"
+            f"{self.aggregator}"
+            f"{self.layer}"
+            f"{self.layer_type}"
         )
-        return hashlib.md5(str.encode()).hexdigest()
+        return hashlib.md5(hash_str.encode()).hexdigest()[:16]
+
+    @property
+    def eval_hash(self):
+        return hashlib.md5(str(self).encode()).hexdigest()[:16]
 
 
 def get_experiment_path(
     experiment_suite: str = experiment_suite,
+    experiment_hash: str | None = None,
 ) -> pathlib.Path:
-    return WORK_DIR / experiment_suite
-
-
-ActivationType = Literal["positive", "negative", "difference"]
-
-
-def save_activations(
-    config: SteeringConfig,
-    activations: dict[int, list[torch.Tensor]],
-    activation_type: ActivationType = "difference",
-):
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    activations_save_dir = experiment_path / "activations"
-    activations_save_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        activations,
-        activations_save_dir / f"activations_{activation_type}_{result_save_suffix}.pt",
-    )
-
-
-def load_activations(
-    config: SteeringConfig, activation_type: ActivationType = "difference"
-) -> dict[int, list[torch.Tensor]]:
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    activations_save_dir = experiment_path / "activations"
-    return torch.load(
-        activations_save_dir / f"activations_{activation_type}_{result_save_suffix}.pt"
-    )
-
-
-def save_concept_vectors(
-    config: SteeringConfig, concept_vectors: dict[int, torch.Tensor]
-):
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    activations_save_dir = experiment_path / "vectors"
-    activations_save_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        concept_vectors,
-        activations_save_dir / f"concept_vectors_{result_save_suffix}.pt",
-    )
-
-
-def save_metrics(
-    config: SteeringConfig,
-    metric_name: str,
-    metrics: dict[int, float],
-):
-    """Save layer-wise metrics for a given config."""
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    metrics_save_dir = experiment_path / "metrics"
-    metrics_save_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        metrics,
-        metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt",
-    )
-
-
-def load_metrics(
-    config: SteeringConfig,
-    metric_name: str,
-) -> dict[int, dict[str, float]]:
-    """Load layer-wise metrics for a given config."""
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    metrics_save_dir = experiment_path / "metrics"
-    return torch.load(metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt")
-
-
-def load_concept_vectors(
-    config: SteeringConfig,
-) -> LayerwiseConceptVectorsDict:
-    """Load layer-wise concept vectors for a given config."""
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    activations_save_dir = experiment_path / "vectors"
-    return torch.load(activations_save_dir / f"concept_vectors_{result_save_suffix}.pt")
+    path = WORK_DIR / experiment_suite / (experiment_hash or "default")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 @dataclass
 class SteeringResult:
-    layer_id: int
-    multiplier: float
-    # steering vector metrics
+    config_hash: str
+    # steering metrics
     mcq_acc: float
     logit_diff: float
     pos_prob: float
-    # 'conceptness' metrics?
 
 
-def save_results(
-    config: SteeringConfig,
-    results: list[SteeringResult],
+def get_result_path(experiment_hash: str) -> pathlib.Path:
+    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+    return experiment_path / "result.json"
+
+
+def save_result(
+    experiment_hash: str,
+    result: SteeringResult,
 ):
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    results_save_dir = experiment_path / "results"
-    results_save_dir.mkdir(parents=True, exist_ok=True)
-    with open(results_save_dir / f"results_{result_save_suffix}.pickle", "wb") as f:
-        pickle.dump(results, f)
+    with open(get_result_path(experiment_hash), "w") as f:
+        json.dump(asdict(result), f)
 
 
-def get_results_path(config: SteeringConfig) -> pathlib.Path:
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    results_save_dir = experiment_path / "results"
-    return results_save_dir / f"results_{result_save_suffix}.pickle"
+def load_result(
+    experiment_hash: str,
+) -> SteeringResult:
+    with open(get_result_path(experiment_hash), "r") as f:
+        return SteeringResult(**json.load(f))
 
 
-def load_results(
-    config: SteeringConfig,
-) -> list[SteeringResult]:
-    experiment_path = get_experiment_path()
-    result_save_suffix = config.make_save_suffix()
-    results_save_dir = experiment_path / "results"
-    with open(results_save_dir / f"results_{result_save_suffix}.pickle", "rb") as f:
-        return cast(list[SteeringResult], pickle.load(f))
+def get_activation_path(experiment_hash: str) -> pathlib.Path:
+    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+    return experiment_path / "activations.pt"
 
 
-def make_dataset(
-    name: str,
-    split_name: str = "train",
+def save_activation(
+    experiment_hash: str,
+    pos_acts: list[torch.Tensor],
+    neg_acts: list[torch.Tensor],
 ):
-    if split_name not in SPLITS:
-        raise ValueError(f"Unknown split name: {split_name}")
-    return _make_dataset(DatasetSpec(name=name, split=SPLITS[split_name]), DATASET_DIR)
+    torch.save(
+        {
+            "pos_acts": pos_acts,
+            "neg_acts": neg_acts,
+        },
+        get_activation_path(experiment_hash),
+    )
+
+
+def load_activation(
+    experiment_hash: str,
+) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+    tensor_dict = torch.load(get_activation_path(experiment_hash))
+    return tensor_dict["pos_acts"], tensor_dict["neg_acts"]
+
+
+def get_metric_path(experiment_hash: str, metric_name: str) -> pathlib.Path:
+    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+    return experiment_path / f"metric_{metric_name}.json"
+
+
+def save_metric(experiment_hash: str, metric_name: str, metric: float):
+    with open(get_metric_path(experiment_hash, metric_name), "w") as f:
+        json.dump(metric, f)
+
+
+def load_metric(experiment_hash: str, metric_name: str) -> float:
+    with open(get_metric_path(experiment_hash, metric_name), "r") as f:
+        return float(json.load(f))
+
+
+def make_dataset(name: str, split: str = "0%:100%"):
+    return _make_dataset(DatasetSpec(name=name, split=split), DATASET_DIR)
 
 
 def convert_to_dataframe(example_list: list[Example]) -> pd.DataFrame:

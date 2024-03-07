@@ -4,25 +4,28 @@ Example usage:
 python repepo/steering/run_experiment.py --config_path repepo/experiments/configs/sycophancy.yaml
 """
 
-import matplotlib.pyplot as plt
 import logging
 import sys
+import torch
 import functools
 
-from torch import Tensor
+from typing import cast
 from pprint import pformat
 from repepo.core.pipeline import Pipeline
 from repepo.steering.utils.helpers import (
     SteeringConfig,
+    SteeringResult,
     EmptyTorchCUDACache,
-    get_model_name,
     get_model_and_tokenizer,
     get_formatter,
     make_dataset,
-    save_results,
-    load_results,
-    save_metrics,
-    get_results_path,
+    get_result_path,
+    save_result,
+    load_result,
+    get_activation_path,
+    save_activation,
+    load_activation,
+    save_metric,
 )
 
 from repepo.steering.build_steering_training_data import (
@@ -35,19 +38,18 @@ from repepo.steering.concept_metrics import (
     compute_difference_vectors,
 )
 
-from repepo.steering.steering_metrics import steering_efficiency
+from repepo.steering.utils.database import SteeringConfigDatabase
 
 from steering_vectors.train_steering_vector import (
     extract_activations,
-    aggregate_activations,
     SteeringVector,
+    LayerType,
 )
 
 from repepo.steering.get_aggregator import get_aggregator
 from repepo.steering.evaluate_steering_vector import (
     evaluate_steering_vector,
 )
-from repepo.steering.plot_results_by_layer import plot_results_by_layer
 
 
 # Cache to avoid adding multiple handlers to the logger
@@ -70,102 +72,101 @@ def setup_logger() -> logging.Logger:
     return logger
 
 
-def run_plot_results(config):
-    fig, ax = plt.subplots()
-    results = load_results(config)
-    plot_results_by_layer(ax, config, results)
-    fig.tight_layout()
-
-    save_path = f"results_{config.make_save_suffix()}.png"
-    print("Saving results to: ", save_path)
-    fig.savefig(save_path)
-
-
 def run_experiment(config: SteeringConfig):
+    # Set up logger
     logger = setup_logger()
     logger.info(f"Running experiment with config: \n{pformat(config)}")
 
+    # Set up database
+    db = SteeringConfigDatabase()
+
     # Set up pipeline
-    model_name = get_model_name(config.use_base_model, config.model_size)
-    model, tokenizer = get_model_and_tokenizer(model_name)
+    model, tokenizer = get_model_and_tokenizer(config.model_name)
     formatter = get_formatter(config.formatter)
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
 
     # Set up train dataset
-    train_dataset = make_dataset(config.train_dataset_name, config.train_split_name)
+    train_dataset = make_dataset(config.train_dataset, config.train_split)
     steering_vector_training_data = build_steering_vector_training_data(
         pipeline, train_dataset, logger=logger
     )
 
-    # Extract activations
-    with EmptyTorchCUDACache():
-        pos_acts, neg_acts = extract_activations(
-            pipeline.model,
-            pipeline.tokenizer,
-            steering_vector_training_data,
-            show_progress=True,
-            move_to_cpu=True,
-        )
+    if get_activation_path(config.train_hash).exists():
+        logger.info(f"Activations already exist for {config}. Skipping.")
+        pos_acts, neg_acts = load_activation(config.train_hash)
 
-    # Compute concept metrics
-    concept_metrics = [
-        VarianceOfNormSimilarityMetric(),
-        EuclideanSimilarityMetric(),
-        CosineSimilarityMetric(),
-    ]
+    else:
+        # Extract activations
+        logging.info("Extracting activations.")
+        with EmptyTorchCUDACache():
+            pos_acts, neg_acts = extract_activations(
+                pipeline.model,
+                pipeline.tokenizer,
+                steering_vector_training_data,
+                layers=[config.layer],
+                layer_type=cast(LayerType, config.layer_type),
+                show_progress=True,
+                move_to_cpu=True,
+            )
+            pos_acts = pos_acts[config.layer]
+            neg_acts = neg_acts[config.layer]
+            save_activation(config.train_hash, pos_acts, neg_acts)
 
-    diff_vecs: dict[int, list[Tensor]] = {}
-    for layer in config.layers:
-        pos_act = pos_acts[layer]
-        neg_act = neg_acts[layer]
-        diff_vecs[layer] = compute_difference_vectors(pos_act, neg_act)
+        # Compute concept metrics
+        concept_metrics = [
+            VarianceOfNormSimilarityMetric(),
+            EuclideanSimilarityMetric(),
+            CosineSimilarityMetric(),
+        ]
+        diff_vecs = compute_difference_vectors(pos_acts, neg_acts)
 
-    for metric in concept_metrics:
-        metrics_dict = {}
-        for layer in config.layers:
-            metrics_dict[layer] = metric(diff_vecs[layer])
-        logger.debug(f"Metric {metric.name} | results: {pformat(metrics_dict)}")
-        save_metrics(config, metric.name, metrics_dict)
+        for metric in concept_metrics:
+            metric_val = metric(diff_vecs)
+            logger.debug(f"Metric {metric.name} | results: {metric_val}")
+            save_metric(config.train_hash, metric.name, metric_val)
 
     # Aggregate activations
     aggregator = get_aggregator(config.aggregator)
     with EmptyTorchCUDACache():
-        agg_acts = aggregate_activations(
-            pos_acts,
-            neg_acts,
-            aggregator,
-        )
+        direction_vec = aggregator(torch.concat(pos_acts), torch.concat(neg_acts))
         steering_vector = SteeringVector(
-            layer_activations=agg_acts,
-            # TODO: make config option?
-            layer_type="decoder_block",
+            layer_activations={config.layer: direction_vec},
+            layer_type=cast(LayerType, config.layer_type),
         )
 
     # Evaluate steering vector
     # We cache this part since it's the most time-consuming
-    if get_results_path(config).exists():
+    if get_result_path(config.eval_hash).exists():
         logger.info(f"Results already exist for {config}. Skipping.")
-        results = load_results(config)
+        result = load_result(config.eval_hash)
 
     else:
-        test_dataset = make_dataset(config.test_dataset_name, config.test_split_name)
+        test_dataset = make_dataset(config.test_dataset, config.test_split)
         with EmptyTorchCUDACache():
-            results = evaluate_steering_vector(
+            eval_results = evaluate_steering_vector(
                 pipeline=pipeline,
                 steering_vector=steering_vector,
                 dataset=test_dataset,
-                layers=config.layers,
-                multipliers=config.multipliers,
+                layers=[config.layer],
+                multipliers=[config.multiplier],
                 completion_template=config.test_completion_template,
                 patch_generation_tokens_only=config.patch_generation_tokens_only,
                 skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
                 logger=logger,
             )
-        save_results(config, results)
+            assert len(eval_results) == 1, "Expected one result"
+            eval_result = eval_results[0]
+            result = SteeringResult(
+                config_hash=config.eval_hash,
+                mcq_acc=eval_result.metrics["mcq_acc"],
+                logit_diff=eval_result.metrics["logit_diff"],
+                pos_prob=eval_result.metrics["pos_prob"],
+            )
 
-    # Compute steering metrics
-    metrics_dict = steering_efficiency(results)
-    save_metrics(config, "steering_efficiency", metrics_dict)
+        save_result(config.eval_hash, result)
+
+    # Add config to database when all completed.
+    db.insert_row(config)
 
 
 if __name__ == "__main__":
@@ -173,4 +174,3 @@ if __name__ == "__main__":
 
     config = simple_parsing.parse(config_class=SteeringConfig, add_config_path_arg=True)
     run_experiment(config)
-    run_plot_results(config)
