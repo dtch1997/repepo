@@ -6,6 +6,7 @@ python repepo/steering/run_experiment.py --config_path repepo/experiments/config
 
 import matplotlib.pyplot as plt
 import logging
+import collections
 import sys
 
 from pprint import pformat
@@ -19,12 +20,20 @@ from repepo.steering.utils.helpers import (
     make_dataset,
     save_results,
     load_results,
+    save_metrics,
     get_results_path,
 )
 
 from repepo.steering.build_steering_training_data import (
     build_steering_vector_training_data,
 )
+from repepo.steering.concept_metrics import (
+    VarianceOfNormSimilarityMetric,
+    EuclideanSimilarityMetric,
+    CosineSimilarityMetric,
+    compute_difference_vectors,
+)
+
 from steering_vectors.train_steering_vector import (
     extract_activations,
     aggregate_activations,
@@ -71,10 +80,6 @@ def run_experiment(config: SteeringConfig):
     logger = setup_logger()
     logger.info(f"Running experiment with config: \n{pformat(config)}")
 
-    if get_results_path(config).exists():
-        logger.info(f"Results already exist for {config}. Skipping.")
-        return
-
     # Set up pipeline
     model_name = get_model_name(config.use_base_model, config.model_size)
     model, tokenizer = get_model_and_tokenizer(model_name)
@@ -97,7 +102,21 @@ def run_experiment(config: SteeringConfig):
             move_to_cpu=True,
         )
 
-    # TODO: compute intermediate metrics
+    # Compute concept metrics
+    concept_metrics = [
+        VarianceOfNormSimilarityMetric(),
+        EuclideanSimilarityMetric(),
+        CosineSimilarityMetric(),
+    ]
+    metrics_dict: dict[int, dict[str, float]] = collections.defaultdict(dict)
+    for layer in config.layers:
+        pos_act = pos_acts[layer]
+        neg_act = neg_acts[layer]
+        diff_vecs = compute_difference_vectors(pos_act, neg_act)
+        for metric in concept_metrics:
+            metric_val = metric(diff_vecs)
+            metrics_dict[layer][metric.name] = metric_val
+    save_metrics(config, metrics_dict)
 
     # Aggregate activations
     aggregator = get_aggregator(config.aggregator)
@@ -114,6 +133,10 @@ def run_experiment(config: SteeringConfig):
         )
 
     # Evaluate steering vector
+    if get_results_path(config).exists():
+        logger.info(f"Results already exist for {config}. Skipping.")
+        return
+
     test_dataset = make_dataset(config.test_dataset_name, config.test_split_name)
     with EmptyTorchCUDACache():
         results = evaluate_steering_vector(
@@ -125,8 +148,6 @@ def run_experiment(config: SteeringConfig):
             completion_template=config.test_completion_template,
             logger=logger,
         )
-
-    # Save results
     save_results(config, results)
 
 

@@ -6,7 +6,7 @@ import pandas as pd
 import gc
 import hashlib
 
-from typing import cast, Hashable, Literal
+from typing import cast, Literal
 from dataclasses import dataclass
 from pyrallis import field
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -189,28 +189,28 @@ def save_concept_vectors(
 
 def save_metrics(
     config: SteeringConfig,
-    metric_name: str,
-    metrics: dict[Hashable, float],
+    metrics: dict[int, dict[str, float]],
 ):
+    """Save layer-wise metrics for a given config."""
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     metrics_save_dir = experiment_path / "metrics"
     metrics_save_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
         metrics,
-        metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt",
+        metrics_save_dir / f"metrics_{result_save_suffix}.pt",
     )
 
 
 def load_metrics(
     config: SteeringConfig,
     metric_name: str,
-) -> LayerwiseMetricsDict:
-    """Load layer-wise metrics for a given metric_name and config."""
+) -> dict[int, dict[str, float]]:
+    """Load layer-wise metrics for a given config."""
     experiment_path = get_experiment_path()
     result_save_suffix = config.make_save_suffix()
     metrics_save_dir = experiment_path / "metrics"
-    return torch.load(metrics_save_dir / f"{metric_name}_{result_save_suffix}.pt")
+    return torch.load(metrics_save_dir / f"metrics_{result_save_suffix}.pt")
 
 
 def load_concept_vectors(
@@ -227,9 +227,11 @@ def load_concept_vectors(
 class SteeringResult:
     layer_id: int
     multiplier: float
+    # steering vector metrics
     mcq_acc: float
     logit_diff: float
     pos_prob: float
+    # 'conceptness' metrics?
 
 
 def save_results(
