@@ -2,6 +2,64 @@
 
 
 
+## v0.3.0 (2024-03-07)
+
+### Feature
+
+* feat: steering experiments (#132)
+
+* Add experimental code
+
+* fix: make_country_capital script
+
+* feat: add code to run steering experiment
+
+* update experiments code
+
+* fix: add --config_path arg
+
+* fix: config yaml parsing
+
+* chore: add more configs
+
+* chore: add even more configs
+
+* refactor: plotting
+
+* feat: add script to run sweep
+
+* fix: do not set completion template by default
+
+* refactor sweeps
+
+* refactor: token concept sweep
+
+* fix: bugbears
+
+* chore: add comments
+
+* fix: steering_index of datasets
+
+* test: steering token index
+
+* updating steering_vectors library version
+
+* evaluate on more layers
+
+* refactor: use steering-vectors code, log instead of print
+
+* chore: fix docstring
+
+* test: training, evaluating steering vectors
+
+* fix: minor
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt;
+Co-authored-by: David Chanin &lt;chanindav@gmail.com&gt; ([`8d1bd7d`](https://github.com/dtch1997/repepo/commit/8d1bd7da1160df267f0425fc4e0d7ec039a7c2be))
+
+
 ## v0.2.0 (2024-03-06)
 
 ### Feature
