@@ -4,6 +4,18 @@ from repepo.steering.utils.helpers import SteeringConfig, load_results
 from repepo.steering.plot_results_by_layer import plot_results_by_layer
 
 
+def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
+    """Find the fields which are swept over"""
+    # For each field, construct a set of all values present in configs
+    # Only fields which have more than 1 value are swept over
+    sweep_variables = []
+    for field in SteeringConfig.__dataclass_fields__.keys():
+        values = set([getattr(config, field) for config in configs])
+        if len(values) > 1:
+            sweep_variables.append(field)
+    return sweep_variables
+
+
 def run_sweep(configs: list[SteeringConfig], suffix=""):
     for config in configs:
         run_experiment(config)

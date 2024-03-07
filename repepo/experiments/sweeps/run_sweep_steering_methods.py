@@ -3,13 +3,12 @@ from repepo.steering.utils.helpers import SteeringConfig
 
 
 def list_configs():
-    datasets = [
-        "D02 [un+adj_reg]",
-        "D07 [verb+able_reg]",
-        "E01 [country - capital]",
-        "E06 [animal - young]",
-        "I01 [noun - plural_reg]",
-        "I07 [verb_inf - Ved]",
+    dataset_name = "desire-for-recursive-self-improvement"
+    aggregators = [
+        "mean",
+        "logistic",
+        "pca",
+        # TODO: gradient
     ]
 
     return [
@@ -19,13 +18,13 @@ def list_configs():
             train_dataset_name=dataset_name,
             train_split_name="train-dev",
             formatter="identity-formatter",
-            aggregator="mean",
-            layers=[0, 13, 31],
+            aggregator=aggregator,
+            layers=[0, 11, 12, 13, 14, 15, 31],
             multipliers=[-1, -0.5, 0, 0.5, 1],
             test_dataset_name=dataset_name,
             test_split_name="val-dev",
         )
-        for dataset_name in datasets
+        for aggregator in aggregators
     ]
 
 
