@@ -4,6 +4,7 @@ import torch
 import pandas as pd
 import gc
 import json
+import pickle
 import hashlib
 
 from dataclasses import dataclass, asdict
@@ -12,6 +13,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import BitsAndBytesConfig
 from repepo.core.types import Example
 from repepo.core.format import Formatter
+from repepo.core.evaluate import EvalResult
 from repepo.data.make_dataset import (
     DatasetSpec,
     make_dataset as _make_dataset,
@@ -142,6 +144,27 @@ class SteeringResult:
 def get_result_path(experiment_hash: str) -> pathlib.Path:
     experiment_path = get_experiment_path(experiment_hash=experiment_hash)
     return experiment_path / "result.json"
+
+
+def get_eval_result_path(experiment_hash: str):
+    return get_experiment_path(experiment_hash) / "eval_result.pickle"
+
+
+def save_eval_result(
+    experiment_hash: str,
+    result: EvalResult,
+):
+    # NOTE: json.dump doesn't work for nested dataclasses
+    with open(get_eval_result_path(experiment_hash), "wb") as f:
+        pickle.dump(result, f)
+
+
+def load_eval_result(
+    experiment_hash: str,
+) -> EvalResult:
+    # NOTE: json.load doesn't work for nested dataclasses
+    with open(get_eval_result_path(experiment_hash), "rb") as f:
+        return pickle.load(f)
 
 
 def save_result(

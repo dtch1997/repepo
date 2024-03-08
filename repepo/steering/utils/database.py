@@ -66,7 +66,7 @@ class SteeringConfigDatabase:
         self.con.commit()
         self.db_path.unlink()
 
-    def insert_row(self, config: SteeringConfig):
+    def insert_config(self, config: SteeringConfig):
         insert_command = f"""
         INSERT INTO {self.name} (train_hash, eval_hash, model_name, train_dataset, train_split, train_completion_template, test_dataset, test_split, test_completion_template, formatter, aggregator, layer, layer_type, multiplier, patch_generation_tokens_only, skip_first_n_generation_tokens)
         VALUES ('{config.train_hash}', '{config.eval_hash}', '{config.model_name}', '{config.train_dataset}', '{config.train_split}', '{config.train_completion_template}', '{config.test_dataset}', '{config.test_split}', '{config.test_completion_template}', '{config.formatter}', '{config.aggregator}', '{config.layer}', '{config.layer_type}', '{config.multiplier}', '{config.patch_generation_tokens_only}', '{config.skip_first_n_generation_tokens}')
@@ -93,3 +93,9 @@ class SteeringConfigDatabase:
             patch_generation_tokens_only=bool(row[14]),
             skip_first_n_generation_tokens=row[15],
         )
+
+    def contains_config(self, config: SteeringConfig) -> bool:
+        self.cur.execute(
+            f"SELECT * FROM {self.name} WHERE eval_hash='{config.eval_hash}'"
+        )
+        return bool(self.cur.fetchone())

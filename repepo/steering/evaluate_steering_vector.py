@@ -65,11 +65,12 @@ def evaluate_steering_vector(
             )
             results.append(result)
             if logger is not None:
+                metrics_info_str = ""
+                for metric, value in result.metrics.items():
+                    metrics_info_str += f"{metric} {value:.2f} "
                 logger.info(
                     f"Layer {layer_id}, multiplier {multiplier:.2f}: "
-                    f"MCQ Accuracy {result.metrics['mcq_acc']:.2f} "
-                    f"Positive Prob {result.metrics['pos_prob']:.2f} "
-                    f"Logit Diff {result.metrics['logit_diff']:.2f} "
+                    + metrics_info_str
                 )
 
     pipeline.hooks.clear()

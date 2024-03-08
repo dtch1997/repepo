@@ -14,14 +14,13 @@ from pprint import pformat
 from repepo.core.pipeline import Pipeline
 from repepo.steering.utils.helpers import (
     SteeringConfig,
-    SteeringResult,
     EmptyTorchCUDACache,
     get_model_and_tokenizer,
     get_formatter,
     make_dataset,
-    get_result_path,
-    save_result,
-    load_result,
+    get_eval_result_path,
+    save_eval_result,
+    load_eval_result,
     get_activation_path,
     save_activation,
     load_activation,
@@ -72,7 +71,7 @@ def setup_logger() -> logging.Logger:
     return logger
 
 
-def run_experiment(config: SteeringConfig):
+def run_experiment(config: SteeringConfig, force_rerun: bool = False):
     # Set up logger
     logger = setup_logger()
     logger.info(f"Running experiment with config: \n{pformat(config)}")
@@ -80,7 +79,12 @@ def run_experiment(config: SteeringConfig):
     # Set up database
     db = SteeringConfigDatabase()
     logger.info("Database contains {} entries".format(len(db)))
-    db.insert_row(config)
+
+    # Insert config into database if it doesn't exist
+    if db.contains_config(config):
+        logger.info(f"Config {config} already exists in database.")
+    else:
+        db.insert_config(config)
 
     # Set up pipeline
     model, tokenizer = get_model_and_tokenizer(config.model_name)
@@ -93,7 +97,7 @@ def run_experiment(config: SteeringConfig):
         pipeline, train_dataset, logger=logger
     )
 
-    if get_activation_path(config.train_hash).exists():
+    if get_activation_path(config.train_hash).exists() and not force_rerun:
         logger.info(f"Activations already exist for {config}. Skipping.")
         pos_acts, neg_acts = load_activation(config.train_hash)
 
@@ -138,9 +142,9 @@ def run_experiment(config: SteeringConfig):
 
     # Evaluate steering vector
     # We cache this part since it's the most time-consuming
-    if get_result_path(config.eval_hash).exists():
+    if get_eval_result_path(config.eval_hash).exists() and not force_rerun:
         logger.info(f"Results already exist for {config}. Skipping.")
-        result = load_result(config.eval_hash)
+        eval_result = load_eval_result(config.eval_hash)
 
     else:
         test_dataset = make_dataset(config.test_dataset, config.test_split)
@@ -158,18 +162,16 @@ def run_experiment(config: SteeringConfig):
             )
             assert len(eval_results) == 1, "Expected one result"
             eval_result = eval_results[0]
-            result = SteeringResult(
-                config_hash=config.eval_hash,
-                mcq_acc=eval_result.metrics["mcq_acc"],
-                logit_diff=eval_result.metrics["logit_diff"],
-                pos_prob=eval_result.metrics["pos_prob"],
-            )
-
-        save_result(config.eval_hash, result)
+            save_eval_result(config.eval_hash, eval_result)
 
 
 if __name__ == "__main__":
     import simple_parsing
 
-    config = simple_parsing.parse(config_class=SteeringConfig, add_config_path_arg=True)
-    run_experiment(config)
+    parser = simple_parsing.ArgumentParser(add_config_path_arg=True)
+
+    parser.add_arguments(SteeringConfig, dest="config")
+    parser.add_argument("--force_rerun", action="store_true")
+    args = parser.parse_args()
+    config = args.config
+    run_experiment(config, force_rerun=args.force_rerun)
