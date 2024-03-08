@@ -7,7 +7,7 @@ import json
 import pickle
 import hashlib
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from transformers import BitsAndBytesConfig
@@ -143,13 +143,8 @@ class SteeringResult:
     pos_prob: float
 
 
-def get_result_path(experiment_hash: str) -> pathlib.Path:
-    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
-    return experiment_path / "result.json"
-
-
 def get_eval_result_path(experiment_hash: str):
-    return get_experiment_path(experiment_hash) / "eval_result.pickle"
+    return get_experiment_path(experiment_hash=experiment_hash) / "eval_result.pickle"
 
 
 def save_eval_result(
@@ -167,21 +162,6 @@ def load_eval_result(
     # NOTE: json.load doesn't work for nested dataclasses
     with open(get_eval_result_path(experiment_hash), "rb") as f:
         return pickle.load(f)
-
-
-def save_result(
-    experiment_hash: str,
-    result: SteeringResult,
-):
-    with open(get_result_path(experiment_hash), "w") as f:
-        json.dump(asdict(result), f)
-
-
-def load_result(
-    experiment_hash: str,
-) -> SteeringResult:
-    with open(get_result_path(experiment_hash), "r") as f:
-        return SteeringResult(**json.load(f))
 
 
 def get_activation_path(experiment_hash: str) -> pathlib.Path:
