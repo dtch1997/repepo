@@ -18,6 +18,7 @@ from repepo.steering.utils.helpers import (
     get_model_and_tokenizer,
     get_formatter,
     make_dataset,
+    get_experiment_path,
     get_eval_result_path,
     save_eval_result,
     load_eval_result,
@@ -51,14 +52,30 @@ from repepo.steering.evaluate_steering_vector import (
 )
 
 
+def get_logging_level_from_str(logging_level: str) -> int:
+    if logging_level == "INFO":
+        return logging.INFO
+    elif logging_level == "DEBUG":
+        return logging.DEBUG
+    elif logging_level == "WARNING":
+        return logging.WARNING
+    elif logging_level == "ERROR":
+        return logging.ERROR
+    else:
+        raise ValueError(f"Invalid logging level: {logging_level}")
+
+
 # Cache to avoid adding multiple handlers to the logger
 @functools.lru_cache(1)
-def setup_logger() -> logging.Logger:
+def setup_logger(logging_level_str: str = "INFO") -> logging.Logger:
     logger = logging.getLogger(__name__)
+    logging_level = get_logging_level_from_str(logging_level_str)
     logger.setLevel(logging.DEBUG)
+
     # print to stdout
     handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
+    handler.setLevel(logging_level)
+
     # Create a formatter and set it for the handler
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -71,13 +88,19 @@ def setup_logger() -> logging.Logger:
     return logger
 
 
-def run_experiment(config: SteeringConfig, force_rerun: bool = False):
+def run_experiment(
+    config: SteeringConfig,
+    force_rerun: bool = False,
+    logging_level: str = "INFO",
+):
     # Set up logger
-    logger = setup_logger()
+    logger = setup_logger(logging_level)
     logger.info(f"Running experiment with config: \n{pformat(config)}")
 
     # Set up database
-    db = SteeringConfigDatabase()
+    # NOTE: get_experiment_path().parent = '.../experiments'
+    db_path = get_experiment_path().parent / "steering_config.sqlite"
+    db = SteeringConfigDatabase(db_path=db_path)
     logger.info("Database contains {} entries".format(len(db)))
 
     # Insert config into database if it doesn't exist
@@ -172,6 +195,9 @@ if __name__ == "__main__":
 
     parser.add_arguments(SteeringConfig, dest="config")
     parser.add_argument("--force_rerun", action="store_true")
+    parser.add_argument("--logging_level", type=str, default="INFO")
     args = parser.parse_args()
     config = args.config
-    run_experiment(config, force_rerun=args.force_rerun)
+    run_experiment(
+        config, force_rerun=args.force_rerun, logging_level=args.logging_level
+    )

@@ -35,7 +35,7 @@ def build_steering_vector_training_data(
     if logger is not None:
         # Log first example
         datum = steering_vector_training_data[0]
-        logger.info(f"Positive example: \n {datum.positive_str}")
-        logger.info(f"Negative example: \n {datum.negative_str}")
+        logger.debug(f"Positive example: \n {datum.positive_str}")
+        logger.debug(f"Negative example: \n {datum.negative_str}")
 
     return steering_vector_training_data

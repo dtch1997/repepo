@@ -127,7 +127,9 @@ def get_experiment_path(
     experiment_suite: str = experiment_suite,
     experiment_hash: str | None = None,
 ) -> pathlib.Path:
-    path = WORK_DIR / experiment_suite / (experiment_hash or "default")
+    path = WORK_DIR / experiment_suite
+    if experiment_hash:
+        path = path / experiment_hash
     path.mkdir(parents=True, exist_ok=True)
     return path
 

@@ -1,3 +1,5 @@
+import os
+
 from dataclasses import fields
 from repepo.steering.run_experiment import run_experiment
 from repepo.steering.utils.helpers import (
@@ -5,6 +7,8 @@ from repepo.steering.utils.helpers import (
     make_dataset,
     EmptyTorchCUDACache,
 )
+
+user_email = os.getenv("USER_EMAIL", "bot@repepo.dev")
 
 
 def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
@@ -21,8 +25,37 @@ def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
 
 def run_sweep(configs: list[SteeringConfig], sweep_name: str):
     for config in configs:
-        with EmptyTorchCUDACache():
-            run_experiment(config)
+        try:
+            with EmptyTorchCUDACache():
+                run_experiment(config)
+        except KeyboardInterrupt:  # noqa: E722
+            # Allow the user to interrupt the sweep
+            break
+        except Exception as e:
+            print(f"Failed to run experiment for config {config}")
+            print(f"Error: {e}")
+            # TODO: Send an email
+            # Need to set up a Gmail account for this
+            # Reference: https://stackoverflow.com/questions/778202/smtplib-and-gmail-python-script-problems
+
+            # smtp = smtplib.SMTP('localhost')
+            # sender = "bot@repepo.dev"
+            # receivers = [user_email]
+            # message = dedent(
+            #     f"""
+            #     From: repepo bot
+            #     Subject: Experiment failed
+
+            #     Sweep name: {sweep_name}
+            #     Config: {pprint.pformat(config)}
+            #     """
+            # )
+            # try:
+            #     smtp.sendmail(sender, receivers, message)
+            # except:
+            #     # Fail gracefully
+            #     print("Failed to send email")
+            continue
 
 
 def test_dataset_exists(configs: list[SteeringConfig]):

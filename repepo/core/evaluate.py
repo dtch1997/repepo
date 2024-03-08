@@ -226,7 +226,7 @@ def evaluate(
             tqdm(dataset, disable=not show_progress, desc=tqdm_desc)
         ):
             if logger is not None and i == 0:
-                logger.info(
+                logger.debug(
                     f"Example full prompt: \n {pipeline.build_full_prompt(example.positive)}"
                 )
             positive_probs = pipeline.calculate_output_logprobs(example.positive)
