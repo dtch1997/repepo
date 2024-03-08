@@ -29,6 +29,14 @@ def test_insert_row():
     db.delete_table()
 
 
+def test_get_config_by_eval_hash():
+    db = SteeringConfigDatabase(name="TestTable", db_path="test_db.sqlite")
+    config = SteeringConfig()
+    db.insert_row(config)
+    assert db.get_config_by_eval_hash(config.eval_hash) == config
+    db.delete_table()
+
+
 def test_persistence():
     """Test that entries remain in the database after database is closed and reopened"""
     db = SteeringConfigDatabase(name="TestTable", db_path="test_db.sqlite")

@@ -1,12 +1,19 @@
 import sqlite3
+import pathlib
 from repepo.steering.utils.helpers import SteeringConfig
 
 
 class SteeringConfigDatabase:
     """Database for storing steering configurations and save paths"""
 
-    def __init__(self, name="SteeringConfig", db_path: str = "steering_config.sqlite"):
+    def __init__(
+        self,
+        name="SteeringConfig",
+        db_path: pathlib.Path | str = "steering_config.sqlite",
+    ):
         self.name = name
+        if isinstance(db_path, str):
+            db_path = pathlib.Path(db_path)
         self.db_path = db_path
         self.con = sqlite3.connect(self.db_path)
         self.cur = self.con.cursor()
@@ -57,6 +64,7 @@ class SteeringConfigDatabase:
     def delete_table(self):
         self.cur.execute(f"DROP TABLE {self.name}")
         self.con.commit()
+        self.db_path.unlink()
 
     def insert_row(self, config: SteeringConfig):
         insert_command = f"""
@@ -65,3 +73,23 @@ class SteeringConfigDatabase:
         """
         self.cur.execute(insert_command)
         self.con.commit()
+
+    def get_config_by_eval_hash(self, eval_hash: str) -> SteeringConfig:
+        self.cur.execute(f"SELECT * FROM {self.name} WHERE eval_hash='{eval_hash}'")
+        row = self.cur.fetchone()
+        return SteeringConfig(
+            model_name=row[2],
+            train_dataset=row[3],
+            train_split=row[4],
+            train_completion_template=row[5],
+            formatter=row[6],
+            aggregator=row[7],
+            test_dataset=row[8],
+            test_split=row[9],
+            test_completion_template=row[10],
+            layer=row[11],
+            layer_type=row[12],
+            multiplier=row[13],
+            patch_generation_tokens_only=bool(row[14]),
+            skip_first_n_generation_tokens=row[15],
+        )
