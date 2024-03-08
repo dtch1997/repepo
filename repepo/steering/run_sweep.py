@@ -24,6 +24,7 @@ def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
 
 
 def run_sweep(configs: list[SteeringConfig], sweep_name: str):
+    print(f"Running on {len(configs)} configs")
     for config in configs:
         try:
             with EmptyTorchCUDACache():
