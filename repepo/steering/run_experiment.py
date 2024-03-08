@@ -79,6 +79,8 @@ def run_experiment(config: SteeringConfig):
 
     # Set up database
     db = SteeringConfigDatabase()
+    logger.info("Database contains {} entries".format(len(db)))
+    db.insert_row(config)
 
     # Set up pipeline
     model, tokenizer = get_model_and_tokenizer(config.model_name)
@@ -164,9 +166,6 @@ def run_experiment(config: SteeringConfig):
             )
 
         save_result(config.eval_hash, result)
-
-    # Add config to database when all completed.
-    db.insert_row(config)
 
 
 if __name__ == "__main__":

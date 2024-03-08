@@ -1,6 +1,10 @@
 from dataclasses import fields
 from repepo.steering.run_experiment import run_experiment
-from repepo.steering.utils.helpers import SteeringConfig, make_dataset
+from repepo.steering.utils.helpers import (
+    SteeringConfig,
+    make_dataset,
+    EmptyTorchCUDACache,
+)
 
 
 def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
@@ -17,7 +21,8 @@ def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
 
 def run_sweep(configs: list[SteeringConfig], sweep_name: str):
     for config in configs:
-        run_experiment(config)
+        with EmptyTorchCUDACache():
+            run_experiment(config)
 
 
 def test_dataset_exists(configs: list[SteeringConfig]):
