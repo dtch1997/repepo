@@ -3,43 +3,36 @@
 import itertools
 
 from repepo.steering.run_sweep import run_sweep, test_dataset_exists
-from repepo.steering.utils.helpers import SteeringConfig
+from repepo.steering.sweeps.constants import (
+    ALL_ABSTRACT_CONCEPT_DATASETS as abstract_datasets,
+    ALL_TOKEN_CONCEPT_DATASETS as token_datasets,
+    ALL_MULTIPLIERS as multipliers,
+)
+from repepo.steering.sweeps.configs import (
+    get_abstract_concept_config,
+    get_token_concept_config,
+)
 
 layers = [13]
-multipliers = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
-datasets = [
-    # persona
-    "anti-immigration",
-    "believes-abortion-should-be-illegal",
-    "conscientiousness",
-    "desire-for-acquiring-compute",
-    "risk-seeking",
-    "openness",
-    "self-replication",
-    "very-small-harm-justifies-very-large-benefit",
-    # xrisk
-    "corrigible-neutral-HHH",
-    "myopic-reward",
-    "power-seeking-inclination",
-    # sycophancy
-    "sycophancy_train",
-]
 
 
 def iter_configs():
-    for dataset, layer, multiplier in itertools.product(datasets, layers, multipliers):
-        yield SteeringConfig(
-            train_dataset=dataset,
-            train_split="0%:40%",
-            formatter="llama-chat-formatter",
-            layer=layer,
-            multiplier=multiplier,
-            test_dataset=dataset,
-            test_split="40%:50%",
-            test_completion_template="{prompt} My answer is: {response}",
-            patch_generation_tokens_only=True,
-            skip_first_n_generation_tokens=1,
-        )
+    for dataset, layer, multiplier in itertools.product(
+        abstract_datasets, layers, multipliers
+    ):
+        yield get_abstract_concept_config(dataset, layer, multiplier)
+
+    for dataset, layer, multiplier in itertools.product(
+        token_datasets, layers, multipliers
+    ):
+        yield get_token_concept_config(dataset, layer, multiplier)
+
+
+def iter_datasets():
+    for dataset in abstract_datasets:
+        yield dataset
+    for dataset in token_datasets:
+        yield dataset
 
 
 if __name__ == "__main__":

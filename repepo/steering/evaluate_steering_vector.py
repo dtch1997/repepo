@@ -27,6 +27,11 @@ def evaluate_steering_vector(
     skip_first_n_generation_tokens: int = 0,
     completion_template: str | None = None,
     logger: logging.Logger | None = None,
+    evaluators: list = [
+        MultipleChoiceAccuracyEvaluator(),
+        LogitDifferenceEvaluator(),
+        NormalizedPositiveProbabilityEvaluator(),
+    ],
 ) -> list[EvalResult]:
     results = []
 
@@ -56,11 +61,7 @@ def evaluate_steering_vector(
                 pipeline,
                 dataset,
                 eval_hooks=eval_hooks,
-                evaluators=[
-                    MultipleChoiceAccuracyEvaluator(),
-                    LogitDifferenceEvaluator(),
-                    NormalizedPositiveProbabilityEvaluator(),
-                ],
+                evaluators=evaluators,
                 logger=logger,
             )
             results.append(result)

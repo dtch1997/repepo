@@ -125,10 +125,15 @@ class Evaluator(ABC):
         pred_results = [self.score_prediction(pred) for pred in predictions]
         # Compute mean, stdev of metric
 
-        return {
-            f"mean_{self.get_metric_name()}": mean(pred_results),
-            f"std_{self.get_metric_name()}": stdev(pred_results),
-        }
+        metric = {}
+        metric[f"mean_{self.get_metric_name()}"] = mean(pred_results)
+
+        try:
+            metric[f"std_{self.get_metric_name()}"] = stdev(pred_results)
+        except Exception as _:
+            pass
+
+        return metric
 
 
 class MultipleChoiceAccuracyEvaluator(Evaluator):
