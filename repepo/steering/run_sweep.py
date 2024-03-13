@@ -1,11 +1,13 @@
 import os
 
 from dataclasses import fields
+from repepo.core.evaluate import EvalResult
 from repepo.steering.run_experiment import run_experiment
 from repepo.steering.utils.helpers import (
     SteeringConfig,
     make_dataset,
     EmptyTorchCUDACache,
+    load_eval_result,
 )
 
 user_email = os.getenv("USER_EMAIL", "bot@repepo.dev")
@@ -23,7 +25,14 @@ def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
     return sweep_variables
 
 
-def run_sweep(configs: list[SteeringConfig], sweep_name: str):
+def load_sweep_results(
+    configs: list[SteeringConfig],
+) -> list[tuple[SteeringConfig, EvalResult]]:
+    results = [(config, load_eval_result(config.eval_hash)) for config in configs]
+    return results
+
+
+def run_sweep(configs: list[SteeringConfig], sweep_name: str = ""):
     print(f"Running on {len(configs)} configs")
     for config in configs:
         try:
