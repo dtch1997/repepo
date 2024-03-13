@@ -125,7 +125,7 @@ class Evaluator(ABC):
         pred_results = [self.score_prediction(pred) for pred in predictions]
         # Compute mean, stdev of metric
 
-        metric = {}
+        metric: dict[str, float] = {}
         metric[f"mean_{self.get_metric_name()}"] = mean(pred_results)
 
         try:
