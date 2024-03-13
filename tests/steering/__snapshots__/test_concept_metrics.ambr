@@ -1,0 +1,10 @@
+# serializer version: 1
+# name: test_cosine_similarity_metric
+  0.9873158931732178
+# ---
+# name: test_euclidean_similarity_metric
+  -0.41514015367596296
+# ---
+# name: test_variance_of_norm_similarity_metric
+  -2.0240427367508826
+# ---

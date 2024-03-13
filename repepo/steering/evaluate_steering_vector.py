@@ -1,6 +1,6 @@
 import logging
 
-from repepo.steering.utils.helpers import SteeringResult
+
 from repepo.core.types import Dataset
 from repepo.core.pipeline import Pipeline
 from repepo.core.evaluate import (
@@ -11,6 +11,7 @@ from repepo.core.evaluate import (
     MultipleChoiceAccuracyEvaluator,
     LogitDifferenceEvaluator,
     NormalizedPositiveProbabilityEvaluator,
+    EvalResult,
 )
 from repepo.core.hook import SteeringHook
 from steering_vectors import SteeringVector, guess_and_enhance_layer_config
@@ -26,7 +27,12 @@ def evaluate_steering_vector(
     skip_first_n_generation_tokens: int = 0,
     completion_template: str | None = None,
     logger: logging.Logger | None = None,
-) -> list[SteeringResult]:
+    evaluators: list = [
+        MultipleChoiceAccuracyEvaluator(),
+        LogitDifferenceEvaluator(),
+        NormalizedPositiveProbabilityEvaluator(),
+    ],
+) -> list[EvalResult]:
     results = []
 
     # Create steering hook and add it to pipeline
@@ -55,28 +61,19 @@ def evaluate_steering_vector(
                 pipeline,
                 dataset,
                 eval_hooks=eval_hooks,
-                evaluators=[
-                    MultipleChoiceAccuracyEvaluator(),
-                    LogitDifferenceEvaluator(),
-                    NormalizedPositiveProbabilityEvaluator(),
-                ],
+                evaluators=evaluators,
                 logger=logger,
-            )
-
-            result = SteeringResult(
-                layer_id=layer_id,
-                multiplier=multiplier,
-                mcq_acc=result.metrics["mcq_acc"],
-                logit_diff=result.metrics["logit_diff"],
-                pos_prob=result.metrics["pos_prob"],
             )
             results.append(result)
             if logger is not None:
+                metrics_info_str = ""
+                for metric, value in result.metrics.items():
+                    metrics_info_str += f"{metric} {value:.2f} "
                 logger.info(
                     f"Layer {layer_id}, multiplier {multiplier:.2f}: "
-                    f"MCQ Accuracy {result.mcq_acc:.2f} "
-                    f"Positive Prob {result.pos_prob:.2f} "
-                    f"Logit Diff {result.logit_diff:.2f} "
+                    + metrics_info_str
                 )
+
+    pipeline.hooks.clear()
 
     return results

@@ -4,7 +4,7 @@
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from dataclasses import dataclass
-from statistics import mean
+from statistics import mean, stdev, StatisticsError
 from tqdm import tqdm
 from typing import Callable, Iterable, Sequence
 from repepo.core.hook import SteeringHook
@@ -96,14 +96,16 @@ def select_repe_layer_at_eval(layer: int) -> EvalHook:
 
 @dataclass
 class EvalPrediction:
-    example: Example
     positive_output_prob: TextProbs
     negative_output_prob: TextProbs
+    # Example-level metrics
+    metrics: dict[str, float]
 
 
 @dataclass
 class EvalResult:
     predictions: list[EvalPrediction]
+    # Dataset-level metrics; e.g. mean, stds of example-level metrics
     metrics: dict[str, float]
 
 
@@ -121,7 +123,19 @@ class Evaluator(ABC):
 
     def __call__(self, predictions: Sequence[EvalPrediction]) -> dict[str, float]:
         pred_results = [self.score_prediction(pred) for pred in predictions]
-        return {self.get_metric_name(): mean(pred_results)}
+        # Compute mean, stdev of metric
+
+        metric: dict[str, float] = {}
+        metric[f"mean_{self.get_metric_name()}"] = mean(pred_results)
+
+        # NOTE: In the case where pred_results only has one element,
+        # stdev will raise a StatisticsError. We handle this gracefully.
+        try:
+            metric[f"std_{self.get_metric_name()}"] = stdev(pred_results)
+        except StatisticsError as _:
+            pass
+
+        return metric
 
 
 class MultipleChoiceAccuracyEvaluator(Evaluator):
@@ -219,21 +233,28 @@ def evaluate(
             tqdm(dataset, disable=not show_progress, desc=tqdm_desc)
         ):
             if logger is not None and i == 0:
-                logger.info(
+                logger.debug(
                     f"Example full prompt: \n {pipeline.build_full_prompt(example.positive)}"
                 )
             positive_probs = pipeline.calculate_output_logprobs(example.positive)
             negative_probs = pipeline.calculate_output_logprobs(example.negative)
 
-            predictions.append(
-                EvalPrediction(
-                    example=example,
-                    positive_output_prob=positive_probs,
-                    negative_output_prob=negative_probs,
-                )
+            pred = EvalPrediction(
+                positive_output_prob=positive_probs,
+                negative_output_prob=negative_probs,
+                metrics={},
             )
-        metrics: dict[str, float] = {}
+            example_metrics = {}
+            for evaluator in evaluators:
+                example_metrics[
+                    evaluator.get_metric_name()
+                ] = evaluator.score_prediction(pred)
+            pred.metrics = example_metrics
+
+            predictions.append(pred)
+
+        dataset_metrics: dict[str, float] = {}
         for evaluator in evaluators:
-            metrics.update(evaluator(predictions))
-        return EvalResult(predictions, metrics)
+            dataset_metrics.update(evaluator(predictions))
+        return EvalResult(predictions, dataset_metrics)
     raise RuntimeError("Should never get here")
