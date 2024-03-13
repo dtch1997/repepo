@@ -10,11 +10,11 @@ from repepo.steering.run_experiment import (
     build_steering_vector_training_data,
     extract_activations,
     get_aggregator,
-    aggregate_activations,
     SteeringVector,
 )
 
 from steering_vectors import guess_and_enhance_layer_config
+from steering_vectors.train_steering_vector import aggregate_activations
 
 from transformers import LlamaForCausalLM
 from tests._original_caa.llama_wrapper import LlamaWrapper

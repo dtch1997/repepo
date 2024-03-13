@@ -4,7 +4,7 @@
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from dataclasses import dataclass
-from statistics import mean, stdev
+from statistics import mean, stdev, StatisticsError
 from tqdm import tqdm
 from typing import Callable, Iterable, Sequence
 from repepo.core.hook import SteeringHook
@@ -128,9 +128,11 @@ class Evaluator(ABC):
         metric: dict[str, float] = {}
         metric[f"mean_{self.get_metric_name()}"] = mean(pred_results)
 
+        # NOTE: In the case where pred_results only has one element,
+        # stdev will raise a StatisticsError. We handle this gracefully.
         try:
             metric[f"std_{self.get_metric_name()}"] = stdev(pred_results)
-        except Exception as _:
+        except StatisticsError as _:
             pass
 
         return metric

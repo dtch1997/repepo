@@ -107,9 +107,9 @@ def test_MultipleChoiceAccuracyEvaluator_score_prediction() -> None:
     example = Example(positive=positive_completion, negative=negative_completion)
 
     eval_prediction = EvalPrediction(
-        example=example,
         positive_output_prob=positive_text_probs,
         negative_output_prob=negative_text_probs,
+        metrics={},
     )
     evaluator = MultipleChoiceAccuracyEvaluator()
     eval_result = evaluator.score_prediction(eval_prediction)
@@ -136,9 +136,9 @@ def test_LogitDifferenceEvaluator_score_prediction() -> None:
     example = Example(positive=positive_completion, negative=negative_completion)
 
     eval_prediction = EvalPrediction(
-        example=example,
         positive_output_prob=positive_text_probs,
         negative_output_prob=negative_text_probs,
+        metrics={},
     )
     evaluator = LogitDifferenceEvaluator()
     eval_result = evaluator.score_prediction(eval_prediction)
@@ -165,9 +165,9 @@ def test_NormalizedPositiveProbabilityEvaluator_score_prediction() -> None:
     example = Example(positive=positive_completion, negative=negative_completion)
 
     eval_prediction = EvalPrediction(
-        example=example,
         positive_output_prob=positive_text_probs,
         negative_output_prob=negative_text_probs,
+        metrics={},
     )
     evaluator = NormalizedPositiveProbabilityEvaluator()
     eval_result = evaluator.score_prediction(eval_prediction)
