@@ -105,12 +105,19 @@ def run_persona_cross_steering_experiment(
     test_split: str,
     layer: int,
     normalize_steering_magnitude_to_baseline: bool = True,
+    show_progress: bool = True,
 ) -> PersonaCrossSteeringExperimentResult:
     steering_vectors: dict[str, SteeringVector] = {}
     test_ds = make_dataset(dataset_name, test_split)
     for persona in PERSONAS:
         steering_vectors[persona] = train_steering_vector_for_persona_and_dataset(
-            model, tokenizer, persona, dataset_name, train_split, layer
+            model,
+            tokenizer,
+            persona,
+            dataset_name,
+            train_split,
+            layer=layer,
+            show_progress=show_progress,
         )
     if normalize_steering_magnitude_to_baseline:
         base_magnitude = steering_vectors["baseline"].layer_activations[layer].norm()
@@ -126,6 +133,7 @@ def run_persona_cross_steering_experiment(
             model, tokenizer, cast(Persona, persona), dataset_name
         ),
         datasets={persona: test_ds for persona in PERSONAS},
+        show_progress=show_progress,
     )
     return PersonaCrossSteeringExperimentResult(
         dataset_name=dataset_name,
