@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, NamedTuple
 
 from steering_vectors import SteeringVector
+from tqdm import tqdm
 
 from repepo.core.evaluate import NormalizedPositiveProbabilityEvaluator, evaluate
 from repepo.core.format import LlamaChatFormatter
@@ -33,6 +34,7 @@ def evaluate_cross_steering(
     build_pipeline: Callable[[Model, Tokenizer, str], Any] | None = None,
     positive_multiplier: float = 1.0,
     negative_multiplier: float = -1.0,
+    show_progress: bool = True,
 ) -> CrossSteeringResult:
     if build_pipeline is None:
         build_pipeline = lambda model, tokenizer, _dataset_label: Pipeline(
@@ -47,6 +49,11 @@ def evaluate_cross_steering(
     baseline_results = []
     pos_steering = []
     neg_steering = []
+    pbar = tqdm(
+        total=len(dataset_labels) * len(steering_labels),
+        desc="Evaluating cross-steering",
+        disable=not show_progress,
+    )
     for dataset_label in dataset_labels:
         dataset_pos_steering = []
         dataset_neg_steering = []
@@ -56,6 +63,7 @@ def evaluate_cross_steering(
             pipeline,
             dataset,
             evaluators=[NormalizedPositiveProbabilityEvaluator()],
+            show_progress=False,
         )
         baseline_results.append(
             MetricVal(result.metrics["mean_pos_prob"], result.metrics["std_pos_prob"])
@@ -82,6 +90,7 @@ def evaluate_cross_steering(
                     pos_result.metrics["std_pos_prob"],
                 )
             )
+            pbar.update(1)
         pos_steering.append(dataset_pos_steering)
         neg_steering.append(dataset_neg_steering)
 

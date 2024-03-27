@@ -74,6 +74,7 @@ def train_steering_vector_for_persona_and_dataset(
     dataset_name: str,
     train_split: str,
     layer: int,
+    show_progress: bool = True,
 ) -> SteeringVector:
     train_dataset = make_dataset(dataset_name, train_split)
     pipeline = persona_pipeline(model, tokenizer, persona, dataset_name)
@@ -81,7 +82,11 @@ def train_steering_vector_for_persona_and_dataset(
         pipeline, train_dataset
     )
     return train_steering_vector(
-        model, tokenizer, steering_vector_training_data, layers=[layer]
+        model,
+        tokenizer,
+        steering_vector_training_data,
+        layers=[layer],
+        show_progress=show_progress,
     )
 
 
