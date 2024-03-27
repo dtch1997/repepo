@@ -77,6 +77,7 @@ def evaluate_cross_steering(
                 layers=[layer],
                 multipliers=[negative_multiplier, positive_multiplier],
                 evaluators=[NormalizedPositiveProbabilityEvaluator()],
+                show_progress=False,
             )
             dataset_neg_steering.append(
                 MetricVal(
