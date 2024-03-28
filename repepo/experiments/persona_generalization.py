@@ -106,6 +106,9 @@ def run_persona_cross_steering_experiment(
     layer: int,
     normalize_steering_magnitude_to_baseline: bool = True,
     show_progress: bool = True,
+    patch_generation_tokens_only: bool = True,
+    skip_first_n_generation_tokens: int = 0,
+    completion_template: str | None = None,
 ) -> PersonaCrossSteeringExperimentResult:
     steering_vectors: dict[str, SteeringVector] = {}
     test_ds = make_dataset(dataset_name, test_split)
@@ -134,6 +137,9 @@ def run_persona_cross_steering_experiment(
         ),
         datasets={persona: test_ds for persona in PERSONAS},
         show_progress=show_progress,
+        patch_generation_tokens_only=patch_generation_tokens_only,
+        skip_first_n_generation_tokens=skip_first_n_generation_tokens,
+        completion_template=completion_template,
     )
     return PersonaCrossSteeringExperimentResult(
         dataset_name=dataset_name,
