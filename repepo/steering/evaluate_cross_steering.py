@@ -4,7 +4,7 @@ from typing import Any, Callable, NamedTuple
 from steering_vectors import SteeringVector
 from tqdm import tqdm
 
-from repepo.core.evaluate import NormalizedPositiveProbabilityEvaluator, evaluate
+from repepo.core.evaluate import NormalizedPositiveProbabilityEvaluator
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Dataset, Model, Tokenizer
@@ -23,6 +23,8 @@ class CrossSteeringResult:
     dataset_baseline: list[MetricVal]
     pos_steering: list[list[MetricVal]]
     neg_steering: list[list[MetricVal]]
+    pos_multiplier: float
+    neg_multiplier: float
 
 
 def evaluate_cross_steering(
@@ -34,11 +36,16 @@ def evaluate_cross_steering(
     build_pipeline: Callable[[Model, Tokenizer, str], Any] | None = None,
     positive_multiplier: float = 1.0,
     negative_multiplier: float = -1.0,
+    patch_generation_tokens_only: bool = True,
+    skip_first_n_generation_tokens: int = 0,
+    completion_template: str | None = None,
     show_progress: bool = True,
 ) -> CrossSteeringResult:
     if build_pipeline is None:
         build_pipeline = lambda model, tokenizer, _dataset_label: Pipeline(
-            model=model, tokenizer=tokenizer, formatter=LlamaChatFormatter()
+            model=model,
+            tokenizer=tokenizer,
+            formatter=LlamaChatFormatter(),
         )
 
     """Evaluate steering vectors on multiple datasets"""
@@ -54,17 +61,27 @@ def evaluate_cross_steering(
         desc="Evaluating cross-steering",
         disable=not show_progress,
     )
+
+    # just need a random steering vector to get the baseline, multiplier will be 0
+    first_sv = list(steering_vectors.values())[0]
+
     for dataset_label in dataset_labels:
         dataset_pos_steering = []
         dataset_neg_steering = []
         dataset = datasets[dataset_label]
         pipeline = build_pipeline(model, tokenizer, dataset_label)
-        result = evaluate(
+        result = evaluate_steering_vector(
             pipeline,
-            dataset,
+            steering_vector=first_sv,
+            dataset=dataset,
+            layers=[layer],
+            multipliers=[0.0],
             evaluators=[NormalizedPositiveProbabilityEvaluator()],
+            patch_generation_tokens_only=patch_generation_tokens_only,
+            skip_first_n_generation_tokens=skip_first_n_generation_tokens,
+            completion_template=completion_template,
             show_progress=False,
-        )
+        )[0]
         baseline_results.append(
             MetricVal(result.metrics["mean_pos_prob"], result.metrics["std_pos_prob"])
         )
@@ -77,6 +94,9 @@ def evaluate_cross_steering(
                 layers=[layer],
                 multipliers=[negative_multiplier, positive_multiplier],
                 evaluators=[NormalizedPositiveProbabilityEvaluator()],
+                patch_generation_tokens_only=patch_generation_tokens_only,
+                skip_first_n_generation_tokens=skip_first_n_generation_tokens,
+                completion_template=completion_template,
                 show_progress=False,
             )
             dataset_neg_steering.append(
@@ -101,4 +121,6 @@ def evaluate_cross_steering(
         dataset_baseline=baseline_results,
         pos_steering=pos_steering,
         neg_steering=neg_steering,
+        pos_multiplier=positive_multiplier,
+        neg_multiplier=negative_multiplier,
     )
