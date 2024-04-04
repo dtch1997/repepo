@@ -16,15 +16,15 @@ class TokenProb:
     logit: float
     text: str
     # Metrics for logits of other tokens that were in this token position
-    logit_mean: float
-    logit_std: float
-    logit_skew: float
-    logit_kurtosis: float
-    logit_100_quantile: float
-    logit_75_quantile: float
-    logit_50_quantile: float
-    logit_25_quantile: float
-    logit_0_quantile: float
+    logit_mean: float = float("nan")
+    logit_std: float = float("nan")
+    logit_skew: float = float("nan")
+    logit_kurtosis: float = float("nan")
+    logit_100_quantile: float = float("nan")
+    logit_75_quantile: float = float("nan")
+    logit_50_quantile: float = float("nan")
+    logit_25_quantile: float = float("nan")
+    logit_0_quantile: float = float("nan")
 
     @property
     def logit_max(self) -> float:
