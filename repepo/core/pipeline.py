@@ -11,9 +11,28 @@ from .format import Formatter, IdentityFormatter
 @dataclass
 class TokenProb:
     token_id: int
+    # Note: the logit, logprob are for this token, not the next token
     logprob: float
     logit: float
     text: str
+    # Metrics for logits of other tokens that were in this token position
+    logit_mean: float
+    logit_std: float
+    logit_skew: float
+    logit_kurtosis: float
+    logit_100_quantile: float
+    logit_75_quantile: float
+    logit_50_quantile: float
+    logit_25_quantile: float
+    logit_0_quantile: float
+
+    @property
+    def logit_max(self) -> float:
+        return self.logit_100_quantile
+
+    @property
+    def logit_min(self) -> float:
+        return self.logit_0_quantile
 
 
 @dataclass
@@ -45,6 +64,30 @@ class PipelineContext:
 class PipelineHook(Protocol):
     def __call__(self, context: PipelineContext) -> AbstractContextManager[None]:
         ...
+
+
+def compute_moments(tensor: torch.Tensor, dim: int) -> torch.Tensor:
+    """Compute mean, std, skew, kurtosis along the specified dimension
+    Input: tensor of shape (batch_size, num_classes)
+    Returns a tensor of shape (batch_size, 4)
+    """
+    mean = tensor.mean(dim=dim, keepdim=True)
+    std = tensor.std(dim=dim, keepdim=True)
+    skew = ((tensor - mean) ** 3).mean(dim=dim, keepdim=True) / (std**3)
+    kurtosis = ((tensor - mean) ** 4).mean(dim=dim, keepdim=True) / (std**4)
+    return torch.cat([mean, std, skew, kurtosis], dim=dim)
+
+
+def compute_quantiles(tensor: torch.Tensor, dim: int) -> torch.Tensor:
+    """Compute quantiles along the specified dimension
+    Input: tensor of shape (batch_size, num_classes)
+    Returns a tensor of shape (batch_size, num_quantiles)
+    """
+    quantile_thresholds = torch.tensor([0, 0.25, 0.5, 0.75, 1])
+    quantiles = torch.quantile(tensor, quantile_thresholds, dim=dim)
+    # transpose to get the shape (batch_size, num_quantiles)
+    quantiles = quantiles.transpose(0, 1)
+    return quantiles
 
 
 @dataclass
@@ -96,15 +139,25 @@ class Pipeline:
             logprobs = logprobs[:, :-1, :]
 
             # get the logprobs for the target tokens
+            # first, get the tokens which correspond to completions
             target_ids = inputs.input_ids[:, 1:].cpu()
+            # next, select the indices corresponding to the target token ids
             gen_logprobs = torch.gather(logprobs, 2, target_ids[:, :, None]).squeeze(
                 -1
             )[0]
             gen_logits = torch.gather(logits, 2, target_ids[:, :, None]).squeeze(-1)[0]
 
+            # For each logit, calculate the moments and quantiles
+            # logits is of shape (1, seq_len, vocab_size)
+            assert logits.shape[0] == 1
+            logits = logits[0]
+            logit_moments = compute_moments(logits, dim=-1)
+            logit_quantiles = compute_quantiles(logits, dim=-1)
             text_probs: list[TokenProb] = []
 
-            for token, logprob, logit in zip(target_ids[0], gen_logprobs, gen_logits):
+            for token, logprob, logit, logit_moment, logit_quantile in zip(
+                target_ids[0], gen_logprobs, gen_logits, logit_moments, logit_quantiles
+            ):
                 if token not in self.tokenizer.all_special_ids:
                     text_probs.append(
                         TokenProb(
@@ -112,6 +165,17 @@ class Pipeline:
                             text=self.tokenizer.decode(token),
                             logprob=logprob.item(),
                             logit=logit.item(),
+                            # moments
+                            logit_mean=logit_moment[0].item(),
+                            logit_std=logit_moment[1].item(),
+                            logit_skew=logit_moment[2].item(),
+                            logit_kurtosis=logit_moment[3].item(),
+                            # quantiles
+                            logit_0_quantile=logit_quantile[0].item(),
+                            logit_25_quantile=logit_quantile[1].item(),
+                            logit_50_quantile=logit_quantile[2].item(),
+                            logit_75_quantile=logit_quantile[3].item(),
+                            logit_100_quantile=logit_quantile[4].item(),
                         )
                     )
             return TextProbs(text=full_prompt, token_probs=text_probs)

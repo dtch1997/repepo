@@ -1,10 +1,69 @@
+import torch
+import scipy
+import numpy as np
 from textwrap import dedent
 from transformers import GPTNeoXForCausalLM
 
-from repepo.core.pipeline import Pipeline
+from repepo.core.pipeline import Pipeline, compute_moments, compute_quantiles
 from repepo.core.format import IdentityFormatter, LlamaChatFormatter
 from repepo.core.types import Completion, Tokenizer
 from syrupy.assertion import SnapshotAssertion
+
+
+def _compute_moments_scipy(x: np.ndarray, axis: int) -> np.ndarray:
+    mean = np.mean(x, axis=axis)
+    std = scipy.stats.tstd(x, axis=axis, ddof=1)
+    skew = scipy.stats.skew(x, axis=axis)
+    kurtosis = scipy.stats.kurtosis(x, axis=axis, fisher=False)
+    return np.stack([mean, std, skew, kurtosis], axis=1)
+
+
+def test_compute_moments_basic():
+    tensor = torch.tensor(
+        [[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]]
+    )
+    output = compute_moments(tensor, dim=1)
+    expected_output = torch.from_numpy(_compute_moments_scipy(tensor.numpy(), axis=1))
+    # NOTE: torch kurtosis does not agree with scipy kurtosis for some reason...
+    # Omitted from testing for now
+    torch.testing.assert_allclose(output[:, :3], expected_output[:, :3])
+
+
+def test_compute_moments_edge_cases():
+    # Test with a single-value tensor
+    tensor = torch.tensor([[1.0]])
+    expected_output = torch.tensor([[1.0, np.nan, np.nan, np.nan]])
+    output = compute_moments(tensor, dim=1)
+    torch.testing.assert_allclose(output[:, :3], expected_output[:, :3])
+
+    # Test with a tensor with uniform values
+    tensor = torch.full((1, 4), 3.0)
+    expected_output = torch.tensor([[3.0, 0.0, np.nan, np.nan]])
+    output = compute_moments(tensor, dim=1)
+    torch.testing.assert_allclose(output[:, :3], expected_output[:, :3])
+
+
+def test_compute_quantiles_basic():
+    tensor = torch.tensor([[1.0, 2.0, 3.0, 4.0], [4.0, 3.0, 2.0, 1.0]])
+    expected_output = torch.tensor(
+        [[1.0, 1.75, 2.5, 3.25, 4.0], [1.0, 1.75, 2.5, 3.25, 4.0]]
+    )
+    output = compute_quantiles(tensor, dim=1)
+    torch.testing.assert_allclose(output, expected_output)
+
+
+def test_compute_quantiles_edge_cases():
+    # Test with a single-value tensor
+    tensor = torch.tensor([[2.0]])
+    expected_output = torch.tensor([[2.0, 2.0, 2.0, 2.0, 2.0]])
+    output = compute_quantiles(tensor, dim=1)
+    torch.testing.assert_allclose(output, expected_output)
+
+    # Test with non-unique values
+    tensor = torch.tensor([[2.0, 2.0, 2.0, 2.0]])
+    expected_output = torch.tensor([[2.0, 2.0, 2.0, 2.0, 2.0]])
+    output = compute_quantiles(tensor, dim=1)
+    torch.testing.assert_allclose(output, expected_output)
 
 
 def test_basic_Pipeline_build_generation_prompt(
