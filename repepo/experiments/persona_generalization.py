@@ -262,7 +262,7 @@ def run_persona_cross_steering_experiment(
         if "PT_" in persona_label or persona_label == "baseline":
             return persona_pipeline(model, tokenizer, "baseline", dataset_name)
         # handle the SYS_ stuff
-        persona = dataset_name.split("_")[1]
+        persona = persona_label.split("_")[1]
         return persona_pipeline(model, tokenizer, cast(Persona, persona), dataset_name)
 
     cross_steering_result = evaluate_cross_steering(
