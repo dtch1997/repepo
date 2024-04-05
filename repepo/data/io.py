@@ -7,7 +7,7 @@ import io
 import json
 import os
 
-from pyparsing import Any
+from typing import Any
 
 
 def _make_w_io_base(f, mode: str):
