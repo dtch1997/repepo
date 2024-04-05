@@ -90,7 +90,9 @@ def setup_logger(logging_level_str: str = "INFO") -> logging.Logger:
 
 def run_experiment(
     config: SteeringConfig,
-    force_rerun: bool = False,
+    *,
+    force_rerun_extract: bool = False,
+    force_rerun_apply: bool = False,
     logging_level: str = "INFO",
 ):
     # Set up logger
@@ -120,7 +122,7 @@ def run_experiment(
         pipeline, train_dataset, logger=logger
     )
 
-    if get_activation_path(config.train_hash).exists() and not force_rerun:
+    if get_activation_path(config.train_hash).exists() and not force_rerun_extract:
         logger.info(f"Activations already exist for {config}. Skipping.")
         pos_acts, neg_acts = load_activation(config.train_hash)
 
@@ -165,7 +167,7 @@ def run_experiment(
 
     # Evaluate steering vector
     # We cache this part since it's the most time-consuming
-    if get_eval_result_path(config.eval_hash).exists() and not force_rerun:
+    if get_eval_result_path(config.eval_hash).exists() and not force_rerun_apply:
         logger.info(f"Results already exist for {config}. Skipping.")
         eval_result = load_eval_result(config.eval_hash)
 
@@ -199,5 +201,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = args.config
     run_experiment(
-        config, force_rerun=args.force_rerun, logging_level=args.logging_level
+        config,
+        force_rerun_extract=args.force_rerun,
+        force_rerun_apply=args.force_rerun,
+        logging_level=args.logging_level,
     )

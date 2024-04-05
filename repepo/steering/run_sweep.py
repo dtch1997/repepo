@@ -32,12 +32,17 @@ def load_sweep_results(
     return results
 
 
-def run_sweep(configs: list[SteeringConfig], sweep_name: str = ""):
+def run_sweep(configs: list[SteeringConfig], **kwargs):
+    """Run a sweep by calling run_experiment many times
+
+    Kwargs are passed to run_experiment
+    """
     print(f"Running on {len(configs)} configs")
+    # TODO: implement asynchronous version
     for config in configs:
         try:
             with EmptyTorchCUDACache():
-                run_experiment(config)
+                run_experiment(config, **kwargs)
         except KeyboardInterrupt:  # noqa: E722
             # Allow the user to interrupt the sweep
             break
