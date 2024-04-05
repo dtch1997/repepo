@@ -21,6 +21,9 @@ from repepo.steering.evaluate_cross_steering import (
 )
 from repepo.steering.utils.helpers import make_dataset
 from steering_vectors import train_steering_vector
+from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe
+from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
+
 
 Persona = Literal["positive", "negative", "baseline"]
 PERSONAS: list[Persona] = ["positive", "negative", "baseline"]
@@ -375,6 +378,8 @@ def run_persona_generalization_experiment(
     config: PersonaGeneralizationExperimentConfig,
 ) -> None:
     print(f"Running persona generalization experiment with config: {config}")
+    make_mwe_personas_caa()
+    make_mwe()
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name, torch_dtype=torch.float16, device_map=0
     )
