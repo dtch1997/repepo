@@ -374,6 +374,7 @@ class PersonaGeneralizationExperimentConfig:
 def run_persona_generalization_experiment(
     config: PersonaGeneralizationExperimentConfig,
 ) -> None:
+    print(f"Running persona generalization experiment with config: {config}")
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name, torch_dtype=torch.float16, device_map=0
     )
@@ -396,7 +397,7 @@ def run_persona_generalization_experiment(
     else:
         output_dir.mkdir(parents=True, exist_ok=True)
         with open(output_dir / CONFIG_SAVE_PATH, "w") as f:
-            json.dump(config.__dict__, f)
+            json.dump(config.__dict__, f, indent=4, ensure_ascii=False)
 
     results: dict[str, PersonaCrossSteeringExperimentResult] = {}
     if (output_dir / RESULTS_SAVE_PATH).exists():
