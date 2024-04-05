@@ -252,6 +252,19 @@ def run_persona_cross_steering_experiment(
         for persona, steering_vector in steering_vectors.items():
             vec = steering_vector.layer_activations[layer]
             steering_vector.layer_activations[layer] = vec * base_magnitude / vec.norm()
+
+    def _eval_build_pipeline(
+        model: Model,
+        tokenizer: Tokenizer,
+        persona_label: str,
+    ) -> Pipeline:
+        # just use base pipeline if we've put the persona in the prompt already
+        if "PT_" in persona_label or persona_label == "baseline":
+            return persona_pipeline(model, tokenizer, "baseline", dataset_name)
+        # handle the SYS_ stuff
+        persona = dataset_name.split("_")[1]
+        return persona_pipeline(model, tokenizer, cast(Persona, persona), dataset_name)
+
     cross_steering_result = evaluate_cross_steering(
         model,
         tokenizer,
@@ -271,18 +284,6 @@ def run_persona_cross_steering_experiment(
         steering_vectors=steering_vectors,
         cross_steering_result=cross_steering_result,
     )
-
-
-def _eval_build_pipeline(
-    model: Model,
-    tokenizer: Tokenizer,
-    dataset_name: str,
-) -> Pipeline:
-    # just use base pipeline if we've put the persona in the prompt already
-    if "PT_" in dataset_name:
-        return persona_pipeline(model, tokenizer, "baseline", dataset_name)
-    persona = dataset_name.split("_")[1]
-    return persona_pipeline(model, tokenizer, cast(Persona, persona), dataset_name)
 
 
 def plot_steering_on_dataset(
