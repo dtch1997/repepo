@@ -402,8 +402,8 @@ def plot_cross_steering_result(
                 ],
             )
 
-    ds_labels = cs.dataset_labels
-    sv_labels = cs.steering_labels
+    ds_labels = list(map(shorten, cs.dataset_labels))
+    sv_labels = list(map(shorten, cs.steering_labels))
 
     # Add a colorbar to show the scale
     # plt.colorbar()
@@ -418,6 +418,15 @@ def plot_cross_steering_result(
 
     # Show the plot
     plt.show()
+
+
+def shorten(label: str) -> str:
+    return (
+        label.replace("SYS_", "S_")
+        .replace("PT_", "P_")
+        .replace("ative", "")
+        .replace("line", "")
+    )
 
 
 @dataclass
