@@ -28,6 +28,12 @@ def make_results_df(results: list[tuple[SteeringConfig, EvalResult]]):
     for config, result in results:
         row = {}
         row.update(asdict(config))
+        row.update(
+            {
+                "train_hash": config.train_hash,
+                "eval_hash": config.eval_hash,
+            }
+        )
         row.update(result.metrics)
         # Sample-wise results
         for prediction in result.predictions:

@@ -32,6 +32,6 @@ ALL_TOKEN_CONCEPT_DATASETS = [
 
 ALL_LANGUAGES = ["en", "fr", "ja", "pirate", "zh"]
 
-ALL_LLAMA_7B_LAYERS = [0, 5, 10, 13, 15, 20, 25, 31]
+ALL_LLAMA_7B_LAYERS = [0, 5, 10, 11, 12, 13, 14, 15, 20, 25, 31]
 
 ALL_MULTIPLIERS = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
