@@ -7,6 +7,7 @@ import json
 import pickle
 import hashlib
 
+from steering_vectors.steering_vector import SteeringVector
 from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -188,6 +189,27 @@ def load_activation(
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     tensor_dict = torch.load(get_activation_path(experiment_hash))
     return tensor_dict["pos_acts"], tensor_dict["neg_acts"]
+
+
+def get_steering_vector_path(experiment_hash: str) -> pathlib.Path:
+    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+    return experiment_path / "steering_vector.pt"
+
+
+def save_steering_vector(
+    experiment_hash: str,
+    steering_vector: SteeringVector,
+):
+    torch.save(
+        steering_vector,
+        get_steering_vector_path(experiment_hash),
+    )
+
+
+def load_steering_vector(
+    experiment_hash: str,
+) -> SteeringVector:
+    return torch.load(get_steering_vector_path(experiment_hash))
 
 
 def get_metric_path(experiment_hash: str, metric_name: str) -> pathlib.Path:

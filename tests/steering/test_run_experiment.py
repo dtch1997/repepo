@@ -1,4 +1,5 @@
 import torch
+import pytest
 from repepo.core.hook import SteeringHook
 
 from repepo.core.format import LlamaChatFormatter
@@ -11,6 +12,10 @@ from repepo.steering.run_experiment import (
     extract_activations,
     get_aggregator,
     SteeringVector,
+    SteeringConfig,
+    run_experiment,
+    load_steering_vector,
+    load_eval_result,
 )
 
 from steering_vectors import guess_and_enhance_layer_config
@@ -18,6 +23,23 @@ from steering_vectors.train_steering_vector import aggregate_activations
 
 from transformers import LlamaForCausalLM
 from tests._original_caa.llama_wrapper import LlamaWrapper
+
+
+@pytest.mark.xfail
+def test_run_experiment_on_pythia():
+    # TODO: why does pythia-70m not work?
+    config = SteeringConfig(
+        model_name="EleutherAI/pythia-70m",
+    )
+    run_experiment(config, force_rerun_extract=True, force_rerun_apply=True)
+
+
+def test_run_experiment_on_llama():
+    config = SteeringConfig()
+    run_experiment(config, force_rerun_extract=True, force_rerun_apply=True)
+    # Test loading the results
+    steering_vector = load_steering_vector(config.train_hash)
+    eval_result = load_eval_result(config.eval_hash)
 
 
 def test_get_steering_vector_matches_caa(

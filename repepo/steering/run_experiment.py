@@ -25,6 +25,9 @@ from repepo.steering.utils.helpers import (
     get_activation_path,
     save_activation,
     load_activation,
+    get_steering_vector_path,
+    save_steering_vector,
+    load_steering_vector,
     save_metric,
 )
 
@@ -157,13 +160,19 @@ def run_experiment(
             save_metric(config.train_hash, metric.name, metric_val)
 
     # Aggregate activations
-    aggregator = get_aggregator(config.aggregator)
-    with EmptyTorchCUDACache():
-        direction_vec = aggregator(torch.concat(pos_acts), torch.concat(neg_acts))
-        steering_vector = SteeringVector(
-            layer_activations={config.layer: direction_vec},
-            layer_type=cast(LayerType, config.layer_type),
-        )
+    if get_steering_vector_path(config.train_hash).exists() and not force_rerun_extract:
+        logger.info(f"Steering vector already exists for {config}. Skipping.")
+        steering_vector = load_steering_vector(config.train_hash)
+
+    else:
+        aggregator = get_aggregator(config.aggregator)
+        with EmptyTorchCUDACache():
+            direction_vec = aggregator(torch.concat(pos_acts), torch.concat(neg_acts))
+            steering_vector = SteeringVector(
+                layer_activations={config.layer: direction_vec},
+                layer_type=cast(LayerType, config.layer_type),
+            )
+            save_steering_vector(config.train_hash, steering_vector)
 
     # Evaluate steering vector
     # We cache this part since it's the most time-consuming
