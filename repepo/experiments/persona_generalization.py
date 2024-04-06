@@ -2,7 +2,7 @@ from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal, TypeVar, cast
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import seaborn as sns
@@ -420,11 +420,19 @@ def plot_cross_steering_result(
     plt.show()
 
 
+T = TypeVar("T")
+
+
+def shorten_keys(named_items: dict[str, T]) -> dict[str, T]:
+    return {shorten(key): value for key, value in named_items.items()}
+
+
 def shorten(label: str) -> str:
     return (
         label.replace("SYS_", "S_")
         .replace("PT_", "P_")
         .replace("ative", "")
+        .replace("itive", "")
         .replace("line", "")
     )
 
