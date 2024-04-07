@@ -2,6 +2,7 @@ from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
+from statistics import mean
 from typing import Literal, cast
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -19,7 +20,11 @@ from repepo.steering.evaluate_cross_steering import (
     CrossSteeringResult,
     evaluate_cross_steering,
 )
-from repepo.steering.plot_cross_steering_result import plot_cross_steering_result
+from repepo.steering.plot_cross_steering_result import (
+    DeltaType,
+    DistMetric,
+    plot_cross_steering_result,
+)
 from repepo.steering.plot_steering_vector_cos_similarities import (
     plot_steering_vector_cos_similarities,
 )
@@ -27,6 +32,7 @@ from repepo.steering.utils.helpers import make_dataset
 from steering_vectors import train_steering_vector
 from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe
 from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
+from repepo.utils.stats import bernoulli_js_dist
 
 
 Persona = Literal["positive", "negative", "baseline"]
@@ -371,7 +377,10 @@ def plot_steering_on_dataset(
 
 
 def plot_persona_cross_steering_result(
-    result: PersonaCrossSteeringExperimentResult, save_path: str | None = None
+    result: PersonaCrossSteeringExperimentResult,
+    delta_type: DeltaType = "pos_base",
+    dist_metric: DistMetric = "raw",
+    save_path: str | None = None,
 ):
     cross_steering_result = replace(
         result.cross_steering_result,
@@ -385,6 +394,8 @@ def plot_persona_cross_steering_result(
     return plot_cross_steering_result(
         cross_steering_result,
         title=result.dataset_name,
+        delta_type=delta_type,
+        dist_metric=dist_metric,
         save_path=save_path,
     )
 
@@ -413,6 +424,40 @@ def shorten(label: str) -> str:
         .replace("itive", "")
         .replace("line", "")
     )
+
+
+def base_dataset_position(
+    result: PersonaCrossSteeringExperimentResult,
+    dist_metric: Literal["raw", "js"] = "raw",
+) -> float:
+    """
+    Return a value between 0 and 1
+    1 means the baseline is close to the positive scores
+    0 means the baseline is close to the negative scores
+    0.5 means it's equidistant
+    """
+    cs = result.cross_steering_result
+    base_index = cs.dataset_labels.index("baseline")
+    pos_indices = [i for i, label in enumerate(cs.dataset_labels) if "pos" in label]
+    neg_indices = [i for i, label in enumerate(cs.dataset_labels) if "neg" in label]
+
+    base_prob = cs.dataset_baseline[base_index].mean
+    pos_prob = mean([cs.dataset_baseline[i].mean for i in pos_indices])
+    neg_prob = mean([cs.dataset_baseline[i].mean for i in neg_indices])
+
+    if base_prob > pos_prob:
+        return 1.0
+    if base_prob < neg_prob:
+        return 0.0
+    if dist_metric == "raw":
+        neg_dist = abs(neg_prob - base_prob)
+        pos_dist = abs(pos_prob - base_prob)
+    elif dist_metric == "js":
+        neg_dist = abs(bernoulli_js_dist(base_prob, neg_prob))
+        pos_dist = abs(bernoulli_js_dist(base_prob, pos_prob))
+    else:
+        raise ValueError(f"Invalid dist_metric: {dist_metric}")
+    return neg_dist / (pos_dist + neg_dist)
 
 
 @dataclass

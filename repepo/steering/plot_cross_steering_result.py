@@ -1,3 +1,4 @@
+from typing import Any, Literal
 import torch
 import seaborn as sns
 import numpy as np
@@ -7,16 +8,52 @@ from repepo.steering.evaluate_cross_steering import (
 )
 from matplotlib import patheffects
 
+from repepo.utils.stats import bernoulli_js_dist
+
+
+DeltaType = Literal["pos_base", "base_neg", "pos_neg"]
+DistMetric = Literal["js", "raw"]
+
+
+def _calc_deltas(
+    result: CrossSteeringResult,
+    delta_type: DeltaType,
+    dist_metric: DistMetric,
+) -> list[list[float]]:
+    dist_fn = bernoulli_js_dist if dist_metric == "js" else lambda x, y: y - x
+    deltas = []
+    for baseline, dataset_pos_steering, dataset_neg_steering in zip(
+        result.dataset_baseline, result.pos_steering, result.neg_steering
+    ):
+        if delta_type == "pos_base":
+            ds_deltas = [
+                dist_fn(baseline.mean, steering.mean)
+                for steering in dataset_pos_steering
+            ]
+        elif delta_type == "base_neg":
+            ds_deltas = [
+                dist_fn(steering.mean, baseline.mean)
+                for steering in dataset_neg_steering
+            ]
+        elif delta_type == "pos_neg":
+            ds_deltas = [
+                dist_fn(neg_steering.mean, pos_steering.mean)
+                for pos_steering, neg_steering in zip(
+                    dataset_pos_steering, dataset_neg_steering
+                )
+            ]
+        deltas.append(ds_deltas)
+    return deltas
+
 
 def plot_cross_steering_result(
-    result: CrossSteeringResult, title: str, save_path: str | None = None
+    result: CrossSteeringResult,
+    title: str,
+    delta_type: DeltaType = "pos_base",
+    dist_metric: DistMetric = "raw",
+    save_path: str | None = None,
 ):
-    deltas = []
-    for baseline, dataset_pos_steering in zip(
-        result.dataset_baseline, result.pos_steering
-    ):
-        ds_deltas = [steering.mean - baseline.mean for steering in dataset_pos_steering]
-        deltas.append(ds_deltas)
+    deltas = _calc_deltas(result, delta_type, dist_metric)
 
     deltas_tensor = torch.tensor(deltas)
     largest_abs_val = deltas_tensor.abs().max().item()
@@ -30,11 +67,13 @@ def plot_cross_steering_result(
 
     # Iterate over the data and create a text annotation for each cell
     for i in range(len(deltas)):
-        for j in range(len(deltas)):
-            text = plt.text(
+        for j in range(len(deltas[i])):
+            # for some reason round() doesn't type check with float??
+            delta: Any = deltas[i][j]
+            plt.text(
                 j + 0.5,
                 i + 0.5,
-                round(deltas[i][j], 3),
+                round(delta, 3),
                 ha="center",
                 va="center",
                 color="w",
