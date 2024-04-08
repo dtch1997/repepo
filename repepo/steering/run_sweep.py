@@ -28,7 +28,12 @@ def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
 def load_sweep_results(
     configs: list[SteeringConfig],
 ) -> list[tuple[SteeringConfig, EvalResult]]:
-    results = [(config, load_eval_result(config.eval_hash)) for config in configs]
+    results = []
+    for config in configs:
+        try:
+            results.append((config, load_eval_result(config.eval_hash)))
+        except FileNotFoundError:
+            print(f"Eval result for config {config} not found")
     return results
 
 

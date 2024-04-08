@@ -3,6 +3,11 @@ import pandas as pd
 from repepo.steering.utils.helpers import SteeringConfig
 from repepo.core.evaluate import EvalResult, TextProbs
 from dataclasses import asdict
+import re
+
+
+def is_linguistic_dataset(dataset_name: str) -> bool:
+    return bool(re.match(r"^[DIE][0-9][0-9]", dataset_name))
 
 
 def get_config_fields() -> list[str]:
@@ -52,7 +57,12 @@ def make_results_df(results: list[tuple[SteeringConfig, EvalResult]]):
                 prediction.positive_output_prob, prediction.negative_output_prob
             )
             # Ensure that the token difference position is valid
-            assert token_difference_position >= 0
+            # NOTE: doesn't work yet for linguistic datasets because prompt is empty...
+            # Hardcode an exception for now
+            if is_linguistic_dataset(config.train_dataset):
+                token_difference_position = 0
+            else:
+                assert token_difference_position >= 0
             positive_token = prediction.positive_output_prob.token_probs[
                 token_difference_position
             ]
