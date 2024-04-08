@@ -118,7 +118,7 @@ def run_experiment(
     model, tokenizer = get_model_and_tokenizer(config.model_name)
     formatter = get_formatter(config.formatter)
     # Set the training system prompt and completion template
-    formatter.system_prompt = config.train_system_prompt
+    # TODO: formatter.system_prompt = config.train_system_prompt
     formatter.completion_template = config.train_completion_template
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
 
@@ -192,7 +192,8 @@ def run_experiment(
                 dataset=test_dataset,
                 layers=[config.layer],
                 multipliers=[config.multiplier],
-                system_prompt=config.test_system_prompt,
+                # TODO: re-enable system prompt
+                # system_prompt=config.test_system_prompt,
                 completion_template=config.test_completion_template,
                 patch_generation_tokens_only=config.patch_generation_tokens_only,
                 skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
