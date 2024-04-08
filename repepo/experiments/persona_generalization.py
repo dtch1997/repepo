@@ -119,6 +119,27 @@ PERSONA_PROMPTS: dict[str, tuple[str, str]] = {
     ),
 }
 
+DARK_TRIAD_PERSONAS = {
+    "machiavellianism",
+    "narcissism",
+    "psychopathy",
+}
+PERSONALITY_PERSONAS = {
+    "neuroticism",
+    "extraversion",
+    "agreeableness",
+    "conscientiousness",
+    "openness",
+}
+POLITICS_PERSONAS = {
+    "politically-liberal",
+    "politically-conservative",
+    "believes-in-gun-rights",
+    "believes-abortion-should-be-illegal",
+    "anti-immigration",
+    "anti-LGBTQ-rights",
+}
+
 
 def persona_pipeline(
     model: Model,
@@ -400,6 +421,10 @@ def plot_persona_cross_steering_result(
     )
 
 
+def extract_layer(result: PersonaCrossSteeringExperimentResult) -> int:
+    return list(list(result.steering_vectors.values())[0].layer_activations.keys())[0]
+
+
 def plot_persona_steering_vector_cos_similarities(
     result: PersonaCrossSteeringExperimentResult,
     save_path: str | None = None,
@@ -407,11 +432,11 @@ def plot_persona_steering_vector_cos_similarities(
     named_steering_vectors = {
         shorten(label): sv for label, sv in result.steering_vectors.items()
     }
-    layer = list(list(named_steering_vectors.values())[0].layer_activations.keys())[0]
+    layer = extract_layer(result)
     return plot_steering_vector_cos_similarities(
         named_steering_vectors,
         layer=layer,
-        title=result.dataset_name,
+        title=result.dataset_name + " (Cosine Similarity)",
         save_path=save_path,
     )
 
