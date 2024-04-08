@@ -5,6 +5,7 @@ from repepo.core.types import Dataset
 from repepo.core.pipeline import Pipeline
 from repepo.core.evaluate import (
     update_completion_template_at_eval,
+    update_system_prompt_at_eval,
     select_repe_layer_at_eval,
     set_repe_direction_multiplier_at_eval,
     evaluate,
@@ -25,6 +26,7 @@ def evaluate_steering_vector(
     multipliers: list[float],
     patch_generation_tokens_only: bool = True,
     skip_first_n_generation_tokens: int = 0,
+    system_prompt: str | None = None,
     completion_template: str | None = None,
     logger: logging.Logger | None = None,
     evaluators: list = [
@@ -55,6 +57,8 @@ def evaluate_steering_vector(
                 eval_hooks.append(
                     update_completion_template_at_eval(completion_template)
                 )
+            if system_prompt is not None:
+                eval_hooks.append(update_system_prompt_at_eval(system_prompt))
 
             # Run evaluate to get metrics
             result = evaluate(

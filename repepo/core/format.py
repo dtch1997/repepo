@@ -5,6 +5,9 @@ from typing_extensions import override
 
 from repepo.core.types import Completion
 
+LLAMA_7B_DEFAULT_SYSTEM_PROMPT = "You are a helpful, honest and concise assistant."
+LLABA_7B_DEFAULT_COMPLETION_TEMPLATE = "{prompt} {response}"
+
 
 @dataclass
 class FormatContext:
@@ -24,6 +27,7 @@ class Formatter(abc.ABC):
     """Describes how to format examples as completions"""
 
     msg_separator: str = "\n"
+    system_prompt: str = ""
     completion_template: str = "{prompt} {response}"
 
     def __init__(
