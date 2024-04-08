@@ -87,7 +87,7 @@ def plot_cross_steering_result(
 
     # Add a colorbar to show the scale
     # plt.colorbar()
-    plt.title(f"{title} (pos prob delta)")
+    plt.title(f"{title} ({dist_metric}, {delta_type})")
     plt.xticks(ticks=np.arange(len(sv_labels)) + 0.5, labels=sv_labels)
     plt.yticks(ticks=np.arange(len(ds_labels)) + 0.5, labels=ds_labels)
     plt.xlabel("Steering vector")
