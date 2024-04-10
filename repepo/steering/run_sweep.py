@@ -28,16 +28,26 @@ def get_sweep_variables(configs: list[SteeringConfig]) -> list[str]:
 def load_sweep_results(
     configs: list[SteeringConfig],
 ) -> list[tuple[SteeringConfig, EvalResult]]:
-    results = [(config, load_eval_result(config.eval_hash)) for config in configs]
+    results = []
+    for config in configs:
+        try:
+            results.append((config, load_eval_result(config.eval_hash)))
+        except FileNotFoundError:
+            print(f"Eval result for config {config} not found")
     return results
 
 
-def run_sweep(configs: list[SteeringConfig], sweep_name: str = ""):
+def run_sweep(configs: list[SteeringConfig], **kwargs):
+    """Run a sweep by calling run_experiment many times
+
+    Kwargs are passed to run_experiment
+    """
     print(f"Running on {len(configs)} configs")
+    # TODO: implement asynchronous version
     for config in configs:
         try:
             with EmptyTorchCUDACache():
-                run_experiment(config)
+                run_experiment(config, **kwargs)
         except KeyboardInterrupt:  # noqa: E722
             # Allow the user to interrupt the sweep
             break

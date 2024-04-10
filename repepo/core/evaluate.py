@@ -33,6 +33,21 @@ def print_first_example() -> EvalHook:
     return print_first_example_hook
 
 
+def update_system_prompt_at_eval(new_prompt: str) -> EvalHook:
+    """Eval hook that changes the system prompt for the duration of the evaluation"""
+
+    @contextmanager
+    def update_system_prompt_hook(pipeline: Pipeline):
+        original_prompt = pipeline.formatter.system_prompt
+        try:
+            pipeline.formatter.system_prompt = new_prompt
+            yield
+        finally:
+            pipeline.formatter.system_prompt = original_prompt
+
+    return update_system_prompt_hook
+
+
 def update_completion_template_at_eval(new_template: str) -> EvalHook:
     """Eval hook that changes the completion template for the duration of the evaluation"""
 

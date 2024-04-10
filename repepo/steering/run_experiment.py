@@ -25,6 +25,9 @@ from repepo.steering.utils.helpers import (
     get_activation_path,
     save_activation,
     load_activation,
+    get_steering_vector_path,
+    save_steering_vector,
+    load_steering_vector,
     save_metric,
 )
 
@@ -90,7 +93,9 @@ def setup_logger(logging_level_str: str = "INFO") -> logging.Logger:
 
 def run_experiment(
     config: SteeringConfig,
-    force_rerun: bool = False,
+    *,
+    force_rerun_extract: bool = False,
+    force_rerun_apply: bool = False,
     logging_level: str = "INFO",
 ):
     # Set up logger
@@ -112,6 +117,9 @@ def run_experiment(
     # Set up pipeline
     model, tokenizer = get_model_and_tokenizer(config.model_name)
     formatter = get_formatter(config.formatter)
+    # Set the training system prompt and completion template
+    # TODO: formatter.system_prompt = config.train_system_prompt
+    formatter.completion_template = config.train_completion_template
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
 
     # Set up train dataset
@@ -120,7 +128,7 @@ def run_experiment(
         pipeline, train_dataset, logger=logger
     )
 
-    if get_activation_path(config.train_hash).exists() and not force_rerun:
+    if get_activation_path(config.train_hash).exists() and not force_rerun_extract:
         logger.info(f"Activations already exist for {config}. Skipping.")
         pos_acts, neg_acts = load_activation(config.train_hash)
 
@@ -155,17 +163,23 @@ def run_experiment(
             save_metric(config.train_hash, metric.name, metric_val)
 
     # Aggregate activations
-    aggregator = get_aggregator(config.aggregator)
-    with EmptyTorchCUDACache():
-        direction_vec = aggregator(torch.concat(pos_acts), torch.concat(neg_acts))
-        steering_vector = SteeringVector(
-            layer_activations={config.layer: direction_vec},
-            layer_type=cast(LayerType, config.layer_type),
-        )
+    if get_steering_vector_path(config.train_hash).exists() and not force_rerun_extract:
+        logger.info(f"Steering vector already exists for {config}. Skipping.")
+        steering_vector = load_steering_vector(config.train_hash)
+
+    else:
+        aggregator = get_aggregator(config.aggregator)
+        with EmptyTorchCUDACache():
+            direction_vec = aggregator(torch.concat(pos_acts), torch.concat(neg_acts))
+            steering_vector = SteeringVector(
+                layer_activations={config.layer: direction_vec},
+                layer_type=cast(LayerType, config.layer_type),
+            )
+            save_steering_vector(config.train_hash, steering_vector)
 
     # Evaluate steering vector
     # We cache this part since it's the most time-consuming
-    if get_eval_result_path(config.eval_hash).exists() and not force_rerun:
+    if get_eval_result_path(config.eval_hash).exists() and not force_rerun_apply:
         logger.info(f"Results already exist for {config}. Skipping.")
         eval_result = load_eval_result(config.eval_hash)
 
@@ -178,6 +192,8 @@ def run_experiment(
                 dataset=test_dataset,
                 layers=[config.layer],
                 multipliers=[config.multiplier],
+                # TODO: re-enable system prompt
+                # system_prompt=config.test_system_prompt,
                 completion_template=config.test_completion_template,
                 patch_generation_tokens_only=config.patch_generation_tokens_only,
                 skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
@@ -199,5 +215,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = args.config
     run_experiment(
-        config, force_rerun=args.force_rerun, logging_level=args.logging_level
+        config,
+        force_rerun_extract=args.force_rerun,
+        force_rerun_apply=args.force_rerun,
+        logging_level=args.logging_level,
     )

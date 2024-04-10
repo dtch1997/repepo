@@ -7,6 +7,7 @@ import json
 import pickle
 import hashlib
 
+from steering_vectors.steering_vector import SteeringVector
 from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -23,6 +24,9 @@ from repepo.steering.utils.variables import (
     LOAD_IN_4BIT,
     LOAD_IN_8BIT,
     DATASET_DIR,
+)
+from repepo.core.format import (
+    LLABA_7B_DEFAULT_COMPLETION_TEMPLATE,
 )
 
 token = os.getenv("HF_TOKEN")
@@ -91,7 +95,8 @@ class SteeringConfig:
     model_name: str = "meta-llama/Llama-2-7b-chat-hf"
     train_dataset: str = "sycophancy_train"
     train_split: str = "0%:+10"
-    train_completion_template: str = "{prompt} {response}"
+    # train_system_prompt: str = LLAMA_7B_DEFAULT_SYSTEM_PROMPT
+    train_completion_template: str = LLABA_7B_DEFAULT_COMPLETION_TEMPLATE
     formatter: str = "llama-chat-formatter"
     aggregator: str = "mean"
     layer: int = 13
@@ -99,7 +104,8 @@ class SteeringConfig:
     # Steering vector evaluation
     test_dataset: str = "sycophancy_train"
     test_split: str = "40%:+10"
-    test_completion_template: str = "{prompt} {response}"
+    # test_system_prompt: str = LLAMA_7B_DEFAULT_SYSTEM_PROMPT
+    test_completion_template: str = LLABA_7B_DEFAULT_COMPLETION_TEMPLATE
     multiplier: float = 0
     patch_generation_tokens_only: bool = True
     skip_first_n_generation_tokens: int = 0
@@ -110,6 +116,7 @@ class SteeringConfig:
             f"{self.model_name}"
             f"{self.train_dataset}"
             f"{self.train_split}"
+            # TODO: add train system prompt
             f"{self.train_completion_template}"
             f"{self.formatter}"
             f"{self.aggregator}"
@@ -188,6 +195,27 @@ def load_activation(
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     tensor_dict = torch.load(get_activation_path(experiment_hash))
     return tensor_dict["pos_acts"], tensor_dict["neg_acts"]
+
+
+def get_steering_vector_path(experiment_hash: str) -> pathlib.Path:
+    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+    return experiment_path / "steering_vector.pt"
+
+
+def save_steering_vector(
+    experiment_hash: str,
+    steering_vector: SteeringVector,
+):
+    torch.save(
+        steering_vector,
+        get_steering_vector_path(experiment_hash),
+    )
+
+
+def load_steering_vector(
+    experiment_hash: str,
+) -> SteeringVector:
+    return torch.load(get_steering_vector_path(experiment_hash))
 
 
 def get_metric_path(experiment_hash: str, metric_name: str) -> pathlib.Path:
