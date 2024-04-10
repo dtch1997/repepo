@@ -32,6 +32,7 @@ def evaluate_steering_vector(
         LogitDifferenceEvaluator(),
         NormalizedPositiveProbabilityEvaluator(),
     ],
+    show_progress: bool = True,
 ) -> list[EvalResult]:
     results = []
 
@@ -63,6 +64,7 @@ def evaluate_steering_vector(
                 eval_hooks=eval_hooks,
                 evaluators=evaluators,
                 logger=logger,
+                show_progress=show_progress,
             )
             results.append(result)
             if logger is not None:
