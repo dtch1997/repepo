@@ -26,7 +26,8 @@ from repepo.steering.utils.variables import (
     DATASET_DIR,
 )
 from repepo.core.format import (
-    LLABA_7B_DEFAULT_COMPLETION_TEMPLATE,
+    LLAMA_7B_DEFAULT_COMPLETION_TEMPLATE,
+    LLAMA_7B_DEFAULT_SYSTEM_PROMPT,
 )
 
 token = os.getenv("HF_TOKEN")
@@ -95,8 +96,8 @@ class SteeringConfig:
     model_name: str = "meta-llama/Llama-2-7b-chat-hf"
     train_dataset: str = "sycophancy_train"
     train_split: str = "0%:+10"
-    # train_system_prompt: str = LLAMA_7B_DEFAULT_SYSTEM_PROMPT
-    train_completion_template: str = LLABA_7B_DEFAULT_COMPLETION_TEMPLATE
+    train_system_prompt: str = LLAMA_7B_DEFAULT_SYSTEM_PROMPT
+    train_completion_template: str = LLAMA_7B_DEFAULT_COMPLETION_TEMPLATE
     formatter: str = "llama-chat-formatter"
     aggregator: str = "mean"
     layer: int = 13
@@ -104,8 +105,8 @@ class SteeringConfig:
     # Steering vector evaluation
     test_dataset: str = "sycophancy_train"
     test_split: str = "40%:+10"
-    # test_system_prompt: str = LLAMA_7B_DEFAULT_SYSTEM_PROMPT
-    test_completion_template: str = LLABA_7B_DEFAULT_COMPLETION_TEMPLATE
+    test_system_prompt: str = LLAMA_7B_DEFAULT_SYSTEM_PROMPT
+    test_completion_template: str = LLAMA_7B_DEFAULT_COMPLETION_TEMPLATE
     multiplier: float = 0
     patch_generation_tokens_only: bool = True
     skip_first_n_generation_tokens: int = 0
@@ -116,7 +117,7 @@ class SteeringConfig:
             f"{self.model_name}"
             f"{self.train_dataset}"
             f"{self.train_split}"
-            # TODO: add train system prompt
+            f"{self.train_system_prompt}"
             f"{self.train_completion_template}"
             f"{self.formatter}"
             f"{self.aggregator}"

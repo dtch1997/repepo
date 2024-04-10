@@ -6,7 +6,7 @@ from typing_extensions import override
 from repepo.core.types import Completion
 
 LLAMA_7B_DEFAULT_SYSTEM_PROMPT = "You are a helpful, honest and concise assistant."
-LLABA_7B_DEFAULT_COMPLETION_TEMPLATE = "{prompt} {response}"
+LLAMA_7B_DEFAULT_COMPLETION_TEMPLATE = "{prompt} {response}"
 
 
 @dataclass

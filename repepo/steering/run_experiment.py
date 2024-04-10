@@ -118,7 +118,7 @@ def run_experiment(
     model, tokenizer = get_model_and_tokenizer(config.model_name)
     formatter = get_formatter(config.formatter)
     # Set the training system prompt and completion template
-    # TODO: formatter.system_prompt = config.train_system_prompt
+    formatter.system_prompt = config.train_system_prompt
     formatter.completion_template = config.train_completion_template
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
 
