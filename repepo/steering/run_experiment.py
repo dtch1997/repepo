@@ -11,7 +11,10 @@ import functools
 
 from typing import cast
 from pprint import pformat
+from repepo.core.evaluate import EvalResult
+from repepo.core.format import LlamaChatFormatter
 from repepo.core.pipeline import Pipeline
+from repepo.core.types import Model, Tokenizer
 from repepo.steering.utils.helpers import (
     SteeringConfig,
     EmptyTorchCUDACache,
@@ -91,35 +94,24 @@ def setup_logger(logging_level_str: str = "INFO") -> logging.Logger:
     return logger
 
 
-def run_experiment(
+def train_steering_vector_from_config(
+    model,
+    tokenizer,
     config: SteeringConfig,
-    *,
+    logger: logging.Logger,
     force_rerun_extract: bool = False,
-    force_rerun_apply: bool = False,
-    logging_level: str = "INFO",
-):
+) -> SteeringVector:
     # Set up logger
-    logger = setup_logger(logging_level)
-    logger.info(f"Running experiment with config: \n{pformat(config)}")
-
-    # Set up database
-    # NOTE: get_experiment_path().parent = '.../experiments'
-    db_path = get_experiment_path().parent / "steering_config.sqlite"
-    db = SteeringConfigDatabase(db_path=db_path)
-    logger.info("Database contains {} entries".format(len(db)))
-
-    # Insert config into database if it doesn't exist
-    if db.contains_config(config):
-        logger.info(f"Config {config} already exists in database.")
-    else:
-        db.insert_config(config)
+    logger.info(f"Training steering vector with config: \n{pformat(config)}")
 
     # Set up pipeline
-    model, tokenizer = get_model_and_tokenizer(config.model_name)
     formatter = get_formatter(config.formatter)
     # Set the training system prompt and completion template
     formatter.system_prompt = config.train_system_prompt
     formatter.completion_template = config.train_completion_template
+    if config.train_prompt_prefix is not None:
+        assert isinstance(formatter, LlamaChatFormatter)
+        formatter.prompt_prefix = config.train_prompt_prefix
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
 
     # Set up train dataset
@@ -131,7 +123,6 @@ def run_experiment(
     if get_activation_path(config.train_hash).exists() and not force_rerun_extract:
         logger.info(f"Activations already exist for {config}. Skipping.")
         pos_acts, neg_acts = load_activation(config.train_hash)
-
     else:
         # Extract activations
         logging.info("Extracting activations.")
@@ -162,46 +153,104 @@ def run_experiment(
             logger.debug(f"Metric {metric.name} | results: {metric_val}")
             save_metric(config.train_hash, metric.name, metric_val)
 
+    aggregator = get_aggregator(config.aggregator)
+    with EmptyTorchCUDACache():
+        direction_vec = aggregator(torch.concat(pos_acts), torch.concat(neg_acts))
+        steering_vector = SteeringVector(
+            layer_activations={config.layer: direction_vec},
+            layer_type=cast(LayerType, config.layer_type),
+        )
+    return steering_vector
+
+
+def evaluate_steering_vector_from_config(
+    model: Model,
+    tokenizer: Tokenizer,
+    config: SteeringConfig,
+    steering_vector: SteeringVector,
+    logger: logging.Logger,
+) -> EvalResult:
+    test_dataset = make_dataset(config.test_dataset, config.test_split)
+
+    # Set up pipeline
+    formatter = get_formatter(config.formatter)
+    # Set the training system prompt and completion template
+    formatter.system_prompt = config.test_system_prompt
+    formatter.completion_template = config.test_completion_template
+    if config.test_prompt_prefix is not None:
+        assert isinstance(formatter, LlamaChatFormatter)
+        formatter.prompt_prefix = config.test_prompt_prefix
+    pipeline = Pipeline(model, tokenizer, formatter=formatter)
+
+    with EmptyTorchCUDACache():
+        eval_results = evaluate_steering_vector(
+            pipeline=pipeline,
+            steering_vector=steering_vector,
+            dataset=test_dataset,
+            layers=[config.layer],
+            multipliers=[config.multiplier],
+            patch_generation_tokens_only=config.patch_generation_tokens_only,
+            skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
+            logger=logger,
+        )
+        assert len(eval_results) == 1, "Expected one result"
+        eval_result = eval_results[0]
+        return eval_result
+
+
+def run_experiment(
+    config: SteeringConfig,
+    *,
+    force_rerun_extract: bool = False,
+    force_rerun_apply: bool = False,
+    logging_level: str = "INFO",
+):
+    # Set up logger
+    logger = setup_logger(logging_level)
+    logger.info(f"Running experiment with config: \n{pformat(config)}")
+
+    model, tokenizer = get_model_and_tokenizer(config.model_name)
+
+    # Set up database
+    # NOTE: get_experiment_path().parent = '.../experiments'
+    db_path = get_experiment_path().parent / "steering_config.sqlite"
+    db = SteeringConfigDatabase(db_path=db_path)
+    logger.info("Database contains {} entries".format(len(db)))
+
+    # Insert config into database if it doesn't exist
+    if db.contains_config(config):
+        logger.info(f"Config {config} already exists in database.")
+    else:
+        db.insert_config(config)
+
     # Aggregate activations
     if get_steering_vector_path(config.train_hash).exists() and not force_rerun_extract:
         logger.info(f"Steering vector already exists for {config}. Skipping.")
         steering_vector = load_steering_vector(config.train_hash)
-
     else:
-        aggregator = get_aggregator(config.aggregator)
-        with EmptyTorchCUDACache():
-            direction_vec = aggregator(torch.concat(pos_acts), torch.concat(neg_acts))
-            steering_vector = SteeringVector(
-                layer_activations={config.layer: direction_vec},
-                layer_type=cast(LayerType, config.layer_type),
-            )
-            save_steering_vector(config.train_hash, steering_vector)
+        steering_vector = train_steering_vector_from_config(
+            model,
+            tokenizer,
+            config,
+            logger=logger,
+            force_rerun_extract=force_rerun_extract,
+        )
+        save_steering_vector(config.train_hash, steering_vector)
 
     # Evaluate steering vector
     # We cache this part since it's the most time-consuming
     if get_eval_result_path(config.eval_hash).exists() and not force_rerun_apply:
         logger.info(f"Results already exist for {config}. Skipping.")
         eval_result = load_eval_result(config.eval_hash)
-
     else:
-        test_dataset = make_dataset(config.test_dataset, config.test_split)
-        with EmptyTorchCUDACache():
-            eval_results = evaluate_steering_vector(
-                pipeline=pipeline,
-                steering_vector=steering_vector,
-                dataset=test_dataset,
-                layers=[config.layer],
-                multipliers=[config.multiplier],
-                # TODO: re-enable system prompt
-                # system_prompt=config.test_system_prompt,
-                completion_template=config.test_completion_template,
-                patch_generation_tokens_only=config.patch_generation_tokens_only,
-                skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
-                logger=logger,
-            )
-            assert len(eval_results) == 1, "Expected one result"
-            eval_result = eval_results[0]
-            save_eval_result(config.eval_hash, eval_result)
+        eval_result = evaluate_steering_vector_from_config(
+            model=model,
+            tokenizer=tokenizer,
+            steering_vector=steering_vector,
+            config=config,
+            logger=logger,
+        )
+        save_eval_result(config.eval_hash, eval_result)
 
 
 if __name__ == "__main__":

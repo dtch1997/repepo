@@ -118,9 +118,11 @@ class LlamaChatFormatter(Formatter):
         self,
         completion_template: str = "{prompt} {response}",
         msg_separator: str = "\n",
+        prompt_prefix: str | None = None,
         system_prompt: str | None = "You are a helpful, honest and concise assistant.",
     ) -> None:
         self.system_prompt = system_prompt
+        self.prompt_prefix = prompt_prefix
         super().__init__(
             completion_template=completion_template, msg_separator=msg_separator
         )
@@ -131,7 +133,10 @@ class LlamaChatFormatter(Formatter):
         # If first example, add system prompt
         if ctx.index == 0 and self.system_prompt is not None:
             dialog_content_parts.append(f"{self.B_SYS}{self.system_prompt}{self.E_SYS}")
-        dialog_content_parts.append(completion.prompt.strip())
+        prompt = completion.prompt.strip()
+        if self.prompt_prefix is not None:
+            prompt = f"{self.prompt_prefix}{prompt}"
+        dialog_content_parts.append(prompt)
         dialog_content = "\n".join(dialog_content_parts)
 
         # Add [INST] and [/INST] tags

@@ -32,6 +32,8 @@ def get_abstract_concept_config(
     test_dataset=None,
     test_system_prompt="You are a helpful, honest, concise assistant.",
     test_completion_template="{prompt} My answer is: {response}",
+    train_prompt_prefix=None,
+    test_prompt_prefix=None,
     patch_generation_tokens_only=True,
     skip_first_n_generation_tokens=1,
 ):
@@ -55,6 +57,8 @@ def get_abstract_concept_config(
         test_split=test_split,
         test_system_prompt=test_system_prompt,
         test_completion_template=test_completion_template,
+        train_prompt_prefix=train_prompt_prefix,
+        test_prompt_prefix=test_prompt_prefix,
         patch_generation_tokens_only=patch_generation_tokens_only,
         skip_first_n_generation_tokens=skip_first_n_generation_tokens,
     )

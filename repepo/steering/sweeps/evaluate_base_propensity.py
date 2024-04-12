@@ -1,6 +1,5 @@
 """ Evaluate the model's base propensity to output the positive / negative token """
 
-
 from repepo.steering.run_sweep import run_sweep, test_dataset_exists
 from repepo.steering.utils.helpers import SteeringConfig
 
@@ -42,4 +41,4 @@ def iter_configs():
 if __name__ == "__main__":
     configs = list(iter_configs())
     test_dataset_exists(configs)
-    run_sweep(configs, "base_propensity")
+    run_sweep(configs)

@@ -4,7 +4,7 @@ from typing import Any, Callable, NamedTuple
 from steering_vectors import SteeringVector
 from tqdm import tqdm
 
-from repepo.core.evaluate import NormalizedPositiveProbabilityEvaluator
+from repepo.core.evaluate import EvalResult, NormalizedPositiveProbabilityEvaluator
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Dataset, Model, Tokenizer
@@ -20,9 +20,9 @@ class MetricVal(NamedTuple):
 class CrossSteeringResult:
     steering_labels: list[str]
     dataset_labels: list[str]
-    dataset_baseline: list[MetricVal]
-    pos_steering: list[list[MetricVal]]
-    neg_steering: list[list[MetricVal]]
+    dataset_baselines: list[EvalResult]
+    pos_steering: list[list[EvalResult]]
+    neg_steering: list[list[EvalResult]]
     pos_multiplier: float
     neg_multiplier: float
 
@@ -82,9 +82,7 @@ def evaluate_cross_steering(
             completion_template=completion_template,
             show_progress=False,
         )[0]
-        baseline_results.append(
-            MetricVal(result.metrics["mean_pos_prob"], result.metrics["std_pos_prob"])
-        )
+        baseline_results.append(result)
         for steering_label in steering_labels:
             steering_vector = steering_vectors[steering_label]
             neg_result, pos_result = evaluate_steering_vector(
@@ -93,24 +91,13 @@ def evaluate_cross_steering(
                 dataset,
                 layers=[layer],
                 multipliers=[negative_multiplier, positive_multiplier],
-                evaluators=[NormalizedPositiveProbabilityEvaluator()],
                 patch_generation_tokens_only=patch_generation_tokens_only,
                 skip_first_n_generation_tokens=skip_first_n_generation_tokens,
                 completion_template=completion_template,
                 show_progress=False,
             )
-            dataset_neg_steering.append(
-                MetricVal(
-                    neg_result.metrics["mean_pos_prob"],
-                    neg_result.metrics["std_pos_prob"],
-                )
-            )
-            dataset_pos_steering.append(
-                MetricVal(
-                    pos_result.metrics["mean_pos_prob"],
-                    pos_result.metrics["std_pos_prob"],
-                )
-            )
+            dataset_neg_steering.append(neg_result)
+            dataset_pos_steering.append(pos_result)
             pbar.update(1)
         pos_steering.append(dataset_pos_steering)
         neg_steering.append(dataset_neg_steering)
@@ -118,7 +105,7 @@ def evaluate_cross_steering(
     return CrossSteeringResult(
         steering_labels=steering_labels,
         dataset_labels=dataset_labels,
-        dataset_baseline=baseline_results,
+        dataset_baselines=baseline_results,
         pos_steering=pos_steering,
         neg_steering=neg_steering,
         pos_multiplier=positive_multiplier,

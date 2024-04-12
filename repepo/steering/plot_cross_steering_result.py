@@ -19,25 +19,28 @@ def _calc_deltas(
     result: CrossSteeringResult,
     delta_type: DeltaType,
     dist_metric: DistMetric,
+    metric_name: str,
 ) -> list[list[float]]:
     dist_fn = bernoulli_js_dist if dist_metric == "js" else lambda x, y: y - x
     deltas = []
     for baseline, dataset_pos_steering, dataset_neg_steering in zip(
-        result.dataset_baseline, result.pos_steering, result.neg_steering
+        result.dataset_baselines, result.pos_steering, result.neg_steering
     ):
         if delta_type == "pos_base":
             ds_deltas = [
-                dist_fn(baseline.mean, steering.mean)
+                dist_fn(baseline.metrics[metric_name], steering.metrics[metric_name])
                 for steering in dataset_pos_steering
             ]
         elif delta_type == "base_neg":
             ds_deltas = [
-                dist_fn(steering.mean, baseline.mean)
+                dist_fn(steering.metrics[metric_name], baseline.metrics[metric_name])
                 for steering in dataset_neg_steering
             ]
         elif delta_type == "pos_neg":
             ds_deltas = [
-                dist_fn(neg_steering.mean, pos_steering.mean)
+                dist_fn(
+                    neg_steering.metrics[metric_name], pos_steering.metrics[metric_name]
+                )
                 for pos_steering, neg_steering in zip(
                     dataset_pos_steering, dataset_neg_steering
                 )
@@ -51,9 +54,12 @@ def plot_cross_steering_result(
     title: str,
     delta_type: DeltaType = "pos_base",
     dist_metric: DistMetric = "raw",
+    metric_name: str = "mean_pos_prob",
     save_path: str | None = None,
 ):
-    deltas = _calc_deltas(result, delta_type, dist_metric)
+    deltas = _calc_deltas(
+        result, delta_type, dist_metric=dist_metric, metric_name=metric_name
+    )
 
     deltas_tensor = torch.tensor(deltas)
     largest_abs_val = deltas_tensor.abs().max().item()

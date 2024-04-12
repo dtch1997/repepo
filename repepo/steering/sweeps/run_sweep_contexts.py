@@ -30,4 +30,4 @@ def iter_configs():
 
 if __name__ == "__main__":
     configs = list(iter_configs())
-    run_sweep(configs, "bats")
+    run_sweep(configs)
