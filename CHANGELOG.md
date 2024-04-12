@@ -2,6 +2,177 @@
 
 
 
+## v0.4.0 (2024-04-12)
+
+### Chore
+
+* chore: modify coderabbit config to reduce verbosity ([`f13fc43`](https://github.com/dtch1997/repepo/commit/f13fc43102aaef88aa7b15640c97e897f0c4fe45))
+
+* chore: ignore png files ([`5c9ddc8`](https://github.com/dtch1997/repepo/commit/5c9ddc8bb414b9081d905251a41501e9c68706c6))
+
+### Feature
+
+* feat: improve steering experiments utils (#147)
+
+* Add statsmodels
+
+* Add notebook ow/ results on choosing steerability metric
+
+* feat: add saving, loading for SVs
+
+* Finish initial study on aggregation method
+
+* rename
+
+* fix: use train_completion_template
+
+* Update lockfile
+
+* Remove system prompt for config for backwards-compatibility
+
+* feat: improve logging of missing steering configs
+
+* Update notebooks
+
+* chore: remove failing py311 ci run
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`f1487a9`](https://github.com/dtch1997/repepo/commit/f1487a9546560ebff60c8104e8884ce24ce828e4))
+
+* feat: add functions to compute logit statistics (#145)
+
+* Add functions to compute logit statistics
+
+* Make logit statistics optional
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`c447864`](https://github.com/dtch1997/repepo/commit/c447864dd4e6a484e0ac0f3a69c2e1e0a3b97994))
+
+### Refactor
+
+* refactor: experiments (#141)
+
+* Add concept metrics calculation
+
+* fix: concept metrics
+
+* Add unit test for metrics
+
+* feat: layer-wise steering metrics
+
+* update config fields
+
+* update experiments code
+
+* minor
+
+* refactor: experiments code
+
+* refactor: experiments code
+
+* Test datasets exist before running
+
+* fix: database
+
+* add method to get config, fix delete_table
+
+* changes
+
+* more changes
+
+* Fix bug in experiment path
+
+* Add sweeps
+
+* WIP
+
+* Fix tests
+
+* Fix tests
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`ee5f190`](https://github.com/dtch1997/repepo/commit/ee5f1902b1e929c3f60cf58ce569b271a6502c73))
+
+### Unknown
+
+* updating persona generalization (#151)
+
+* updating persona generalization
+
+* temporarily disabling test due to cpu/cuda issue on ci ([`ef91f2f`](https://github.com/dtch1997/repepo/commit/ef91f2f38c7d7c686317e383f5d749934ea388dd))
+
+* Add evaluate_generalization.py notebook ([`4a25847`](https://github.com/dtch1997/repepo/commit/4a258472e295ef8aa3ce90d925fc1ac380c5fc58))
+
+* minor fixes ([`506ff11`](https://github.com/dtch1997/repepo/commit/506ff11fa416ee79010091405a7d8ab208a67733))
+
+* WIP: Persona cross steering (#150)
+
+* setting up cross-evaluation experiments
+
+* improving progress reporting in experiments
+
+* adding option to normalize steering magnitude to baseline
+
+* tweaking params
+
+* fixing nested progress
+
+* updating persona evals
+
+* passing eval params through persona experiment
+
+* setting up script for persona generalization experiments
+
+* more debugging output
+
+* updating test
+
+* fixing typing
+
+* make datasets as part of experiments script
+
+* fixing eval dataset selection
+
+* fixing eval
+
+* adding cross steering plots
+
+* shorten labels in cross-steering plots
+
+* WIP adding plotting helpers
+
+* refactoring plotting code
+
+* adding more plotting options
+
+* adding more content to plots
+
+* outptting more info in graphs ([`352df94`](https://github.com/dtch1997/repepo/commit/352df94b656a5e75c3e1cd7c272233bac55507e6))
+
+* Add sft training examples ([`bcf8c2c`](https://github.com/dtch1997/repepo/commit/bcf8c2c36b4635d3e77e6b3b20d26cfb8a679a08))
+
+* Experiments (#146)
+
+* Add sweeps
+
+* WIP experimental code
+
+* Update experiment notebook
+
+* Remove pycache
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`037bea3`](https://github.com/dtch1997/repepo/commit/037bea3b52ed3a7e7bf6e52198ecc26ff8f3553b))
+
+* Add notebooks to run experiments ([`9c662c7`](https://github.com/dtch1997/repepo/commit/9c662c756cf8354e6cef528089a30eb2bca9691a))
+
+* Add fucntion to load sweep results ([`66cb2d7`](https://github.com/dtch1997/repepo/commit/66cb2d7e49ef69d3c9f7429e092aabb6758bacb0))
+
+
 ## v0.3.0 (2024-03-07)
 
 ### Feature
