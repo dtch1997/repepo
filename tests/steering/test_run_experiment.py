@@ -34,6 +34,7 @@ def test_run_experiment_on_pythia():
     run_experiment(config, force_rerun_extract=True, force_rerun_apply=True)
 
 
+@pytest.mark.skip("Cant run with bitsandbytes on cpu")
 def test_run_experiment_on_llama():
     config = SteeringConfig()
     run_experiment(config, force_rerun_extract=True, force_rerun_apply=True)

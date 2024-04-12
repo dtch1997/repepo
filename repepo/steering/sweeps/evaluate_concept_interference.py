@@ -36,4 +36,4 @@ def iter_config():
 if __name__ == "__main__":
     configs = list(iter_config())
     print(len(configs))
-    run_sweep(configs, "steering_efficiency")
+    run_sweep(configs)

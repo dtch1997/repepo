@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from transformers import BitsAndBytesConfig
-from repepo.core.types import Example
-from repepo.core.format import Formatter
+from repepo.core.types import Example, Model, Tokenizer
+from repepo.core.format import Formatter, IdentityFormatter, LlamaChatFormatter
 from repepo.core.evaluate import EvalResult
 from repepo.data.make_dataset import (
     DatasetSpec,
@@ -59,7 +59,7 @@ def get_model_and_tokenizer(
     model_name: str,
     load_in_4bit: bool = bool(LOAD_IN_4BIT),
     load_in_8bit: bool = bool(LOAD_IN_8BIT),
-):
+) -> tuple[Model, Tokenizer]:
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=load_in_4bit,
         load_in_8bit=load_in_8bit,
@@ -79,12 +79,8 @@ def get_formatter(
     formatter_name: str = "llama-chat-formatter",
 ) -> Formatter:
     if formatter_name == "llama-chat-formatter":
-        from repepo.core.format import LlamaChatFormatter
-
         return LlamaChatFormatter()
     elif formatter_name == "identity-formatter":
-        from repepo.core.format import IdentityFormatter
-
         return IdentityFormatter()
     else:
         raise ValueError(f"Unknown formatter: {formatter_name}")
@@ -98,6 +94,8 @@ class SteeringConfig:
     train_split: str = "0%:+10"
     train_system_prompt: str = LLAMA_7B_DEFAULT_SYSTEM_PROMPT
     train_completion_template: str = LLAMA_7B_DEFAULT_COMPLETION_TEMPLATE
+    train_prompt_prefix: str | None = None
+    test_prompt_prefix: str | None = None
     formatter: str = "llama-chat-formatter"
     aggregator: str = "mean"
     layer: int = 13
@@ -123,6 +121,7 @@ class SteeringConfig:
             f"{self.aggregator}"
             f"{self.layer}"
             f"{self.layer_type}"
+            f"{self.train_prompt_prefix}"
         )
         return hashlib.md5(hash_str.encode()).hexdigest()[:16]
 

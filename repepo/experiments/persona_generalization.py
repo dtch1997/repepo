@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from steering_vectors import SteeringVector
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.pipeline import Pipeline
-from repepo.core.types import Dataset, Example, Model, Tokenizer
+from repepo.core.types import Example, Model, Tokenizer
 from repepo.steering.build_steering_training_data import (
     build_steering_vector_training_data,
 )
@@ -146,28 +146,23 @@ def persona_pipeline(
     tokenizer: Tokenizer,
     persona: Persona,
     dataset_name: str,
+    use_sys_prompt: bool,
 ) -> Pipeline:
     if dataset_name not in PERSONA_PROMPTS:
         raise ValueError(f"Dataset {dataset_name} is not supported.")
     positive_prompt, negative_prompt = PERSONA_PROMPTS[dataset_name]
     formatter = LlamaChatFormatter()
     if persona == "positive":
-        formatter = LlamaChatFormatter(system_prompt=positive_prompt)
+        if use_sys_prompt:
+            formatter = LlamaChatFormatter(system_prompt=positive_prompt)
+        else:
+            formatter = LlamaChatFormatter(prompt_prefix=positive_prompt + "\n\n")
     elif persona == "negative":
-        formatter = LlamaChatFormatter(system_prompt=negative_prompt)
+        if use_sys_prompt:
+            formatter = LlamaChatFormatter(system_prompt=negative_prompt)
+        else:
+            formatter = LlamaChatFormatter(prompt_prefix=negative_prompt + "\n\n")
     return Pipeline(model, tokenizer, formatter=formatter)
-
-
-def personaify_dataset(
-    dataset: Dataset,
-    dataset_name: str,
-    persona: Persona,
-) -> Dataset:
-    if persona == "baseline":
-        return dataset
-    positive_prompt, negative_prompt = PERSONA_PROMPTS[dataset_name]
-    prefix = positive_prompt if persona == "positive" else negative_prompt
-    return [prefix_example(example, prefix) for example in dataset]
 
 
 def prefix_example(example: Example, prefix: str) -> Example:
@@ -194,10 +189,9 @@ def train_steering_vector_for_persona_and_dataset(
     show_progress: bool = True,
 ) -> SteeringVector:
     train_dataset = make_dataset(dataset_name, train_split)
-    pipeline = persona_pipeline(model, tokenizer, persona, dataset_name)
-    if not use_sys_prompt:
-        pipeline = persona_pipeline(model, tokenizer, "baseline", dataset_name)
-        train_dataset = personaify_dataset(train_dataset, dataset_name, persona)
+    pipeline = persona_pipeline(
+        model, tokenizer, persona, dataset_name, use_sys_prompt=use_sys_prompt
+    )
     steering_vector_training_data = build_steering_vector_training_data(
         pipeline, train_dataset
     )
@@ -250,34 +244,39 @@ def run_persona_cross_steering_experiment(
         "baseline": test_ds,
     }
     for persona in non_baseline_personas:
-        steering_vectors["SYS_" + persona] = (
-            train_steering_vector_for_persona_and_dataset(
-                model,
-                tokenizer,
-                persona,
-                dataset_name,
-                train_split,
-                layer=layer,
-                use_sys_prompt=True,
-                show_progress=show_progress,
-            )
+        steering_vectors[
+            "SYS_" + persona
+        ] = train_steering_vector_for_persona_and_dataset(
+            model,
+            tokenizer,
+            persona,
+            dataset_name,
+            train_split,
+            layer=layer,
+            use_sys_prompt=True,
+            show_progress=show_progress,
         )
         test_dataset_mapping["SYS_" + persona] = test_ds
-        steering_vectors["PT_" + persona] = (
-            train_steering_vector_for_persona_and_dataset(
-                model,
-                tokenizer,
-                persona,
-                dataset_name,
-                train_split,
-                layer=layer,
-                use_sys_prompt=False,
-                show_progress=show_progress,
-            )
+        steering_vectors[
+            "PT_" + persona
+        ] = train_steering_vector_for_persona_and_dataset(
+            model,
+            tokenizer,
+            persona,
+            dataset_name,
+            train_split,
+            layer=layer,
+            use_sys_prompt=False,
+            show_progress=show_progress,
         )
-        test_dataset_mapping["PT_" + persona] = personaify_dataset(
-            test_ds, dataset_name, persona
-        )
+        test_dataset_mapping["PT_" + persona] = test_ds
+    mean_layer_activation = torch.stack(
+        [sv.layer_activations[layer] for sv in steering_vectors.values()]
+    ).mean(dim=0)
+    steering_vectors["mean"] = SteeringVector(
+        layer_activations={layer: mean_layer_activation},
+        layer_type=steering_vectors["baseline"].layer_type,
+    )
     if normalize_steering_magnitude_to_baseline:
         base_magnitude = steering_vectors["baseline"].layer_activations[layer].norm()
         for persona, steering_vector in steering_vectors.items():
@@ -289,12 +288,20 @@ def run_persona_cross_steering_experiment(
         tokenizer: Tokenizer,
         persona_label: str,
     ) -> Pipeline:
-        # just use base pipeline if we've put the persona in the prompt already
-        if "PT_" in persona_label or persona_label == "baseline":
-            return persona_pipeline(model, tokenizer, "baseline", dataset_name)
+        # just use base pipeline for baseline
+        if persona_label == "baseline":
+            return persona_pipeline(
+                model, tokenizer, "baseline", dataset_name, use_sys_prompt=False
+            )
         # handle the SYS_ stuff
         persona = persona_label.split("_")[1]
-        return persona_pipeline(model, tokenizer, cast(Persona, persona), dataset_name)
+        return persona_pipeline(
+            model,
+            tokenizer,
+            cast(Persona, persona),
+            dataset_name,
+            use_sys_prompt="SYS_" in persona_label,
+        )
 
     cross_steering_result = evaluate_cross_steering(
         model,
@@ -320,8 +327,8 @@ def run_persona_cross_steering_experiment(
 def plot_steering_on_dataset(
     result: PersonaCrossSteeringExperimentResult,
     dataset_version: str,
-    show_bounds=False,
     save_path: str | None = None,
+    metric_name: str = "mean_pos_prob",
 ):
     cs = result.cross_steering_result
     ds_index = cs.dataset_labels.index(dataset_version)
@@ -331,40 +338,22 @@ def plot_steering_on_dataset(
     multipliers = [cs.neg_multiplier, 0.0, cs.pos_multiplier]
 
     results_line_mean = []
-    results_line_std_pos = []
-    results_line_std_neg = []
     for i, label in enumerate(cs.steering_labels):
         results_line_mean.append(
             [
-                ds_neg_steering[i].mean,
-                cs.dataset_baseline[ds_index].mean,
-                ds_pos_steering[i].mean,
-            ]
-        )
-        results_line_std_pos.append(
-            [
-                ds_neg_steering[i].mean + ds_neg_steering[i].std,
-                cs.dataset_baseline[ds_index].mean + cs.dataset_baseline[ds_index].std,
-                ds_pos_steering[i].mean + ds_pos_steering[i].std,
-            ]
-        )
-        results_line_std_neg.append(
-            [
-                ds_neg_steering[i].mean - ds_neg_steering[i].std,
-                cs.dataset_baseline[ds_index].mean - cs.dataset_baseline[ds_index].std,
-                ds_pos_steering[i].mean - ds_pos_steering[i].std,
+                ds_neg_steering[i].metrics[metric_name],
+                cs.dataset_baselines[ds_index].metrics[metric_name],
+                ds_pos_steering[i].metrics[metric_name],
             ]
         )
 
     plt.figure(figsize=(8, 6))
     # Plot each line
     line_styles = ["--", "-.", ":"]
-    for i, (label, data, std_pos, std_neg) in enumerate(
+    for i, (label, data) in enumerate(
         zip(
             cs.steering_labels,
             results_line_mean,
-            results_line_std_pos,
-            results_line_std_neg,
         )
     ):
         sns.lineplot(
@@ -373,8 +362,6 @@ def plot_steering_on_dataset(
             label=label,
             linestyle=line_styles[i % len(line_styles)],
         )
-        if show_bounds:
-            plt.fill_between(multipliers, std_neg, std_pos, alpha=0.2)
 
     # Adding title and labels
     plt.title(f"{result.dataset_name}: {dataset_version}")
@@ -454,6 +441,7 @@ def shorten(label: str) -> str:
 def base_dataset_position(
     result: PersonaCrossSteeringExperimentResult,
     dist_metric: Literal["raw", "js"] = "raw",
+    metric_name: str = "mean_pos_prob",
 ) -> float:
     """
     Return a value between 0 and 1
@@ -466,9 +454,9 @@ def base_dataset_position(
     pos_indices = [i for i, label in enumerate(cs.dataset_labels) if "pos" in label]
     neg_indices = [i for i, label in enumerate(cs.dataset_labels) if "neg" in label]
 
-    base_prob = cs.dataset_baseline[base_index].mean
-    pos_prob = mean([cs.dataset_baseline[i].mean for i in pos_indices])
-    neg_prob = mean([cs.dataset_baseline[i].mean for i in neg_indices])
+    base_prob = cs.dataset_baselines[base_index].metrics[metric_name]
+    pos_prob = mean([cs.dataset_baselines[i].metrics[metric_name] for i in pos_indices])
+    neg_prob = mean([cs.dataset_baselines[i].metrics[metric_name] for i in neg_indices])
 
     if base_prob > pos_prob:
         return 1.0

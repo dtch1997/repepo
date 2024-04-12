@@ -29,7 +29,10 @@ def iter_config():
         setting["aggregators"],
     ):
         yield get_abstract_concept_config(
-            dataset=dataset, layer=layer, multiplier=multiplier, aggregator=aggregator
+            train_dataset=dataset,
+            layer=layer,
+            multiplier=multiplier,
+            aggregator=aggregator,
         )
 
 

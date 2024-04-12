@@ -30,4 +30,4 @@ def iter_configs():
 if __name__ == "__main__":
     configs = list(iter_configs())
     # test_dataset_exists(configs)
-    run_sweep(configs, "steering_efficiency")
+    run_sweep(configs)

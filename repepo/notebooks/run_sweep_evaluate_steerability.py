@@ -44,7 +44,7 @@ def iter_config():
         abstract_setting["multipliers"],
     ):
         yield get_abstract_concept_config(
-            dataset=dataset, layer=layer, multiplier=multiplier
+            train_dataset=dataset, layer=layer, multiplier=multiplier
         )
 
     for dataset, layer, multiplier in product(
