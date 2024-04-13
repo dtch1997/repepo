@@ -4,7 +4,11 @@ from typing import Any, Callable, NamedTuple
 from steering_vectors import SteeringVector
 from tqdm import tqdm
 
-from repepo.core.evaluate import EvalResult, NormalizedPositiveProbabilityEvaluator
+from repepo.core.evaluate import (
+    EvalResult,
+    LogitDifferenceEvaluator,
+    NormalizedPositiveProbabilityEvaluator,
+)
 from repepo.core.format import LlamaChatFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Dataset, Model, Tokenizer
@@ -76,7 +80,10 @@ def evaluate_cross_steering(
             dataset=dataset,
             layers=[layer],
             multipliers=[0.0],
-            evaluators=[NormalizedPositiveProbabilityEvaluator()],
+            evaluators=[
+                NormalizedPositiveProbabilityEvaluator(),
+                LogitDifferenceEvaluator(),
+            ],
             patch_generation_tokens_only=patch_generation_tokens_only,
             skip_first_n_generation_tokens=skip_first_n_generation_tokens,
             completion_template=completion_template,
@@ -91,6 +98,10 @@ def evaluate_cross_steering(
                 dataset,
                 layers=[layer],
                 multipliers=[negative_multiplier, positive_multiplier],
+                evaluators=[
+                    NormalizedPositiveProbabilityEvaluator(),
+                    LogitDifferenceEvaluator(),
+                ],
                 patch_generation_tokens_only=patch_generation_tokens_only,
                 skip_first_n_generation_tokens=skip_first_n_generation_tokens,
                 completion_template=completion_template,
