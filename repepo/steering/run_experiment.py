@@ -1,4 +1,4 @@
-""" Defines a workflow to run a steering experiment. 
+"""Defines a workflow to run a steering experiment.
 
 Example usage:
 python repepo/steering/run_experiment.py --config_path repepo/experiments/configs/sycophancy.yaml

@@ -1,7 +1,7 @@
-""" Script to make datasets for sycophancy dataset. 
+"""Script to make datasets for sycophancy dataset.
 
-Uses a different dataset version that includes more prompts. 
-Included for purposes of reproducing key plots 
+Uses a different dataset version that includes more prompts.
+Included for purposes of reproducing key plots
 """
 
 from repepo.data.make_dataset import (

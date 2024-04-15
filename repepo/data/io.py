@@ -1,4 +1,4 @@
-""" Utilities for reading, writing datasets to disk """
+"""Utilities for reading, writing datasets to disk"""
 
 # Taken from: https://github.com/tatsu-lab/stanford_alpaca/blob/main/utils.py
 

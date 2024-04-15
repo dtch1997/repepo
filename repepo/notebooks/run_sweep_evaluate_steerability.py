@@ -1,4 +1,4 @@
-""" Runs a sweep to evaluate the steerability at a single layer across diverse concepts. """
+"""Runs a sweep to evaluate the steerability at a single layer across diverse concepts."""
 
 from itertools import product
 

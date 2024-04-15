@@ -1,4 +1,4 @@
-""" Environment variables """
+"""Environment variables"""
 
 import os
 import pathlib

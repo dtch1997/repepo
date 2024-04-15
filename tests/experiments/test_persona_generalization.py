@@ -109,7 +109,7 @@ def test_persona_pipeline_can_inject_persona_into_prompt(
 
 @pytest.mark.parametrize("dist_metric", ["js", "raw"])
 def test_base_dataset_position_is_half_if_evenly_spaced(
-    dist_metric: Literal["js", "raw"]
+    dist_metric: Literal["js", "raw"],
 ):
     labels = [
         "SYS_positive",
@@ -142,7 +142,7 @@ def test_base_dataset_position_is_half_if_evenly_spaced(
 
 @pytest.mark.parametrize("dist_metric", ["js", "raw"])
 def test_base_dataset_position_is_near_one_if_base_is_near_pos(
-    dist_metric: Literal["js", "raw"]
+    dist_metric: Literal["js", "raw"],
 ):
     labels = [
         "SYS_positive",
@@ -176,7 +176,7 @@ def test_base_dataset_position_is_near_one_if_base_is_near_pos(
 
 @pytest.mark.parametrize("dist_metric", ["js", "raw"])
 def test_base_dataset_position_is_near_zero_if_base_is_near_neg(
-    dist_metric: Literal["js", "raw"]
+    dist_metric: Literal["js", "raw"],
 ):
     labels = [
         "SYS_positive",
