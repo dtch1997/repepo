@@ -82,7 +82,7 @@ def compute_quantiles(tensor: torch.Tensor, dim: int) -> torch.Tensor:
     Input: tensor of shape (batch_size, num_classes)
     Returns a tensor of shape (batch_size, num_quantiles)
     """
-    quantile_thresholds = torch.tensor([0, 0.25, 0.5, 0.75, 1])
+    quantile_thresholds = torch.tensor([0, 0.25, 0.5, 0.75, 1], device=tensor.device)
     quantiles = torch.quantile(tensor, quantile_thresholds, dim=dim)
     # transpose to get the shape (batch_size, num_quantiles)
     quantiles = quantiles.transpose(0, 1)
