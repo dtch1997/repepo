@@ -244,30 +244,30 @@ def run_persona_cross_steering_experiment(
         "baseline": test_ds,
     }
     for persona in non_baseline_personas:
-        steering_vectors[
-            "SYS_" + persona
-        ] = train_steering_vector_for_persona_and_dataset(
-            model,
-            tokenizer,
-            persona,
-            dataset_name,
-            train_split,
-            layer=layer,
-            use_sys_prompt=True,
-            show_progress=show_progress,
+        steering_vectors["SYS_" + persona] = (
+            train_steering_vector_for_persona_and_dataset(
+                model,
+                tokenizer,
+                persona,
+                dataset_name,
+                train_split,
+                layer=layer,
+                use_sys_prompt=True,
+                show_progress=show_progress,
+            )
         )
         test_dataset_mapping["SYS_" + persona] = test_ds
-        steering_vectors[
-            "PT_" + persona
-        ] = train_steering_vector_for_persona_and_dataset(
-            model,
-            tokenizer,
-            persona,
-            dataset_name,
-            train_split,
-            layer=layer,
-            use_sys_prompt=False,
-            show_progress=show_progress,
+        steering_vectors["PT_" + persona] = (
+            train_steering_vector_for_persona_and_dataset(
+                model,
+                tokenizer,
+                persona,
+                dataset_name,
+                train_split,
+                layer=layer,
+                use_sys_prompt=False,
+                show_progress=show_progress,
+            )
         )
         test_dataset_mapping["PT_" + persona] = test_ds
     mean_layer_activation = torch.stack(
@@ -279,7 +279,7 @@ def run_persona_cross_steering_experiment(
     )
     if normalize_steering_magnitude_to_baseline:
         base_magnitude = steering_vectors["baseline"].layer_activations[layer].norm()
-        for persona, steering_vector in steering_vectors.items():
+        for steering_vector in steering_vectors.values():
             vec = steering_vector.layer_activations[layer]
             steering_vector.layer_activations[layer] = vec * base_magnitude / vec.norm()
 

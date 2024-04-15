@@ -62,8 +62,7 @@ class PipelineContext:
 
 
 class PipelineHook(Protocol):
-    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]:
-        ...
+    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]: ...
 
 
 def compute_moments(tensor: torch.Tensor, dim: int) -> torch.Tensor:
@@ -114,6 +113,7 @@ class Pipeline:
             self.formatter.format_conversation(completion, self.conversation_history)
         )
 
+    @torch.no_grad()
     def calculate_output_logprobs(self, completion: Completion) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
         base_prompt = self.build_generation_prompt(completion)
@@ -131,8 +131,8 @@ class Pipeline:
             for hook in self.hooks:
                 stack.enter_context(hook(context))
             outputs = self.model(**inputs, output_hidden_states=False, return_dict=True)
-            logits = outputs.logits.detach().cpu()
-            logprobs = torch.log_softmax(logits, dim=-1).detach().cpu()
+            logits = outputs.logits
+            logprobs = torch.log_softmax(logits, dim=-1)
 
             # collect the probability of the generated token -- probability at index 0 corresponds to the token at index 1
             logits = logits[:, :-1, :]
@@ -140,23 +140,29 @@ class Pipeline:
 
             # get the logprobs for the target tokens
             # first, get the tokens which correspond to completions
-            target_ids = inputs.input_ids[:, 1:].cpu()
+            target_ids = inputs.input_ids[:, 1:]
             # next, select the indices corresponding to the target token ids
-            gen_logprobs = torch.gather(logprobs, 2, target_ids[:, :, None]).squeeze(
-                -1
-            )[0]
-            gen_logits = torch.gather(logits, 2, target_ids[:, :, None]).squeeze(-1)[0]
+            gen_logprobs = (
+                torch.gather(logprobs, 2, target_ids[:, :, None]).squeeze(-1)[0].cpu()
+            )
+            gen_logits = (
+                torch.gather(logits, 2, target_ids[:, :, None]).squeeze(-1)[0].cpu()
+            )
 
             # For each logit, calculate the moments and quantiles
             # logits is of shape (1, seq_len, vocab_size)
             assert logits.shape[0] == 1
             logits = logits[0]
-            logit_moments = compute_moments(logits, dim=-1)
-            logit_quantiles = compute_quantiles(logits, dim=-1)
+            logit_moments = compute_moments(logits, dim=-1).cpu()
+            logit_quantiles = compute_quantiles(logits, dim=-1).cpu()
             text_probs: list[TokenProb] = []
 
             for token, logprob, logit, logit_moment, logit_quantile in zip(
-                target_ids[0], gen_logprobs, gen_logits, logit_moments, logit_quantiles
+                target_ids[0].cpu(),
+                gen_logprobs,
+                gen_logits,
+                logit_moments,
+                logit_quantiles,
             ):
                 if token not in self.tokenizer.all_special_ids:
                     text_probs.append(
