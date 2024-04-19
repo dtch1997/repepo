@@ -1,4 +1,4 @@
-""" Evaluate the steering efficiency at a single layer across diverse concepts. """
+"""Evaluate the steering efficiency at a single layer across diverse concepts."""
 
 import itertools
 

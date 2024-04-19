@@ -279,7 +279,7 @@ def run_persona_cross_steering_experiment(
     )
     if normalize_steering_magnitude_to_baseline:
         base_magnitude = steering_vectors["baseline"].layer_activations[layer].norm()
-        for persona, steering_vector in steering_vectors.items():
+        for steering_vector in steering_vectors.values():
             vec = steering_vector.layer_activations[layer]
             steering_vector.layer_activations[layer] = vec * base_magnitude / vec.norm()
 

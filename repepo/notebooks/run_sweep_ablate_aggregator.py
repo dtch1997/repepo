@@ -1,4 +1,4 @@
-""" Run sweep to find the best layer for steering with different aggregators. """
+"""Run sweep to find the best layer for steering with different aggregators."""
 
 from itertools import product
 from repepo.steering.sweeps.constants import (

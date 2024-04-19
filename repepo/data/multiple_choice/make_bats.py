@@ -1,4 +1,4 @@
-""" Script to make datasets from Bigger Analogies Test Set 3.0 """
+"""Script to make datasets from Bigger Analogies Test Set 3.0"""
 
 from typing import Any
 

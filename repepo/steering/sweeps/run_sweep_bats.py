@@ -1,4 +1,4 @@
-""" Evaluate steering efficiency across all token-level concepts. """
+"""Evaluate steering efficiency across all token-level concepts."""
 
 import pathlib
 import itertools

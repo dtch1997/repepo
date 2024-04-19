@@ -1,4 +1,4 @@
-""" Evaluate the model's base propensity to output the positive / negative token """
+"""Evaluate the model's base propensity to output the positive / negative token"""
 
 from repepo.steering.run_sweep import run_sweep, test_dataset_exists
 from repepo.steering.utils.helpers import SteeringConfig

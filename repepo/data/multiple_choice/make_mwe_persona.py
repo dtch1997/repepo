@@ -1,4 +1,4 @@
-""" Script to make datasets for Anthropic's Persona Model-Written Evals """
+"""Script to make datasets for Anthropic's Persona Model-Written Evals"""
 
 import json
 from typing import cast
