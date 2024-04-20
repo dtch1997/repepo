@@ -39,7 +39,6 @@ Persona = Literal["positive", "negative", "baseline"]
 PERSONAS: list[Persona] = ["positive", "negative", "baseline"]
 
 CONFIG_SAVE_PATH = "config.json"
-RESULTS_SAVE_PATH = "results.pt"
 
 PERSONA_PROMPTS: dict[str, tuple[str, str]] = {
     "interest-in-math": (
@@ -244,30 +243,30 @@ def run_persona_cross_steering_experiment(
         "baseline": test_ds,
     }
     for persona in non_baseline_personas:
-        steering_vectors[
-            "SYS_" + persona
-        ] = train_steering_vector_for_persona_and_dataset(
-            model,
-            tokenizer,
-            persona,
-            dataset_name,
-            train_split,
-            layer=layer,
-            use_sys_prompt=True,
-            show_progress=show_progress,
+        steering_vectors["SYS_" + persona] = (
+            train_steering_vector_for_persona_and_dataset(
+                model,
+                tokenizer,
+                persona,
+                dataset_name,
+                train_split,
+                layer=layer,
+                use_sys_prompt=True,
+                show_progress=show_progress,
+            )
         )
         test_dataset_mapping["SYS_" + persona] = test_ds
-        steering_vectors[
-            "PT_" + persona
-        ] = train_steering_vector_for_persona_and_dataset(
-            model,
-            tokenizer,
-            persona,
-            dataset_name,
-            train_split,
-            layer=layer,
-            use_sys_prompt=False,
-            show_progress=show_progress,
+        steering_vectors["PT_" + persona] = (
+            train_steering_vector_for_persona_and_dataset(
+                model,
+                tokenizer,
+                persona,
+                dataset_name,
+                train_split,
+                layer=layer,
+                use_sys_prompt=False,
+                show_progress=show_progress,
+            )
         )
         test_dataset_mapping["PT_" + persona] = test_ds
     mean_layer_activation = torch.stack(
@@ -518,16 +517,14 @@ def run_persona_generalization_experiment(
         with open(output_dir / CONFIG_SAVE_PATH, "w") as f:
             json.dump(config.__dict__, f, indent=4, ensure_ascii=False)
 
-    results: dict[str, PersonaCrossSteeringExperimentResult] = {}
-    if (output_dir / RESULTS_SAVE_PATH).exists():
-        results = torch.load(output_dir / RESULTS_SAVE_PATH)
     for i, dataset_name in enumerate(PERSONA_PROMPTS):
+        results_save_file = output_dir / f"{dataset_name}.pt"
+        if results_save_file.exists():
+            print(f"already ran {dataset_name}, skipping")
+            continue
         print(
             f"Running experiment for dataset {dataset_name} ({i+1} / {len(PERSONA_PROMPTS)})"
         )
-        if dataset_name in results:
-            print(f"already ran {dataset_name}, skipping")
-            continue
         result = run_persona_cross_steering_experiment(
             model,
             tokenizer,
@@ -542,8 +539,7 @@ def run_persona_generalization_experiment(
             positive_multiplier=config.positive_multiplier,
             negative_multiplier=config.negative_multiplier,
         )
-        results[dataset_name] = result
-        torch.save(results, output_dir / RESULTS_SAVE_PATH)
+        torch.save(result, results_save_file)
     print("Done!")
 
 
