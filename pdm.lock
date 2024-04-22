@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
-lock_version = "4.4"
-content_hash = "sha256:1e5053c184db80fb6ae73ce90bad8d4154b553e259d8b9c1f914d4debcf19f16"
+lock_version = "4.4.1"
+content_hash = "sha256:28bfaa0122acd22674f70e4f2404b96d943ec1b911b129ed64dbf3f1c5f96648"
 
 [[package]]
 name = "absl-py"
@@ -1433,6 +1433,20 @@ dependencies = [
 files = [
     {file = "isoduration-20.11.0-py3-none-any.whl", hash = "sha256:b2904c2a4228c3d44f409c8ae8e2370eb21a26f7ac2ec5446df141dde3452042"},
     {file = "isoduration-20.11.0.tar.gz", hash = "sha256:ac2f9015137935279eac671f94f89eb00584f940f5dc49462a0c4ee692ba1bd9"},
+]
+
+[[package]]
+name = "jaxtyping"
+version = "0.2.28"
+requires_python = "~=3.9"
+summary = "Type annotations and runtime checking for shape and dtype of JAX arrays, and PyTrees."
+dependencies = [
+    "numpy>=1.20.0",
+    "typeguard==2.13.3",
+]
+files = [
+    {file = "jaxtyping-0.2.28-py3-none-any.whl", hash = "sha256:4a54eb964087cd46463d9a86c805b4e4f5c20cce5f22049d6f35a26d9f105bd3"},
+    {file = "jaxtyping-0.2.28.tar.gz", hash = "sha256:cd20bf1558a90c6d77c589354e35670ecc5b94925ef45bf1c020fde7b44fac8d"},
 ]
 
 [[package]]
@@ -4485,6 +4499,16 @@ files = [
     {file = "triton-2.2.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a2294514340cfe4e8f4f9e5c66c702744c4a117d25e618bd08469d0bfed1e2e5"},
     {file = "triton-2.2.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:da58a152bddb62cafa9a857dd2bc1f886dbf9f9c90a2b5da82157cd2b34392b0"},
     {file = "triton-2.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0af58716e721460a61886668b205963dc4d1e4ac20508cc3f623aef0d70283d5"},
+]
+
+[[package]]
+name = "typeguard"
+version = "2.13.3"
+requires_python = ">=3.5.3"
+summary = "Run-time type checker for Python"
+files = [
+    {file = "typeguard-2.13.3-py3-none-any.whl", hash = "sha256:5e3e3be01e887e7eafae5af63d1f36c849aaa94e3a0112097312aabfa16284f1"},
+    {file = "typeguard-2.13.3.tar.gz", hash = "sha256:00edaa8da3a133674796cf5ea87d9f4b4c367d77476e185e80251cc13dfbb8c4"},
 ]
 
 [[package]]
