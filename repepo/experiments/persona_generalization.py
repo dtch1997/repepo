@@ -387,6 +387,7 @@ def plot_persona_cross_steering_result(
     result: PersonaCrossSteeringExperimentResult,
     delta_type: DeltaType = "pos_base",
     dist_metric: DistMetric = "raw",
+    metric_name: str = "mean_pos_prob",
     save_path: str | None = None,
 ):
     cross_steering_result = replace(
@@ -403,6 +404,7 @@ def plot_persona_cross_steering_result(
         title=result.dataset_name,
         delta_type=delta_type,
         dist_metric=dist_metric,
+        metric_name=metric_name,
         save_path=save_path,
     )
 
