@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, NamedTuple
 
@@ -25,10 +26,15 @@ class CrossSteeringResult:
     steering_labels: list[str]
     dataset_labels: list[str]
     dataset_baselines: list[EvalResult]
-    pos_steering: list[list[EvalResult]]
-    neg_steering: list[list[EvalResult]]
-    pos_multiplier: float
-    neg_multiplier: float
+    steering: dict[float, list[list[EvalResult]]]
+
+    @property
+    def neg_steering(self) -> dict[float, list[list[EvalResult]]]:
+        return {k: v for k, v in self.steering.items() if k < 0}
+
+    @property
+    def pos_steering(self) -> dict[float, list[list[EvalResult]]]:
+        return {k: v for k, v in self.steering.items() if k > 0}
 
 
 def evaluate_cross_steering(
@@ -37,9 +43,8 @@ def evaluate_cross_steering(
     layer: int,
     steering_vectors: dict[str, SteeringVector],
     datasets: dict[str, Dataset],
+    multipliers: list[float],
     build_pipeline: Callable[[Model, Tokenizer, str], Any] | None = None,
-    positive_multiplier: float = 1.0,
-    negative_multiplier: float = -1.0,
     patch_generation_tokens_only: bool = True,
     skip_first_n_generation_tokens: int = 0,
     completion_template: str | None = None,
@@ -58,8 +63,7 @@ def evaluate_cross_steering(
 
     # Get baseline logits
     baseline_results = []
-    pos_steering = []
-    neg_steering = []
+    steering: dict[float, list[list[EvalResult]]] = defaultdict(list)
     pbar = tqdm(
         total=len(dataset_labels) * len(steering_labels),
         desc="Evaluating cross-steering",
@@ -70,8 +74,7 @@ def evaluate_cross_steering(
     first_sv = list(steering_vectors.values())[0]
 
     for dataset_label in dataset_labels:
-        dataset_pos_steering = []
-        dataset_neg_steering = []
+        dataset_steering: dict[float, list[EvalResult]] = defaultdict(list)
         dataset = datasets[dataset_label]
         pipeline = build_pipeline(model, tokenizer, dataset_label)
         result = evaluate_steering_vector(
@@ -92,12 +95,12 @@ def evaluate_cross_steering(
         baseline_results.append(result)
         for steering_label in steering_labels:
             steering_vector = steering_vectors[steering_label]
-            neg_result, pos_result = evaluate_steering_vector(
+            results = evaluate_steering_vector(
                 pipeline,
                 steering_vector,
                 dataset,
                 layers=[layer],
-                multipliers=[negative_multiplier, positive_multiplier],
+                multipliers=[mul for mul in multipliers if mul != 0],
                 evaluators=[
                     NormalizedPositiveProbabilityEvaluator(),
                     LogitDifferenceEvaluator(),
@@ -106,19 +109,17 @@ def evaluate_cross_steering(
                 skip_first_n_generation_tokens=skip_first_n_generation_tokens,
                 completion_template=completion_template,
                 show_progress=False,
+                slim_results=True,
             )
-            dataset_neg_steering.append(neg_result)
-            dataset_pos_steering.append(pos_result)
+            for result, multiplier in zip(results, multipliers):
+                dataset_steering[multiplier].append(result)
             pbar.update(1)
-        pos_steering.append(dataset_pos_steering)
-        neg_steering.append(dataset_neg_steering)
+        for multiplier, results in dataset_steering.items():
+            steering[multiplier].append(results)
 
     return CrossSteeringResult(
         steering_labels=steering_labels,
         dataset_labels=dataset_labels,
         dataset_baselines=baseline_results,
-        pos_steering=pos_steering,
-        neg_steering=neg_steering,
-        pos_multiplier=positive_multiplier,
-        neg_multiplier=negative_multiplier,
+        steering=steering,
     )

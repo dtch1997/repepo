@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 import json
 import os
 from pathlib import Path
@@ -19,11 +19,6 @@ from repepo.steering.build_steering_training_data import (
 from repepo.steering.evaluate_cross_steering import (
     CrossSteeringResult,
     evaluate_cross_steering,
-)
-from repepo.steering.plot_cross_steering_result import (
-    DeltaType,
-    DistMetric,
-    plot_cross_steering_result,
 )
 from repepo.steering.plot_steering_vector_cos_similarities import (
     plot_steering_vector_cos_similarities,
@@ -217,13 +212,12 @@ def run_persona_cross_steering_experiment(
     train_split: str,
     test_split: str,
     layer: int,
+    multipliers: list[float],
     normalize_steering_magnitude_to_baseline: bool = True,
     show_progress: bool = True,
     patch_generation_tokens_only: bool = True,
     skip_first_n_generation_tokens: int = 0,
     completion_template: str | None = None,
-    positive_multiplier: float = 1.0,
-    negative_multiplier: float = -1.0,
 ) -> PersonaCrossSteeringExperimentResult:
     steering_vectors: dict[str, SteeringVector] = {}
     test_ds = make_dataset(dataset_name, test_split)
@@ -313,8 +307,7 @@ def run_persona_cross_steering_experiment(
         patch_generation_tokens_only=patch_generation_tokens_only,
         skip_first_n_generation_tokens=skip_first_n_generation_tokens,
         completion_template=completion_template,
-        positive_multiplier=positive_multiplier,
-        negative_multiplier=negative_multiplier,
+        multipliers=multipliers,
     )
     return PersonaCrossSteeringExperimentResult(
         dataset_name=dataset_name,
@@ -331,18 +324,22 @@ def plot_steering_on_dataset(
 ):
     cs = result.cross_steering_result
     ds_index = cs.dataset_labels.index(dataset_version)
-    ds_neg_steering = cs.neg_steering[ds_index]
-    ds_pos_steering = cs.pos_steering[ds_index]
 
-    multipliers = [cs.neg_multiplier, 0.0, cs.pos_multiplier]
+    multipliers = [*list(cs.neg_steering.keys()), 0.0, *list(cs.neg_steering.keys())]
 
     results_line_mean = []
     for i, label in enumerate(cs.steering_labels):
         results_line_mean.append(
             [
-                ds_neg_steering[i].metrics[metric_name],
+                *[
+                    res[ds_index][i].metrics[metric_name]
+                    for res in cs.neg_steering.values()
+                ],
                 cs.dataset_baselines[ds_index].metrics[metric_name],
-                ds_pos_steering[i].metrics[metric_name],
+                *[
+                    res[ds_index][i].metrics[metric_name]
+                    for res in cs.pos_steering.values()
+                ],
             ]
         )
 
@@ -381,32 +378,6 @@ def plot_steering_on_dataset(
 
     # Show the plot
     plt.show()
-
-
-def plot_persona_cross_steering_result(
-    result: PersonaCrossSteeringExperimentResult,
-    delta_type: DeltaType = "pos_base",
-    dist_metric: DistMetric = "raw",
-    metric_name: str = "mean_pos_prob",
-    save_path: str | None = None,
-):
-    cross_steering_result = replace(
-        result.cross_steering_result,
-        steering_labels=[
-            shorten(label) for label in result.cross_steering_result.steering_labels
-        ],
-        dataset_labels=[
-            shorten(label) for label in result.cross_steering_result.dataset_labels
-        ],
-    )
-    return plot_cross_steering_result(
-        cross_steering_result,
-        title=result.dataset_name,
-        delta_type=delta_type,
-        dist_metric=dist_metric,
-        metric_name=metric_name,
-        save_path=save_path,
-    )
 
 
 def extract_layer(result: PersonaCrossSteeringExperimentResult) -> int:
@@ -485,8 +456,9 @@ class PersonaGeneralizationExperimentConfig:
     train_split: str = "0:50%"
     test_split: str = "50:100%"
     layer: int = 15
-    positive_multiplier: float = 1.0
-    negative_multiplier: float = -1.0
+    multipliers: list[float] = field(
+        default_factory=lambda: [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
+    )
 
 
 def run_persona_generalization_experiment(
@@ -538,8 +510,7 @@ def run_persona_generalization_experiment(
             patch_generation_tokens_only=config.patch_generation_tokens_only,
             skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
             completion_template=config.completion_template,
-            positive_multiplier=config.positive_multiplier,
-            negative_multiplier=config.negative_multiplier,
+            multipliers=config.multipliers,
         )
         torch.save(result, results_save_file)
     print("Done!")

@@ -111,8 +111,8 @@ def select_repe_layer_at_eval(layer: int) -> EvalHook:
 
 @dataclass
 class EvalPrediction:
-    positive_output_prob: TextProbs
-    negative_output_prob: TextProbs
+    positive_output_prob: TextProbs | None
+    negative_output_prob: TextProbs | None
     # Example-level metrics
     metrics: dict[str, float]
 
@@ -212,6 +212,8 @@ class NormalizedPositiveProbabilityEvaluator(Evaluator):
         """
 
         # calculate normalized logprobs
+        assert prediction.positive_output_prob is not None
+        assert prediction.negative_output_prob is not None
         positive_output_logprob = prediction.positive_output_prob.sum_logprobs
         negative_output_logprob = prediction.negative_output_prob.sum_logprobs
 
@@ -236,6 +238,7 @@ def evaluate(
     show_progress: bool = True,
     tqdm_desc: str = "Evaluating",
     logger: logging.Logger | None = None,
+    slim_results: bool = False,  # if True, only return metrics for each example, not full token-level stats
 ) -> EvalResult:
     # evaluate
     predictions: list[EvalPrediction] = []
@@ -251,8 +254,12 @@ def evaluate(
                 logger.debug(
                     f"Example full prompt: \n {pipeline.build_full_prompt(example.positive)}"
                 )
-            positive_probs = pipeline.calculate_output_logprobs(example.positive)
-            negative_probs = pipeline.calculate_output_logprobs(example.negative)
+            positive_probs = pipeline.calculate_output_logprobs(
+                example.positive, slim_results=slim_results
+            )
+            negative_probs = pipeline.calculate_output_logprobs(
+                example.negative, slim_results=slim_results
+            )
 
             pred = EvalPrediction(
                 positive_output_prob=positive_probs,
@@ -271,5 +278,9 @@ def evaluate(
         dataset_metrics: dict[str, float] = {}
         for evaluator in evaluators:
             dataset_metrics.update(evaluator(predictions))
+        if slim_results:
+            for prediction in predictions:
+                prediction.positive_output_prob = None
+                prediction.negative_output_prob = None
         return EvalResult(predictions, dataset_metrics)
     raise RuntimeError("Should never get here")

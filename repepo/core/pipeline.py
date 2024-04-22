@@ -14,24 +14,28 @@ class TokenProb:
     # Note: the logit, logprob are for this token, not the next token
     logprob: float
     logit: float
-    text: str
+    text: str | None = None
     # Metrics for logits of other tokens that were in this token position
-    logit_mean: float = float("nan")
-    logit_std: float = float("nan")
-    logit_skew: float = float("nan")
-    logit_kurtosis: float = float("nan")
-    logit_100_quantile: float = float("nan")
-    logit_75_quantile: float = float("nan")
-    logit_50_quantile: float = float("nan")
-    logit_25_quantile: float = float("nan")
-    logit_0_quantile: float = float("nan")
+    logit_mean: float | None = None
+    logit_std: float | None = None
+    logit_skew: float | None = None
+    logit_kurtosis: float | None = None
+    logit_100_quantile: float | None = None
+    logit_75_quantile: float | None = None
+    logit_50_quantile: float | None = None
+    logit_25_quantile: float | None = None
+    logit_0_quantile: float | None = None
 
     @property
     def logit_max(self) -> float:
+        if self.logit_100_quantile is None:
+            raise ValueError("logit_100_quantile is not set")
         return self.logit_100_quantile
 
     @property
     def logit_min(self) -> float:
+        if self.logit_0_quantile is None:
+            raise ValueError("logit_0_quantile is not set")
         return self.logit_0_quantile
 
 
@@ -62,8 +66,7 @@ class PipelineContext:
 
 
 class PipelineHook(Protocol):
-    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]:
-        ...
+    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]: ...
 
 
 def compute_moments(tensor: torch.Tensor, dim: int) -> torch.Tensor:
@@ -115,7 +118,9 @@ class Pipeline:
         )
 
     @torch.no_grad()
-    def calculate_output_logprobs(self, completion: Completion) -> TextProbs:
+    def calculate_output_logprobs(
+        self, completion: Completion, slim_results: bool = False
+    ) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
         base_prompt = self.build_generation_prompt(completion)
         full_prompt = self.build_full_prompt(completion)
@@ -154,36 +159,40 @@ class Pipeline:
             # logits is of shape (1, seq_len, vocab_size)
             assert logits.shape[0] == 1
             logits = logits[0]
-            logit_moments = compute_moments(logits, dim=-1).cpu()
-            logit_quantiles = compute_quantiles(logits, dim=-1).cpu()
             text_probs: list[TokenProb] = []
 
-            for token, logprob, logit, logit_moment, logit_quantile in zip(
-                target_ids[0].cpu(),
-                gen_logprobs,
-                gen_logits,
-                logit_moments,
-                logit_quantiles,
+            logit_moments = None
+            logit_quantiles = None
+            if not slim_results:
+                logit_moments = compute_moments(logits, dim=-1).cpu()
+                logit_quantiles = compute_quantiles(logits, dim=-1).cpu()
+
+            for i, (token, logprob, logit) in enumerate(
+                zip(
+                    target_ids[0].cpu(),
+                    gen_logprobs,
+                    gen_logits,
+                )
             ):
                 if token not in self.tokenizer.all_special_ids:
-                    text_probs.append(
-                        TokenProb(
-                            token_id=token.item(),
-                            text=self.tokenizer.decode(token),
-                            logprob=logprob.item(),
-                            logit=logit.item(),
-                            # moments
-                            logit_mean=logit_moment[0].item(),
-                            logit_std=logit_moment[1].item(),
-                            logit_skew=logit_moment[2].item(),
-                            logit_kurtosis=logit_moment[3].item(),
-                            # quantiles
-                            logit_0_quantile=logit_quantile[0].item(),
-                            logit_25_quantile=logit_quantile[1].item(),
-                            logit_50_quantile=logit_quantile[2].item(),
-                            logit_75_quantile=logit_quantile[3].item(),
-                            logit_100_quantile=logit_quantile[4].item(),
-                        )
+                    token_prob = TokenProb(
+                        token_id=token.item(),
+                        logprob=logprob.item(),
+                        logit=logit.item(),
                     )
+                    if not slim_results:
+                        assert logit_moments is not None
+                        assert logit_quantiles is not None
+                        token_prob.text = self.tokenizer.decode(token)
+                        token_prob.logit_mean = logit_moments[i, 0].item()
+                        token_prob.logit_std = logit_moments[i, 1].item()
+                        token_prob.logit_skew = logit_moments[i, 2].item()
+                        token_prob.logit_kurtosis = logit_moments[i, 3].item()
+                        token_prob.logit_0_quantile = logit_quantiles[i, 0].item()
+                        token_prob.logit_25_quantile = logit_quantiles[i, 1].item()
+                        token_prob.logit_50_quantile = logit_quantiles[i, 2].item()
+                        token_prob.logit_75_quantile = logit_quantiles[i, 3].item()
+                        token_prob.logit_100_quantile = logit_quantiles[i, 4].item()
+                    text_probs.append(token_prob)
             return TextProbs(text=full_prompt, token_probs=text_probs)
         raise RuntimeError("Should never get here")

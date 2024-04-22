@@ -131,10 +131,7 @@ def test_base_dataset_position_is_half_if_evenly_spaced(
                 EvalResult(metrics={"mean_pos_prob": 0.25}, predictions=[]),
                 EvalResult(metrics={"mean_pos_prob": 0.50}, predictions=[]),  # baseline
             ],
-            pos_steering=[],
-            neg_steering=[],
-            pos_multiplier=1.0,
-            neg_multiplier=-1.0,
+            steering={},
         ),
     )
     assert base_dataset_position(results, dist_metric=dist_metric) == 0.5
@@ -164,10 +161,7 @@ def test_base_dataset_position_is_near_one_if_base_is_near_pos(
                 EvalResult(metrics={"mean_pos_prob": 0.25}, predictions=[]),
                 EvalResult(metrics={"mean_pos_prob": 0.70}, predictions=[]),  # baseline
             ],
-            pos_steering=[],
-            neg_steering=[],
-            pos_multiplier=1.0,
-            neg_multiplier=-1.0,
+            steering={},
         ),
     )
     assert base_dataset_position(results, dist_metric=dist_metric) > 0.8
@@ -198,10 +192,7 @@ def test_base_dataset_position_is_near_zero_if_base_is_near_neg(
                 EvalResult(metrics={"mean_pos_prob": 0.25}, predictions=[]),
                 EvalResult(metrics={"mean_pos_prob": 0.30}, predictions=[]),  # baseline
             ],
-            pos_steering=[],
-            neg_steering=[],
-            pos_multiplier=1.0,
-            neg_multiplier=-1.0,
+            steering={},
         ),
     )
     assert base_dataset_position(results, dist_metric=dist_metric) < 0.2

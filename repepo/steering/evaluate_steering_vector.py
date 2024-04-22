@@ -35,6 +35,7 @@ def evaluate_steering_vector(
         NormalizedPositiveProbabilityEvaluator(),
     ],
     show_progress: bool = True,
+    slim_results: bool = False,
 ) -> list[EvalResult]:
     results = []
 
@@ -69,6 +70,7 @@ def evaluate_steering_vector(
                 evaluators=evaluators,
                 logger=logger,
                 show_progress=show_progress,
+                slim_results=slim_results,
             )
             results.append(result)
             if logger is not None:
