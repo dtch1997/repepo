@@ -119,6 +119,12 @@ class EvalPrediction:
 
 @dataclass
 class EvalResult:
+    # Metadata about how the SV was extracted
+    steering_vector_id: str
+    # Metadata about how the SV was applied
+    multiplier: float
+    # patch_generation_tokens_only: bool
+    # skip_first_n_generation_tokens: int
     predictions: list[EvalPrediction]
     # Dataset-level metrics; e.g. mean, stds of example-level metrics
     metrics: dict[str, float]
