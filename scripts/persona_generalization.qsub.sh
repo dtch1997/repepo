@@ -8,8 +8,9 @@
 module load python3/3.11  # Load Python 3.11 module
 module load cuda/11.2     # Load CUDA module, adjust version as necessary
 
+# NOTE: Assume you have already cloned the repository and checked out correct branch
 # Navigate to the project directory
-cd /home/ucabdc6/Scratch/repepo
+cd /home/$USER/Scratch/repepo
 
 # Create a Python virtual environment
 python3 -m venv .venv
