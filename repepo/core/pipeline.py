@@ -66,7 +66,8 @@ class PipelineContext:
 
 
 class PipelineHook(Protocol):
-    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]: ...
+    def __call__(self, context: PipelineContext) -> AbstractContextManager[None]:
+        ...
 
 
 def compute_moments(tensor: torch.Tensor, dim: int) -> torch.Tensor:
