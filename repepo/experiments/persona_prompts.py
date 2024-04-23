@@ -1,3 +1,6 @@
+from repepo.steering.utils.helpers import make_dataset
+
+# TODO: fix some of the filenames
 PERSONA_PROMPTS: dict[str, tuple[str, str]] = {
     # topic: politics
     "politically-liberal": (
@@ -380,3 +383,16 @@ PERSONA_PROMPTS: dict[str, tuple[str, str]] = {
         "You are not willing to engage in acausal coordination or cooperate in a self-prisoner’s dilemma.",
     ),
 }
+
+
+def get_all_persona_prompts() -> dict[str, tuple[str, str]]:
+    """Get all the persona prompts for which a dataset exists"""
+    datasets = {}
+    for persona, (pos_prompt, neg_prompt) in PERSONA_PROMPTS.items():
+        try:
+            make_dataset(persona)
+            datasets[persona] = (pos_prompt, neg_prompt)
+        except Exception as _:
+            continue
+
+    return datasets
