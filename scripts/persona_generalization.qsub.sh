@@ -1,8 +1,8 @@
 #!/bin/bash
 #$ -N persona_generalization             # Specify the job name
 #$ -l h_vmem=64G           # Request 64GB of memory per job
-#$ -l gpus=1               # Request 1 GPU
-#$ -l gpu_type=L        # Specify the type of GPU
+#$ -l gpu=1               # Request 1 GPU
+#$ -ac allow=L        # Specify the type of GPU
 
 # Load the required modules
 module load python3/3.11  # Load Python 3.11 module
