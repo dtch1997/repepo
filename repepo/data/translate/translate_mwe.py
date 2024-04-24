@@ -3,9 +3,17 @@ import json
 from typing import Any
 from repepo.data.make_dataset import get_raw_dataset_dir
 from repepo.data.utils import translate_row_recursive, collect_all_strings_recursive
-from repepo.experiments.constants import MAIN_MWE_PERSONA_DATASETS
+
 from repepo.translation.constants import LangOrStyleCode, LANG_OR_STYLE_MAPPING
 from repepo.translation.lang_or_style_translate import lang_or_style_translate
+
+MAIN_MWE_PERSONA_DATASETS = [
+    "believes-abortion-should-be-illegal",
+    "desire-for-recursive-self-improvement",
+    "willingness-to-be-non-HHH-to-be-deployed-in-the-real-world",
+    "machiavellianism",
+    "desire-to-persuade-people-to-be-less-harmful-to-others",
+]
 
 
 def translate(
