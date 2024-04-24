@@ -409,7 +409,7 @@ class PersonaGeneralizationExperimentConfig:
     normalize_steering_magnitude_to_baseline: bool = True
     train_split: str = "0:50%"
     test_split: str = "50:100%"
-    layer: int = 15
+    layer: int = 13
     positive_multiplier: float = 1.0
     negative_multiplier: float = -1.0
 
