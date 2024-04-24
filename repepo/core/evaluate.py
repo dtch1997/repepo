@@ -169,6 +169,8 @@ class MultipleChoiceAccuracyEvaluator(Evaluator):
 
         # the output might be longer than the expected depending on how many tokens we generate
         # so just verify that the expected output is a prefix of the generated output
+        assert prediction.positive_output_prob is not None
+        assert prediction.negative_output_prob is not None
         positive_output_prob = prediction.positive_output_prob.sum_logprobs
         negative_output_prob = prediction.negative_output_prob.sum_logprobs
         return 1.0 if positive_output_prob > negative_output_prob else 0.0
@@ -189,6 +191,8 @@ class LogitDifferenceEvaluator(Evaluator):
         """Score a single prediction based on difference in sum of logits."""
 
         # calculate difference in logits
+        assert prediction.positive_output_prob is not None
+        assert prediction.negative_output_prob is not None
         positive_output_logit = prediction.positive_output_prob.sum_logits
         negative_output_logit = prediction.negative_output_prob.sum_logits
         return positive_output_logit - negative_output_logit

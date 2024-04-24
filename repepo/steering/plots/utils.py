@@ -42,6 +42,8 @@ def make_results_df(results: list[tuple[SteeringConfig, EvalResult]]):
         row.update(result.metrics)
         # Sample-wise results
         for prediction in result.predictions:
+            assert prediction.positive_output_prob is not None
+            assert prediction.negative_output_prob is not None
             sample_row = row.copy()
             # Add the text output
             sample_row.update(
@@ -53,6 +55,7 @@ def make_results_df(results: list[tuple[SteeringConfig, EvalResult]]):
             # Add raw metrics
             sample_row.update(prediction.metrics)
             # Add other information about logits
+
             token_difference_position = find_token_difference_position(
                 prediction.positive_output_prob, prediction.negative_output_prob
             )
