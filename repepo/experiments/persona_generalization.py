@@ -41,8 +41,6 @@ PERSONAS: list[Persona] = ["positive", "negative", "baseline"]
 
 CONFIG_SAVE_PATH = "config.json"
 
-PERSONA_PROMPTS = get_all_persona_prompts()
-
 DARK_TRIAD_PERSONAS = {
     "machiavellianism",
     "narcissism",
@@ -72,9 +70,10 @@ def persona_pipeline(
     dataset_name: str,
     use_sys_prompt: bool,
 ) -> Pipeline:
-    if dataset_name not in PERSONA_PROMPTS:
+    all_persona_prompts = get_all_persona_prompts()
+    if dataset_name not in all_persona_prompts:
         raise ValueError(f"Dataset {dataset_name} is not supported.")
-    positive_prompt, negative_prompt = PERSONA_PROMPTS[dataset_name]
+    positive_prompt, negative_prompt = all_persona_prompts[dataset_name]
     formatter = LlamaChatFormatter()
     if persona == "positive":
         if use_sys_prompt:
@@ -444,13 +443,14 @@ def run_persona_generalization_experiment(
         with open(output_dir / CONFIG_SAVE_PATH, "w") as f:
             json.dump(config.__dict__, f, indent=4, ensure_ascii=False)
 
-    for i, dataset_name in enumerate(PERSONA_PROMPTS):
+    all_persona_prompts = get_all_persona_prompts()
+    for i, dataset_name in enumerate(all_persona_prompts):
         results_save_file = output_dir / f"{dataset_name}.pt"
         if results_save_file.exists():
             print(f"already ran {dataset_name}, skipping")
             continue
         print(
-            f"Running experiment for dataset {dataset_name} ({i+1} / {len(PERSONA_PROMPTS)})"
+            f"Running experiment for dataset {dataset_name} ({i+1} / {len(all_persona_prompts)})"
         )
         result = run_persona_cross_steering_experiment(
             model,
