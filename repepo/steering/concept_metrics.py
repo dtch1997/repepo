@@ -66,8 +66,7 @@ def _mean_dot_product(diff_vecs: list[Tensor]) -> float:
 
 
 class Metric(Protocol):
-    def __call__(self, diff_vecs: list[Tensor]) -> float:
-        ...
+    def __call__(self, diff_vecs: list[Tensor]) -> float: ...
 
 
 def compute_difference_vectors(
