@@ -4,8 +4,6 @@ from textwrap import dedent
 from transformers import (
     GPTNeoXForCausalLM,
 )
-from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe
-from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
 from repepo.core.evaluate import EvalResult
 from repepo.core.types import Completion, Tokenizer
 from repepo.experiments.persona_generalization import (
@@ -15,12 +13,6 @@ from repepo.experiments.persona_generalization import (
     persona_pipeline,
 )
 from repepo.steering.evaluate_cross_steering import CrossSteeringResult
-
-
-@pytest.fixture(scope="package")
-def datasets() -> None:
-    make_mwe_personas_caa()
-    make_mwe()
 
 
 @pytest.mark.parametrize(
