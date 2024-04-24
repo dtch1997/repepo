@@ -56,23 +56,23 @@ exclude = '''
 
 [tool.ruff]
 line-length = 88
-select = [
+lint.select = [
   "E", # pycodestyle
   "F", # pyflakes
   "I",
 ]
 exclude = ["third_party", ".venv"]
-ignore = ["F841", "E501", "E741", "I001", "E731"]
+lint.ignore = ["F841", "E501", "E741", "I001", "E731"]
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401", "F403", "E402"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["cdax"]
 force-single-line = true
 single-line-exclusions = ["typing"]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
 [tool.pyright]
