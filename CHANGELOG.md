@@ -2,6 +2,75 @@
 
 
 
+## v0.5.0 (2024-04-24)
+
+### Chore
+
+* chore: replace hardcoded user id with daniel ([`b1271a6`](https://github.com/dtch1997/repepo/commit/b1271a6a4b98069a35ffe65f62ce1394670296fa))
+
+* chore: fix qsub script ([`5f50c60`](https://github.com/dtch1997/repepo/commit/5f50c60050b55ac5b96508c55ac1e14ed0ee756c))
+
+* chore: cleanup dead code ([`9e615ff`](https://github.com/dtch1997/repepo/commit/9e615ff75f26d6692cf6966371cc00a3b98228f6))
+
+### Feature
+
+* feat: slim eval results and allowing multipler multipliers in cross-steering (#159)
+
+* adding slim eval results and allowing multipler multipliers in cross-steering
+
+* fixing linting
+
+* fixing typing ([`64d94aa`](https://github.com/dtch1997/repepo/commit/64d94aaf86e0782513c9f80888999bddc3e348f8))
+
+* feat: add more persona prompts (#160)
+
+* add more persona prompts
+
+* add persona prompts, tests
+
+* Modify persona_generalization to work with more prompts
+
+* Add script to run persona generalization
+
+* fix: translation constants
+
+* Add test for variables
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`1cdf847`](https://github.com/dtch1997/repepo/commit/1cdf847c4b78e2a7cab7099594bee6a3c567c4da))
+
+* feat: steerability metrics ([`f9e22cc`](https://github.com/dtch1997/repepo/commit/f9e22ccb0252963041854a8e26fe5295dd2f1b6c))
+
+### Fix
+
+* fix: replace global var ([`d91a75f`](https://github.com/dtch1997/repepo/commit/d91a75f691144d940376812fc19a11a5b7476434))
+
+### Unknown
+
+* update test fixture ([`53d06ab`](https://github.com/dtch1997/repepo/commit/53d06ab494cf42a0e159ca5c96360458bb91cbba))
+
+* text: add dataset fixture ([`1b10ef4`](https://github.com/dtch1997/repepo/commit/1b10ef4d0b21d1e9fd040e74fe6d746e9477d341))
+
+* set layer to 13 ([`f75473d`](https://github.com/dtch1997/repepo/commit/f75473d1f6db0a9c246040fafdc3320ac29cacfe))
+
+* fixing linting ([`cdb5494`](https://github.com/dtch1997/repepo/commit/cdb54943e5c94a2a78b493cb8153839da4422179))
+
+* allow customizing metric name in persona plots ([`d379a6d`](https://github.com/dtch1997/repepo/commit/d379a6de2cbee15471e08e5ee02c84e349d72c47))
+
+* save persona generalization results individually ([`de8bbd0`](https://github.com/dtch1997/repepo/commit/de8bbd0571b2cf6b05a8f3f1c816ed33ca47b71b))
+
+* Faster eval (#153)
+
+* hopefully improving eval speed
+
+* more device issues
+
+* reformatting ([`03a6dfc`](https://github.com/dtch1997/repepo/commit/03a6dfcc9b306c128c97ef0631acd897d55993fe))
+
+* tweaking cross steering ([`2babe64`](https://github.com/dtch1997/repepo/commit/2babe6449c3f9ceeba4295256640c2870f0e9f7e))
+
+
 ## v0.4.0 (2024-04-12)
 
 ### Chore
