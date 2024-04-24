@@ -49,9 +49,6 @@ jobs:
       - name: build
         run: pdm build
       - name: test
-        run: pdm run pytest
-
-      - name: Test
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: pdm run python -m pytest tests
