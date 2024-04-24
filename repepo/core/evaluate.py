@@ -261,9 +261,9 @@ def evaluate(
             )
             example_metrics = {}
             for evaluator in evaluators:
-                example_metrics[
-                    evaluator.get_metric_name()
-                ] = evaluator.score_prediction(pred)
+                example_metrics[evaluator.get_metric_name()] = (
+                    evaluator.score_prediction(pred)
+                )
             pred.metrics = example_metrics
 
             predictions.append(pred)

@@ -136,9 +136,9 @@ def plot_detection_results(input_ids, rep_reader_scores_dict, THRESHOLD):
     for rep, s_style, n_style in zip(selected_concepts, selection_style, norm_style):
         rep_scores = np.array(rep_reader_scores_dict[rep])
         mean, std = np.median(rep_scores), rep_scores.std()
-        rep_scores[
-            (rep_scores > mean + 5 * std) | (rep_scores < mean - 5 * std)
-        ] = mean  # get rid of outliers
+        rep_scores[(rep_scores > mean + 5 * std) | (rep_scores < mean - 5 * std)] = (
+            mean  # get rid of outliers
+        )
         mag = max(0.3, np.abs(rep_scores).std() / 10)
         min_val, max_val = -mag, mag
         norm = Normalize(vmin=min_val, vmax=max_val)
