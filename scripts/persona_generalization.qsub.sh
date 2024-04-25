@@ -5,6 +5,10 @@
 #$ -l gpu=1               # Request 1 GPU
 #$ -ac allow=L        # Specify the type of GPU
 
+# Add locally installed executables to PATH
+#  (e.g. pdm)
+export PATH=$PATH:/home/$USER/.local/bin
+
 # NOTE: Assume you have already cloned the repository and checked out correct branch
 # Navigate to the project directory
 cd /home/$USER/Scratch/repepo
