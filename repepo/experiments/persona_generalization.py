@@ -387,6 +387,7 @@ class PersonaGeneralizationExperimentConfig:
 
 def run_persona_generalization_experiment(
     config: PersonaGeneralizationExperimentConfig,
+    sge_task_id: int | None = None,
 ) -> None:
     print(f"Running persona generalization experiment with config: {config}")
     make_mwe_personas_caa()
@@ -416,6 +417,11 @@ def run_persona_generalization_experiment(
             json.dump(config.__dict__, f, indent=4, ensure_ascii=False)
 
     all_persona_prompts = get_all_persona_prompts()
+
+    if sge_task_id is not None:
+        persona_prompt = list(all_persona_prompts.keys())[sge_task_id]
+        all_persona_prompts = {persona_prompt: all_persona_prompts[persona_prompt]}
+
     for i, dataset_name in enumerate(all_persona_prompts):
         results_save_file = output_dir / f"{dataset_name}.pt"
         if results_save_file.exists():
@@ -444,6 +450,8 @@ def run_persona_generalization_experiment(
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_arguments(PersonaGeneralizationExperimentConfig, dest="config")
+    parser.add_argument("--sge_task_id", type=int, default=None)
     args = parser.parse_args()
     config = args.config
-    run_persona_generalization_experiment(config)
+    sge_task_id = args.sge_task_id
+    run_persona_generalization_experiment(config, sge_task_id=sge_task_id)
