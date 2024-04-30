@@ -78,6 +78,26 @@ def add_persona_cross_steering_experiment_result_to_db(
     test_labels = cross_steering_result.dataset_labels
     
     iterator = cross_steering_result.steering.items()
+
+    # Add zero multipliers
+    baseline_results = cross_steering_result.dataset_baselines
+    # Duplicate across all steering vectors
+
+    # NOTE: The first index in eval_resultss is the test dataset index
+    # The second index is the steering vector index
+    # However, the index in baseline_results is the test dataset index
+    # So we need to expand each element in baseline_results to match the length of sv_labels
+    assert len(baseline_results) == len(test_labels)
+    baseline_resultss = [[b] * len(sv_labels) for b in baseline_results]
+    add_eval_resultss_for_multiplier_to_db(
+        db = db,
+        datset_name = dataset_name,
+        multiplier = 0.0,
+        sv_labels = sv_labels,
+        test_labels = test_labels,
+        eval_resultss = baseline_resultss,
+    )
+
     # Add nonzero multipliers
     for multiplier, eval_resultss in iterator:
         add_eval_resultss_for_multiplier_to_db(
@@ -88,19 +108,6 @@ def add_persona_cross_steering_experiment_result_to_db(
             test_labels = test_labels,
             eval_resultss = eval_resultss,
         )
-
-    # Add zero multipliers
-    baseline_results = cross_steering_result.dataset_baselines
-    # Duplicate across all steering vectors
-    baseline_resultss = [baseline_results for _ in sv_labels]
-    add_eval_resultss_for_multiplier_to_db(
-        db = db,
-        datset_name = dataset_name,
-        multiplier = 0.0,
-        sv_labels = sv_labels,
-        test_labels = test_labels,
-        eval_resultss = baseline_resultss,
-    )
 
 def thunk(dataset_name):
     print(f"Processing {dataset_name}")
