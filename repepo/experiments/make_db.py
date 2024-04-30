@@ -1,11 +1,8 @@
 import pathlib
 import torch
-import tqdm
 import multiprocessing
 from multiprocessing import RLock
 
-from tqdm.auto import tqdm
-from tqdm.contrib.concurrent import process_map
 from repepo.variables import Environ
 from repepo.experiments.cross_steering_result_db import CrossSteeringResultDatabase
 from repepo.steering.utils.helpers import make_dataset
@@ -80,11 +77,7 @@ def add_persona_cross_steering_experiment_result_to_db(
     sv_labels = cross_steering_result.steering_labels
     test_labels = cross_steering_result.dataset_labels
     
-    iterator = tqdm(
-        cross_steering_result.steering.items(), 
-        desc = f"Processing {dataset_name}",
-        disable=True
-    )
+    iterator = cross_steering_result.steering.items()
     # Add nonzero multipliers
     for multiplier, eval_resultss in iterator:
         add_eval_resultss_for_multiplier_to_db(
@@ -128,16 +121,17 @@ if __name__ == "__main__":
 
     db = CrossSteeringResultDatabase()
     results = []
-    tqdm.set_lock(RLock())
 
-    with multiprocessing.Pool(
-        processes = 16,
-        initializer=tqdm.set_lock,
-        initargs=(tqdm.get_lock(),),        
-    ) as pool:
+    dataset_names = list(get_all_persona_prompts().keys())
 
-        dataset_names = list(get_all_persona_prompts().keys())
-        pool.map(thunk, dataset_names)
+    for dataset_name in dataset_names:
+        thunk(dataset_name)
+
+    # TODO: get multiprocessing working
+    # with multiprocessing.Pool(
+    #     processes = 16,   
+    # ) as pool:
+    # pool.map(thunk, dataset_names)
 
     print(len(db))
     
