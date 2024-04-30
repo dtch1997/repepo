@@ -1,8 +1,8 @@
-""" Create a SQLite database with the results of the cross steering experiments. """ 
+"""Create a SQLite database with the results of the cross steering experiments."""
 
 # NOTE: One row = 1 steering vector on 1 example
 
-# NOTE: Database schema: 
+# NOTE: Database schema:
 # train_dataset_name: str
 # train_dataset_variant: str
 # test_dataset_name: str
@@ -17,11 +17,14 @@ import pathlib
 from contextlib import closing
 from contextlib import contextmanager
 
+
 def with_cursor(func):
     def wrapped(self, *args, **kwargs):
         with self.cursor() as cur:
             return func(self, cur, *args, **kwargs)
+
     return wrapped
+
 
 class CrossSteeringResultDatabase:
     def __init__(
@@ -91,17 +94,17 @@ class CrossSteeringResultDatabase:
         self.db_path.unlink()
 
     def add(
-        self, 
-        steering_vector_dataset_name, 
-        steering_vector_dataset_variant, 
+        self,
+        steering_vector_dataset_name,
+        steering_vector_dataset_variant,
         steering_vector_multiplier,
-        test_dataset_name, 
-        test_dataset_variant, 
-        test_example_id, 
-        test_example_positive_text, 
-        test_example_negative_text, 
+        test_dataset_name,
+        test_dataset_variant,
+        test_example_id,
+        test_example_positive_text,
+        test_example_negative_text,
         test_example_logit_diff,
-        test_example_pos_prob
+        test_example_pos_prob,
     ):
         with closing(self.con.cursor()) as cur:
             cur.execute(

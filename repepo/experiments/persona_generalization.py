@@ -450,7 +450,7 @@ def run_persona_generalization_experiment(
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_arguments(PersonaGeneralizationExperimentConfig, dest="config")
-    parser.add_argument('--sge_task_id', type=int, default=None)
+    parser.add_argument("--sge_task_id", type=int, default=None)
     args = parser.parse_args()
     config = args.config
     sge_task_id = args.sge_task_id
