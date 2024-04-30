@@ -249,7 +249,7 @@ def plot_steering_on_dataset(
     cs = result.cross_steering_result
     ds_index = cs.dataset_labels.index(dataset_version)
 
-    multipliers = [*list(cs.neg_steering.keys()), 0.0, *list(cs.neg_steering.keys())]
+    multipliers = [*list(cs.neg_steering.keys()), 0.0, *list(cs.pos_steering.keys())]
 
     results_line_mean = []
     for i, label in enumerate(cs.steering_labels):
