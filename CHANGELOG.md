@@ -2,6 +2,69 @@
 
 
 
+## v0.6.0 (2024-04-30)
+
+### Chore
+
+* chore: add note to explain cluster utils ([`a13a503`](https://github.com/dtch1997/repepo/commit/a13a503ae1be728005a564b50949b5cec4aa550e))
+
+* chore: add cluster utils ([`dcd731a`](https://github.com/dtch1997/repepo/commit/dcd731a079ea48d587f5db8736d581f11caeb8fd))
+
+* chore: modify path to include local dependencies ([`4a97734`](https://github.com/dtch1997/repepo/commit/4a97734f8f6b87c3a44d4457c0581e5915a3cc3b))
+
+* chore: update time requirement in qsub ([`d1268c8`](https://github.com/dtch1997/repepo/commit/d1268c8dff7932f2b54c7f6b858663a6bf4f057e))
+
+* chore: delete incorrect test step ([`1f4c2bb`](https://github.com/dtch1997/repepo/commit/1f4c2bbb9aadcd84847bda1171d0d7d90e5e47ba))
+
+* chore: update lockfile ([`40baf38`](https://github.com/dtch1997/repepo/commit/40baf38e5612de4f606a6ffb1a58378f3cab9797))
+
+* chore: update ci (#161)
+
+* update ci
+
+* chore: fix typo
+
+* chore: add py312 test
+
+* update ruff settings
+
+* chore: ruff format
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`4482d27`](https://github.com/dtch1997/repepo/commit/4482d273234612e5fe6ada43df9485d5dd96c4f8))
+
+### Feature
+
+* feat: cross steering results db (#162)
+
+* modify jobscript  to submit array job
+
+* chore: fix typo
+
+* Add sqlite database for results
+
+* implement multiprocessing to make db
+
+* update db
+
+* add notebook for in-distribution-steerability
+
+* add analysis notebook for intra concept variability
+
+* fix ruff format
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`cd16daa`](https://github.com/dtch1997/repepo/commit/cd16daa573fb2fb05a1088ca779a46ea3a388b69))
+
+### Unknown
+
+* categorize persona prompts ([`6dd631f`](https://github.com/dtch1997/repepo/commit/6dd631f582d962e38907fcedfed66c73af879e06))
+
+* adding persona analysis notebook ([`38d3ed4`](https://github.com/dtch1997/repepo/commit/38d3ed4e9971ba2af96bfbbb72ac804075295296))
+
+
 ## v0.5.0 (2024-04-24)
 
 ### Chore
