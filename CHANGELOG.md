@@ -2,6 +2,17 @@
 
 
 
+## v0.7.0 (2024-05-05)
+
+### Feature
+
+* feat: pipeline generation ([`9c69185`](https://github.com/dtch1997/repepo/commit/9c6918531aae505dcbce4fa8ae2c2784064e8486))
+
+### Unknown
+
+* lint: run linters ([`88cf51a`](https://github.com/dtch1997/repepo/commit/88cf51a0bfee85bdc25b5d8d165737d4a8274b22))
+
+
 ## v0.6.0 (2024-04-30)
 
 ### Chore
