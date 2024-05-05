@@ -78,6 +78,7 @@ def test_basic_Pipeline_generate(
     assert isinstance(res, str)
     assert len(res) > 0
 
+
 def test_basic_Pipeline_build_generation_prompt(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
