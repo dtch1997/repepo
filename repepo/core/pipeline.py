@@ -1,6 +1,7 @@
 from contextlib import AbstractContextManager, ExitStack
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
+from transformers.generation import GenerationConfig
 
 import torch
 
@@ -116,6 +117,36 @@ class Pipeline:
         return self.formatter.format_as_str(
             self.formatter.format_conversation(completion, self.conversation_history)
         )
+
+    def generate(
+        self,
+        completion: Completion,
+        generation_config: GenerationConfig | None = None,
+        remove_base_prompt: bool = True,
+    ) -> str:
+        """Generate a completion for a given example"""
+        base_prompt = self.build_generation_prompt(completion)
+        inputs: Any = self.tokenizer(base_prompt, return_tensors="pt")
+        inputs = inputs.to(self.model.device)
+        context = PipelineContext(
+            method="generate",
+            base_prompt=base_prompt,
+            full_prompt=base_prompt,
+            inputs=inputs,
+            pipeline=self,
+        )
+        with ExitStack() as stack:
+            for hook in self.hooks:
+                stack.enter_context(hook(context))
+            outputs = self.model.generate(
+                **inputs,
+                generation_config=generation_config,
+            )[0]
+            outputs_str = self.tokenizer.decode(outputs, skip_special_tokens=True)
+            if remove_base_prompt:
+                return outputs_str.replace(base_prompt, "")
+            return outputs_str
+        raise RuntimeError("Should never get here")
 
     @torch.no_grad()
     def calculate_output_logprobs(

@@ -66,6 +66,18 @@ def test_compute_quantiles_edge_cases():
     torch.testing.assert_allclose(output, expected_output)
 
 
+def test_basic_Pipeline_generate(
+    model: GPTNeoXForCausalLM, tokenizer: Tokenizer
+) -> None:
+    pipeline = Pipeline(model, tokenizer)
+    res = pipeline.generate(
+        Completion(prompt="Respond A B C D", response="E"),
+        generation_config=None,
+    )
+    # pythia-70m generates nonsense, so just verify we get something
+    assert isinstance(res, str)
+    assert len(res) > 0
+
 def test_basic_Pipeline_build_generation_prompt(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
 ) -> None:
