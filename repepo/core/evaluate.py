@@ -3,13 +3,13 @@
 
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager, ExitStack, contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from statistics import mean, stdev, StatisticsError
 from tqdm import tqdm
 from typing import Callable, Iterable, Sequence
 from repepo.core.hook import SteeringHook
 from repepo.core.pipeline import TextProbs
-from repepo.core.types import Example
+from repepo.core.types import Example, Completion
 from repepo.core.pipeline import Pipeline
 
 import numpy as np
@@ -115,6 +115,7 @@ class EvalPrediction:
     negative_output_prob: TextProbs | None
     # Example-level metrics
     metrics: dict[str, float]
+    generations: list[Completion] = field(default_factory=list)
 
 
 @dataclass
@@ -230,6 +231,7 @@ class NormalizedPositiveProbabilityEvaluator(Evaluator):
         positive_output_prob = np.exp(positive_output_logprob)
         negative_output_prob = np.exp(negative_output_logprob)
         return positive_output_prob / (positive_output_prob + negative_output_prob)
+
 
 
 def evaluate(
