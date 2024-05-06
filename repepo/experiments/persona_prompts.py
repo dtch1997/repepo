@@ -491,6 +491,12 @@ CAA_TRUTHFULQA_PROMPTS = {
 
 
 PERSONA_PROMPTS: dict[str, tuple[str, str]] = {
+    # advanced ai risk
+    **ADVANCED_AI_RISK,
+    # CAA
+    **CAA_SYCOPHANCY_PROMPTS,
+    **CAA_TRUTHFULQA_PROMPTS,
+    # persona
     # topic: politics
     **POLITICS_PROMPTS,
     # topic: religion
@@ -537,10 +543,6 @@ PERSONA_PROMPTS: dict[str, tuple[str, str]] = {
     **SELF_PRESERVATION_PROMPTS,
     # misc ai risk
     **MISC_AI_RISK_PROMPTS,
-    # advanced ai risk
-    **ADVANCED_AI_RISK,
-    **CAA_SYCOPHANCY_PROMPTS,
-    **CAA_TRUTHFULQA_PROMPTS
 }
 
 CATEGORIZED_PERSONA_PROMPTS = {
