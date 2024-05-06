@@ -232,33 +232,31 @@ class NormalizedPositiveProbabilityEvaluator(Evaluator):
         negative_output_prob = np.exp(negative_output_logprob)
         return positive_output_prob / (positive_output_prob + negative_output_prob)
 
+
 def get_eval_hooks(
     layer_id: int,
     multiplier: float = 0,
     completion_template: str | None = None,
-    system_prompt: str | None = None
+    system_prompt: str | None = None,
 ) -> list[EvalHook]:
     eval_hooks = [
         set_repe_direction_multiplier_at_eval(multiplier),
         select_repe_layer_at_eval(layer_id),
     ]
     if completion_template is not None:
-        eval_hooks.append(
-            update_completion_template_at_eval(completion_template)
-        )
+        eval_hooks.append(update_completion_template_at_eval(completion_template))
     if system_prompt is not None:
         eval_hooks.append(update_system_prompt_at_eval(system_prompt))
     return eval_hooks
+
 
 # Function to get a single prediction
 def get_prediction(
     pipeline: Pipeline,
     example: Example,
-    evaluators: Sequence[Evaluator] = [
-        LogitDifferenceEvaluator()
-    ],
+    evaluators: Sequence[Evaluator] = [LogitDifferenceEvaluator()],
     n_generation: int = 0,
-    slim_results: bool = False
+    slim_results: bool = False,
 ) -> EvalPrediction:
     positive_probs = pipeline.calculate_output_logprobs(
         example.positive, slim_results=slim_results
@@ -273,9 +271,7 @@ def get_prediction(
     )
     example_metrics = {}
     for evaluator in evaluators:
-        example_metrics[evaluator.get_metric_name()] = (
-            evaluator.score_prediction(pred)
-        )
+        example_metrics[evaluator.get_metric_name()] = evaluator.score_prediction(pred)
     for _ in range(n_generation):
         prompt = pipeline.build_generation_prompt(example.positive)
         response = pipeline.generate(example.positive)
@@ -313,11 +309,11 @@ def evaluate(
                 )
 
             pred = get_prediction(
-                pipeline, 
-                example, 
-                evaluators=evaluators, 
-                n_generation=n_generation, 
-                slim_results=slim_results
+                pipeline,
+                example,
+                evaluators=evaluators,
+                n_generation=n_generation,
+                slim_results=slim_results,
             )
             predictions.append(pred)
 

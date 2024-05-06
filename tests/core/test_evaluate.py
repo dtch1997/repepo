@@ -11,8 +11,6 @@ from repepo.core.evaluate import (
     select_repe_layer_at_eval,
     update_completion_template_at_eval,
     set_repe_direction_multiplier_at_eval,
-    get_prediction,
-    get_eval_hooks,
     EvalPrediction,
     MultipleChoiceAccuracyEvaluator,
     NormalizedPositiveProbabilityEvaluator,
@@ -20,14 +18,17 @@ from repepo.core.evaluate import (
 )
 from repepo.core.hook import SteeringHook
 
+
 # TODO: Implement passing test
 @pytest.mark.xfail
 def test_get_prediction() -> None:
     raise NotImplementedError
 
+
 @pytest.mark.xfail
 def test_get_eval_hooks() -> None:
     raise NotImplementedError
+
 
 def test_update_completion_template_at_eval_hook(
     model: GPTNeoXForCausalLM, tokenizer: Tokenizer
