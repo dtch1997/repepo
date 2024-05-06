@@ -25,7 +25,7 @@ dependencies = [
     "bitsandbytes==0.42.0",
     "nbdime>=4.0.1",
     "steering-vectors>=0.10.0",
-    "openai>=1.10.0",
+    "openai>=1.25.2",
     "arrr>=1.0.4",
     "spacy>=3.7.2",
     "mosestokenizer>=1.2.1",
