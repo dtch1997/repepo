@@ -59,8 +59,8 @@ def make_truthfulqa_caa():
     # hf's dataset is too general and requires casting every field we access, so just using Any for simplicity
     hf_dataset = cast(Any, load_dataset("truthful_qa", "multiple_choice"))["validation"]
     tqa_dataset = convert_hf_truthfulqa_caa_dataset(hf_dataset)
-    filename = build_dataset_filename("truthfulqa_caa")
-    jdump(tqa_dataset, get_dataset_dir() / filename)
+    filename = build_dataset_filename("truthfulqa")
+    jdump(tqa_dataset, get_dataset_dir() / "caa" / filename)
 
     # also build translated datasets
     for translated_tqa in Path(Environ.TranslatedDatasetsDir).glob(
@@ -69,8 +69,8 @@ def make_truthfulqa_caa():
         lang_or_style = translated_tqa.parent.stem
         dataset = HFDataset.from_json(str(translated_tqa))
         converted_dataset = convert_hf_truthfulqa_caa_dataset(dataset)
-        filename = build_dataset_filename("truthfulqa_caa", lang_or_style=lang_or_style)
-        jdump(converted_dataset, get_dataset_dir() / filename)
+        filename = build_dataset_filename("truthfulqa", lang_or_style=lang_or_style)
+        jdump(converted_dataset, get_dataset_dir() / "caa" / filename)
 
 
 if __name__ == "__main__":
