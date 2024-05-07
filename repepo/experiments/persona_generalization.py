@@ -386,11 +386,13 @@ class PersonaGeneralizationExperimentConfig:
         default_factory=lambda: [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
     )
 
+
 def make_all_datasets():
     make_sycophancy_caa()
     make_truthfulqa_caa()
     make_mwe_xrisk_caa()
     make_mwe_personas_caa()
+
 
 def run_persona_generalization_experiment(
     config: PersonaGeneralizationExperimentConfig,
