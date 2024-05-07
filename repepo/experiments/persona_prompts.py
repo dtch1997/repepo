@@ -563,12 +563,8 @@ def get_all_persona_prompts() -> dict[str, tuple[str, str]]:
     """Get all the persona prompts for which a dataset exists"""
     datasets = {}
     for persona, (pos_prompt, neg_prompt) in PERSONA_PROMPTS.items():
-        try:
-            make_dataset(persona)
-            datasets[persona] = (pos_prompt, neg_prompt)
-        except Exception as _:
-            continue
-
+        make_dataset(persona)
+        datasets[persona] = (pos_prompt, neg_prompt)
     return datasets
 
 
