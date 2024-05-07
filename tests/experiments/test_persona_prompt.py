@@ -5,4 +5,4 @@ def test_get_all_persona_prompts(
     datasets: None,
 ):
     prompts = get_all_persona_prompts()
-    assert len(prompts) > 0
+    assert len(prompts) == 116
