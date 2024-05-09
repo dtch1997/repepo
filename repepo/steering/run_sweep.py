@@ -1,7 +1,9 @@
 import os
 
 from dataclasses import fields
+from pathlib import Path
 from repepo.core.evaluate import EvalResult
+from repepo.core.types import Model, Tokenizer
 from repepo.steering.run_experiment import run_experiment
 from repepo.steering.utils.helpers import (
     SteeringConfig,
@@ -37,7 +39,16 @@ def load_sweep_results(
     return results
 
 
-def run_sweep(configs: list[SteeringConfig], **kwargs):
+def run_sweep(
+    configs: list[SteeringConfig],
+    *,
+    force_rerun_extract: bool = False,
+    force_rerun_apply: bool = False,
+    logging_level: str = "INFO",
+    work_dir: Path | str | None = None,
+    model: Model | None = None,
+    tokenizer: Tokenizer | None = None,
+):
     """Run a sweep by calling run_experiment many times
 
     Kwargs are passed to run_experiment
@@ -47,7 +58,15 @@ def run_sweep(configs: list[SteeringConfig], **kwargs):
     for config in configs:
         try:
             with EmptyTorchCUDACache():
-                run_experiment(config, **kwargs)
+                run_experiment(
+                    config,
+                    force_rerun_extract=force_rerun_extract,
+                    force_rerun_apply=force_rerun_apply,
+                    logging_level=logging_level,
+                    work_dir=work_dir,
+                    model=model,
+                    tokenizer=tokenizer,
+                )
         except KeyboardInterrupt:  # noqa: E722
             # Allow the user to interrupt the sweep
             break

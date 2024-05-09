@@ -5,6 +5,7 @@ python repepo/steering/run_experiment.py --config_path repepo/experiments/config
 """
 
 import logging
+from pathlib import Path
 import sys
 import torch
 import functools
@@ -12,7 +13,7 @@ import functools
 from typing import cast
 from pprint import pformat
 from repepo.core.evaluate import EvalResult
-from repepo.core.format import LlamaChatFormatter
+from repepo.core.format import LlamaChatFormatter, QwenChatFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Model, Tokenizer
 from repepo.steering.utils.helpers import (
@@ -100,6 +101,7 @@ def train_steering_vector_from_config(
     config: SteeringConfig,
     logger: logging.Logger,
     force_rerun_extract: bool = False,
+    work_dir: Path | str | None = None,
 ) -> SteeringVector:
     # Set up logger
     logger.info(f"Training steering vector with config: \n{pformat(config)}")
@@ -138,7 +140,7 @@ def train_steering_vector_from_config(
             )
             pos_acts = pos_acts[config.layer]
             neg_acts = neg_acts[config.layer]
-            save_activation(config.train_hash, pos_acts, neg_acts)
+            save_activation(config.train_hash, pos_acts, neg_acts, work_dir=work_dir)
 
         # Compute concept metrics
         concept_metrics = [
@@ -151,7 +153,7 @@ def train_steering_vector_from_config(
         for metric in concept_metrics:
             metric_val = metric(diff_vecs)
             logger.debug(f"Metric {metric.name} | results: {metric_val}")
-            save_metric(config.train_hash, metric.name, metric_val)
+            save_metric(config.train_hash, metric.name, metric_val, work_dir=work_dir)
 
     aggregator = get_aggregator(config.aggregator)
     with EmptyTorchCUDACache():
@@ -178,7 +180,7 @@ def evaluate_steering_vector_from_config(
     formatter.system_prompt = config.test_system_prompt
     formatter.completion_template = config.test_completion_template
     if config.test_prompt_prefix is not None:
-        assert isinstance(formatter, LlamaChatFormatter)
+        assert isinstance(formatter, (LlamaChatFormatter, QwenChatFormatter))
         formatter.prompt_prefix = config.test_prompt_prefix
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
 
@@ -192,6 +194,7 @@ def evaluate_steering_vector_from_config(
             patch_generation_tokens_only=config.patch_generation_tokens_only,
             skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
             logger=logger,
+            slim_results=config.slim_eval,
         )
         assert len(eval_results) == 1, "Expected one result"
         eval_result = eval_results[0]
@@ -204,16 +207,20 @@ def run_experiment(
     force_rerun_extract: bool = False,
     force_rerun_apply: bool = False,
     logging_level: str = "INFO",
+    work_dir: Path | str | None = None,
+    model: Model | None = None,
+    tokenizer: Tokenizer | None = None,
 ):
     # Set up logger
     logger = setup_logger(logging_level)
     logger.info(f"Running experiment with config: \n{pformat(config)}")
 
-    model, tokenizer = get_model_and_tokenizer(config.model_name)
+    if not model or not tokenizer:
+        model, tokenizer = get_model_and_tokenizer(config.model_name)
 
     # Set up database
     # NOTE: get_experiment_path().parent = '.../experiments'
-    db_path = get_experiment_path().parent / "steering_config.sqlite"
+    db_path = get_experiment_path(work_dir=work_dir).parent / "steering_config.sqlite"
     db = SteeringConfigDatabase(db_path=db_path)
     logger.info("Database contains {} entries".format(len(db)))
 
@@ -224,9 +231,12 @@ def run_experiment(
         db.insert_config(config)
 
     # Aggregate activations
-    if get_steering_vector_path(config.train_hash).exists() and not force_rerun_extract:
+    if (
+        get_steering_vector_path(config.train_hash, work_dir=work_dir).exists()
+        and not force_rerun_extract
+    ):
         logger.info(f"Steering vector already exists for {config}. Skipping.")
-        steering_vector = load_steering_vector(config.train_hash)
+        steering_vector = load_steering_vector(config.train_hash, work_dir=work_dir)
     else:
         steering_vector = train_steering_vector_from_config(
             model,
@@ -234,14 +244,18 @@ def run_experiment(
             config,
             logger=logger,
             force_rerun_extract=force_rerun_extract,
+            work_dir=work_dir,
         )
-        save_steering_vector(config.train_hash, steering_vector)
+        save_steering_vector(config.train_hash, steering_vector, work_dir=work_dir)
 
     # Evaluate steering vector
     # We cache this part since it's the most time-consuming
-    if get_eval_result_path(config.eval_hash).exists() and not force_rerun_apply:
+    if (
+        get_eval_result_path(config.eval_hash, work_dir=work_dir).exists()
+        and not force_rerun_apply
+    ):
         logger.info(f"Results already exist for {config}. Skipping.")
-        eval_result = load_eval_result(config.eval_hash)
+        eval_result = load_eval_result(config.eval_hash, work_dir=work_dir)
     else:
         eval_result = evaluate_steering_vector_from_config(
             model=model,
@@ -250,7 +264,7 @@ def run_experiment(
             config=config,
             logger=logger,
         )
-        save_eval_result(config.eval_hash, eval_result)
+        save_eval_result(config.eval_hash, eval_result, work_dir=work_dir)
 
 
 if __name__ == "__main__":
