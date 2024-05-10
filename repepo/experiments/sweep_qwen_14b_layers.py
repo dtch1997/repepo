@@ -24,6 +24,7 @@ class QwenSweepLayersConfig:
     multipliers: list[float] = field(
         default_factory=lambda: [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
     )
+    force: bool = False
 
 
 def make_all_datasets():
@@ -65,6 +66,7 @@ def sweep_qwen_14b_layers(config: QwenSweepLayersConfig):
         train_split=config.train_split,
         test_split=config.test_split,
         formatter=QwenChatFormatter(),
+        save_progress_dir=output_dir,
     )
     if output_dir is not None:
         torch.save(sweep_results, output_dir / "sweep_results.pt")
