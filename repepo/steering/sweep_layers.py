@@ -72,7 +72,7 @@ def train_steering_vectors_for_sweep(
                 tokenizer,
                 steering_vector_training_data,
                 layers=[layer],
-                show_progress=show_progress,
+                show_progress=False,
             )
             steering_vectors[dataset][layer] = steering_vector
             pbar.update(1)
