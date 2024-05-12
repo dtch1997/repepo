@@ -16,6 +16,7 @@ from repepo.core.types import Example, Model, Tokenizer
 from repepo.steering.build_steering_training_data import (
     build_steering_vector_training_data,
 )
+from repepo.steering.utils.helpers import get_model_and_tokenizer
 from repepo.steering.evaluate_cross_steering import (
     CrossSteeringResult,
     evaluate_cross_steering,
@@ -30,7 +31,7 @@ from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
 from repepo.data.multiple_choice.make_caa_sycophancy import make_sycophancy_caa
 from repepo.data.multiple_choice.make_caa_truthfulqa import make_truthfulqa_caa
 from repepo.utils.stats import bernoulli_js_dist
-from repepo.experiments.persona_prompts import get_all_persona_prompts
+from repepo.experiments.get_datasets import get_all_prompts
 
 
 Persona = Literal["positive", "negative", "baseline"]
@@ -67,7 +68,7 @@ def persona_pipeline(
     dataset_name: str,
     use_sys_prompt: bool,
 ) -> Pipeline:
-    all_persona_prompts = get_all_persona_prompts()
+    all_persona_prompts = get_all_prompts()
     if dataset_name not in all_persona_prompts:
         raise ValueError(f"Dataset {dataset_name} is not supported.")
     positive_prompt, negative_prompt = all_persona_prompts[dataset_name]
@@ -385,6 +386,7 @@ class PersonaGeneralizationExperimentConfig:
     multipliers: list[float] = field(
         default_factory=lambda: [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
     )
+    load_in_8bit: bool = False
 
 
 def make_all_datasets():
@@ -400,11 +402,17 @@ def run_persona_generalization_experiment(
 ) -> None:
     print(f"Running persona generalization experiment with config: {config}")
     make_all_datasets()
-    model = AutoModelForCausalLM.from_pretrained(
-        config.model_name, torch_dtype=torch.float16, device_map=0
-    )
+
+    if config.load_in_8bit:
+        model, tokenizer = get_model_and_tokenizer(config.model_name, load_in_8bit=True)
+
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            config.model_name, torch_dtype=torch.float16, device_map=0
+        )
+        tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+
     model.eval()
-    tokenizer = AutoTokenizer.from_pretrained(config.model_name)
 
     output_dir = Path(config.output_dir)
     if output_dir.exists():
@@ -424,7 +432,7 @@ def run_persona_generalization_experiment(
         with open(output_dir / CONFIG_SAVE_PATH, "w") as f:
             json.dump(config.__dict__, f, indent=4, ensure_ascii=False)
 
-    all_persona_prompts = get_all_persona_prompts()
+    all_persona_prompts = get_all_prompts()
 
     if sge_task_id is not None:
         persona_prompt = list(all_persona_prompts.keys())[sge_task_id]
