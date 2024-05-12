@@ -36,6 +36,7 @@ dependencies = [
     "google-cloud-translate>=3.15.1",
     "statsmodels>=0.14.1",
     "jaxtyping>=0.2.28",
+    "concept-erasure>=0.2.4",
 ]
 
 [tool.black]

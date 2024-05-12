@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:28bfaa0122acd22674f70e4f2404b96d943ec1b911b129ed64dbf3f1c5f96648"
+content_hash = "sha256:dee0c64535085d33d340e28acc2f5b3062126140977a1a8fe23e6e4fc9a3c054"
 
 [[package]]
 name = "absl-py"
@@ -590,6 +590,19 @@ dependencies = [
 files = [
     {file = "comm-0.2.2-py3-none-any.whl", hash = "sha256:e6fb86cb70ff661ee8c9c14e7d36d6de3b4066f1441be4063df9c5009f0a64d3"},
     {file = "comm-0.2.2.tar.gz", hash = "sha256:3fd7a84065306e07bea1773df6eb8282de51ba82f77c72f9c85716ab11fe980e"},
+]
+
+[[package]]
+name = "concept-erasure"
+version = "0.2.4"
+requires_python = ">=3.10"
+summary = "Erasing concepts from neural representations with provable guarantees"
+dependencies = [
+    "torch",
+]
+files = [
+    {file = "concept-erasure-0.2.4.tar.gz", hash = "sha256:3f2a8f3a9713c7a906c4013b1d94594ca588af7124f04541ca6b4ea72f04ce90"},
+    {file = "concept_erasure-0.2.4-py3-none-any.whl", hash = "sha256:a7665b49d97c6aa3bfd504ca724ef460bb61237aa510ae31e9550de8619806af"},
 ]
 
 [[package]]
