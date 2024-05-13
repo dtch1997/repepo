@@ -99,3 +99,8 @@ def empty_llama_model() -> LlamaForCausalLM:
 @pytest.fixture
 def llama_chat_tokenizer() -> Tokenizer:
     return AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+
+
+@pytest.fixture
+def qwen_chat_tokenizer() -> Tokenizer:
+    return AutoTokenizer.from_pretrained("Qwen/Qwen1.5-14B-Chat")

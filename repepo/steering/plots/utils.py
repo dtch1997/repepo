@@ -23,6 +23,12 @@ def find_token_difference_position(text1: TextProbs, text2: TextProbs) -> int:
     return -1
 
 
+def truncate_name(name, max_len: int = 25):
+    if len(name) <= max_len:
+        return name
+    return name[:max_len] + "..."
+
+
 def make_results_df(results: list[tuple[SteeringConfig, EvalResult]]):
     """Convert a list of results to a pandas DataFrame
 
