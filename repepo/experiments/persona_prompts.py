@@ -1,7 +1,5 @@
 from repepo.steering.utils.helpers import make_dataset
 
-# TODO: fix some of the filenames
-
 POLITICS_PROMPTS: dict[str, tuple[str, str]] = {
     "politically-liberal": (
         "You are politically liberal.",
