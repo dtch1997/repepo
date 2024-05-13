@@ -10,7 +10,7 @@ import seaborn as sns
 from simple_parsing import ArgumentParser
 import matplotlib.pyplot as plt
 from steering_vectors import SteeringVector
-from repepo.core.format import LlamaChatFormatter
+from repepo.core.format import LlamaChatFormatter, QwenChatFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Example, Model, Tokenizer
 from repepo.steering.build_steering_training_data import (
@@ -65,6 +65,7 @@ def persona_pipeline(
     model: Model,
     tokenizer: Tokenizer,
     persona: Persona,
+    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
     dataset_name: str,
     use_sys_prompt: bool,
 ) -> Pipeline:
@@ -72,17 +73,23 @@ def persona_pipeline(
     if dataset_name not in all_persona_prompts:
         raise ValueError(f"Dataset {dataset_name} is not supported.")
     positive_prompt, negative_prompt = all_persona_prompts[dataset_name]
-    formatter = LlamaChatFormatter()
+    if formatter_name == "llama-chat-formatter":
+        formatter_class = LlamaChatFormatter
+    elif formatter_name == "qwen-chat-formatter":
+        formatter_class = QwenChatFormatter
+    else:
+        raise ValueError(f"Invalid formatter name: {formatter_name}")
+    formatter = formatter_class()
     if persona == "positive":
         if use_sys_prompt:
-            formatter = LlamaChatFormatter(system_prompt=positive_prompt)
+            formatter = formatter_class(system_prompt=positive_prompt)
         else:
-            formatter = LlamaChatFormatter(prompt_prefix=positive_prompt + "\n\n")
+            formatter = formatter_class(prompt_prefix=positive_prompt + "\n\n")
     elif persona == "negative":
         if use_sys_prompt:
-            formatter = LlamaChatFormatter(system_prompt=negative_prompt)
+            formatter = formatter_class(system_prompt=negative_prompt)
         else:
-            formatter = LlamaChatFormatter(prompt_prefix=negative_prompt + "\n\n")
+            formatter = formatter_class(prompt_prefix=negative_prompt + "\n\n")
     return Pipeline(model, tokenizer, formatter=formatter)
 
 
@@ -104,6 +111,7 @@ def train_steering_vector_for_persona_and_dataset(
     tokenizer: Tokenizer,
     persona: Persona,
     dataset_name: str,
+    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
     train_split: str,
     layer: int,
     use_sys_prompt: bool = True,
@@ -111,7 +119,12 @@ def train_steering_vector_for_persona_and_dataset(
 ) -> SteeringVector:
     train_dataset = make_dataset(dataset_name, train_split)
     pipeline = persona_pipeline(
-        model, tokenizer, persona, dataset_name, use_sys_prompt=use_sys_prompt
+        model,
+        tokenizer,
+        persona,
+        formatter_name=formatter_name,
+        dataset_name=dataset_name,
+        use_sys_prompt=use_sys_prompt,
     )
     steering_vector_training_data = build_steering_vector_training_data(
         pipeline, train_dataset
@@ -136,6 +149,7 @@ def run_persona_cross_steering_experiment(
     model: Model,
     tokenizer: Tokenizer,
     dataset_name: str,
+    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
     train_split: str,
     test_split: str,
     layer: int,
@@ -152,8 +166,9 @@ def run_persona_cross_steering_experiment(
         model,
         tokenizer,
         "baseline",
-        dataset_name,
-        train_split,
+        formatter_name=formatter_name,
+        dataset_name=dataset_name,
+        train_split=train_split,
         layer=layer,
         show_progress=show_progress,
     )
@@ -169,8 +184,9 @@ def run_persona_cross_steering_experiment(
                 model,
                 tokenizer,
                 persona,
-                dataset_name,
-                train_split,
+                dataset_name=dataset_name,
+                train_split=train_split,
+                formatter_name=formatter_name,
                 layer=layer,
                 use_sys_prompt=True,
                 show_progress=show_progress,
@@ -182,8 +198,9 @@ def run_persona_cross_steering_experiment(
                 model,
                 tokenizer,
                 persona,
-                dataset_name,
-                train_split,
+                formatter_name=formatter_name,
+                dataset_name=dataset_name,
+                train_split=train_split,
                 layer=layer,
                 use_sys_prompt=False,
                 show_progress=show_progress,
@@ -211,7 +228,12 @@ def run_persona_cross_steering_experiment(
         # just use base pipeline for baseline
         if persona_label == "baseline":
             return persona_pipeline(
-                model, tokenizer, "baseline", dataset_name, use_sys_prompt=False
+                model,
+                tokenizer,
+                "baseline",
+                formatter_name=formatter_name,
+                dataset_name=dataset_name,
+                use_sys_prompt=False,
             )
         # handle the SYS_ stuff
         persona = persona_label.split("_")[1]
@@ -219,7 +241,8 @@ def run_persona_cross_steering_experiment(
             model,
             tokenizer,
             cast(Persona, persona),
-            dataset_name,
+            dataset_name=dataset_name,
+            formatter_name=formatter_name,
             use_sys_prompt="SYS_" in persona_label,
         )
 
@@ -376,6 +399,9 @@ def base_dataset_position(
 class PersonaGeneralizationExperimentConfig:
     output_dir: str
     model_name: str = "meta-llama/Llama-2-7b-chat-hf"
+    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"] = (
+        "llama-chat-formatter"
+    )
     patch_generation_tokens_only: bool = True
     skip_first_n_generation_tokens: int = 0
     completion_template: str | None = None
@@ -449,9 +475,10 @@ def run_persona_generalization_experiment(
         result = run_persona_cross_steering_experiment(
             model,
             tokenizer,
-            dataset_name,
-            config.train_split,
-            config.test_split,
+            train_split=config.train_split,
+            test_split=config.test_split,
+            dataset_name=dataset_name,
+            formatter_name=config.formatter_name,
             layer=config.layer,
             normalize_steering_magnitude_to_baseline=config.normalize_steering_magnitude_to_baseline,
             patch_generation_tokens_only=config.patch_generation_tokens_only,
