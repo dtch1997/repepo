@@ -20,7 +20,7 @@ CONFIG_SAVE_PATH = "config.json"
 class QwenSweepLayersConfig:
     output_dir: str
     train_split: str = "0%:10%"
-    test_split: str = "50%:60%"
+    test_split: str = "20%:30%"
     multipliers: list[float] = field(
         default_factory=lambda: [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
     )
