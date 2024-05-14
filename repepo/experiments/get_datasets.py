@@ -12,7 +12,7 @@ random.seed(0)
 
 
 # Sample 3 without replacement from each category
-def get_sampled_persona_prompts(k: int = 3):
+def get_sampled_persona_prompts(k: int = 3) -> dict[str, tuple[str, str]]:
     sampled_personas = {}
     for name, category in PERSONA_PROMPTS_BY_TOP_LEVEL_CATEGORIES.items():
         keys = list(category.keys())
