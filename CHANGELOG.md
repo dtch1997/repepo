@@ -2,6 +2,35 @@
 
 
 
+## v0.8.0 (2024-05-07)
+
+### Feature
+
+* feat: more datasets (#164)
+
+* add all xrisk datasets
+
+* make truthfulqa consistent with others
+
+* fix some prompts
+
+* Verify all existing persona prompts
+
+* add persona prompts for Xrisk, sycophancy, tqa
+
+* refactor: make more datasets
+
+* minor
+
+* fix lint
+
+* fix test persona prompt len
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`0f6dff2`](https://github.com/dtch1997/repepo/commit/0f6dff290e3c79ad6fe8dc353b49497e6b89624c))
+
+
 ## v0.7.0 (2024-05-05)
 
 ### Feature

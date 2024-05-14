@@ -13,7 +13,12 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from transformers import BitsAndBytesConfig
 from repepo.core.types import Example, Model, Tokenizer
-from repepo.core.format import Formatter, IdentityFormatter, LlamaChatFormatter
+from repepo.core.format import (
+    Formatter,
+    IdentityFormatter,
+    LlamaChatFormatter,
+    QwenChatFormatter,
+)
 from repepo.core.evaluate import EvalResult
 from repepo.data.make_dataset import (
     DatasetSpec,
@@ -82,6 +87,8 @@ def get_formatter(
         return LlamaChatFormatter()
     elif formatter_name == "identity-formatter":
         return IdentityFormatter()
+    elif formatter_name == "qwen-chat-formatter":
+        return QwenChatFormatter()
     else:
         raise ValueError(f"Unknown formatter: {formatter_name}")
 
@@ -108,6 +115,7 @@ class SteeringConfig:
     multiplier: float = 0
     patch_generation_tokens_only: bool = True
     skip_first_n_generation_tokens: int = 0
+    slim_eval: bool = True
 
     @property
     def train_hash(self):
@@ -133,8 +141,10 @@ class SteeringConfig:
 def get_experiment_path(
     experiment_suite: str = experiment_suite,
     experiment_hash: str | None = None,
+    work_dir: pathlib.Path | str | None = None,
 ) -> pathlib.Path:
-    path = WORK_DIR / experiment_suite
+    work_path = pathlib.Path(work_dir) if work_dir else WORK_DIR
+    path = work_path / experiment_suite
     if experiment_hash:
         path = path / experiment_hash
     path.mkdir(parents=True, exist_ok=True)
@@ -150,29 +160,37 @@ class SteeringResult:
     pos_prob: float
 
 
-def get_eval_result_path(experiment_hash: str):
-    return get_experiment_path(experiment_hash=experiment_hash) / "eval_result.pickle"
+def get_eval_result_path(
+    experiment_hash: str, work_dir: pathlib.Path | str | None = None
+):
+    return (
+        get_experiment_path(experiment_hash=experiment_hash, work_dir=work_dir)
+        / "eval_result.pickle"
+    )
 
 
 def save_eval_result(
-    experiment_hash: str,
-    result: EvalResult,
+    experiment_hash: str, result: EvalResult, work_dir: pathlib.Path | str | None = None
 ):
     # NOTE: json.dump doesn't work for nested dataclasses
-    with open(get_eval_result_path(experiment_hash), "wb") as f:
+    with open(get_eval_result_path(experiment_hash, work_dir=work_dir), "wb") as f:
         pickle.dump(result, f)
 
 
 def load_eval_result(
-    experiment_hash: str,
+    experiment_hash: str, work_dir: pathlib.Path | str | None = None
 ) -> EvalResult:
     # NOTE: json.load doesn't work for nested dataclasses
-    with open(get_eval_result_path(experiment_hash), "rb") as f:
+    with open(get_eval_result_path(experiment_hash, work_dir=work_dir), "rb") as f:
         return pickle.load(f)
 
 
-def get_activation_path(experiment_hash: str) -> pathlib.Path:
-    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+def get_activation_path(
+    experiment_hash: str, work_dir: pathlib.Path | str | None = None
+) -> pathlib.Path:
+    experiment_path = get_experiment_path(
+        experiment_hash=experiment_hash, work_dir=work_dir
+    )
     return experiment_path / "activations.pt"
 
 
@@ -180,13 +198,14 @@ def save_activation(
     experiment_hash: str,
     pos_acts: list[torch.Tensor],
     neg_acts: list[torch.Tensor],
+    work_dir: pathlib.Path | str | None = None,
 ):
     torch.save(
         {
             "pos_acts": pos_acts,
             "neg_acts": neg_acts,
         },
-        get_activation_path(experiment_hash),
+        get_activation_path(experiment_hash, work_dir=work_dir),
     )
 
 
@@ -197,39 +216,60 @@ def load_activation(
     return tensor_dict["pos_acts"], tensor_dict["neg_acts"]
 
 
-def get_steering_vector_path(experiment_hash: str) -> pathlib.Path:
-    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+def get_steering_vector_path(
+    experiment_hash: str, work_dir: pathlib.Path | str | None = None
+) -> pathlib.Path:
+    experiment_path = get_experiment_path(
+        experiment_hash=experiment_hash, work_dir=work_dir
+    )
     return experiment_path / "steering_vector.pt"
 
 
 def save_steering_vector(
     experiment_hash: str,
     steering_vector: SteeringVector,
+    work_dir: pathlib.Path | str | None = None,
 ):
     torch.save(
         steering_vector,
-        get_steering_vector_path(experiment_hash),
+        get_steering_vector_path(experiment_hash, work_dir=work_dir),
     )
 
 
 def load_steering_vector(
     experiment_hash: str,
+    work_dir: pathlib.Path | str | None = None,
 ) -> SteeringVector:
-    return torch.load(get_steering_vector_path(experiment_hash))
+    return torch.load(get_steering_vector_path(experiment_hash, work_dir=work_dir))
 
 
-def get_metric_path(experiment_hash: str, metric_name: str) -> pathlib.Path:
-    experiment_path = get_experiment_path(experiment_hash=experiment_hash)
+def get_metric_path(
+    experiment_hash: str, metric_name: str, work_dir: pathlib.Path | str | None = None
+) -> pathlib.Path:
+    experiment_path = get_experiment_path(
+        experiment_hash=experiment_hash, work_dir=work_dir
+    )
     return experiment_path / f"metric_{metric_name}.json"
 
 
-def save_metric(experiment_hash: str, metric_name: str, metric: float):
-    with open(get_metric_path(experiment_hash, metric_name), "w") as f:
+def save_metric(
+    experiment_hash: str,
+    metric_name: str,
+    metric: float,
+    work_dir: pathlib.Path | str | None = None,
+):
+    with open(
+        get_metric_path(experiment_hash, metric_name, work_dir=work_dir), "w"
+    ) as f:
         json.dump(metric, f)
 
 
-def load_metric(experiment_hash: str, metric_name: str) -> float:
-    with open(get_metric_path(experiment_hash, metric_name), "r") as f:
+def load_metric(
+    experiment_hash: str, metric_name: str, work_dir: pathlib.Path | str | None = None
+) -> float:
+    with open(
+        get_metric_path(experiment_hash, metric_name, work_dir=work_dir), "r"
+    ) as f:
         return float(json.load(f))
 
 

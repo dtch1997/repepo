@@ -25,8 +25,10 @@ from repepo.steering.plot_steering_vector_cos_similarities import (
 )
 from repepo.steering.utils.helpers import make_dataset
 from steering_vectors import train_steering_vector
-from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe
+from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe as make_mwe_xrisk_caa
 from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
+from repepo.data.multiple_choice.make_caa_sycophancy import make_sycophancy_caa
+from repepo.data.multiple_choice.make_caa_truthfulqa import make_truthfulqa_caa
 from repepo.utils.stats import bernoulli_js_dist
 from repepo.experiments.persona_prompts import get_all_persona_prompts
 
@@ -385,13 +387,19 @@ class PersonaGeneralizationExperimentConfig:
     )
 
 
+def make_all_datasets():
+    make_sycophancy_caa()
+    make_truthfulqa_caa()
+    make_mwe_xrisk_caa()
+    make_mwe_personas_caa()
+
+
 def run_persona_generalization_experiment(
     config: PersonaGeneralizationExperimentConfig,
     sge_task_id: int | None = None,
 ) -> None:
     print(f"Running persona generalization experiment with config: {config}")
-    make_mwe_personas_caa()
-    make_mwe()
+    make_all_datasets()
     model = AutoModelForCausalLM.from_pretrained(
         config.model_name, torch_dtype=torch.float16, device_map=0
     )

@@ -11,7 +11,9 @@ from transformers import (
     LlamaConfig,
 )
 from repepo.core.types import Tokenizer
-from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe
+from repepo.data.multiple_choice.make_caa_truthfulqa import make_truthfulqa_caa
+from repepo.data.multiple_choice.make_caa_sycophancy import make_sycophancy_caa
+from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe as make_mwe_xrisk_caa
 from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
 
 
@@ -21,8 +23,10 @@ _device: Literal["cpu", "cuda"] = "cuda" if torch.cuda.is_available() else "cpu"
 # create persona datasets dynamically for testing
 @pytest.fixture(scope="package")
 def datasets() -> None:
+    make_sycophancy_caa()
+    make_truthfulqa_caa()
+    make_mwe_xrisk_caa()
     make_mwe_personas_caa()
-    make_mwe()
 
 
 # mock openai.OpenAI for testing
@@ -95,3 +99,8 @@ def empty_llama_model() -> LlamaForCausalLM:
 @pytest.fixture
 def llama_chat_tokenizer() -> Tokenizer:
     return AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+
+
+@pytest.fixture
+def qwen_chat_tokenizer() -> Tokenizer:
+    return AutoTokenizer.from_pretrained("Qwen/Qwen1.5-14B-Chat")

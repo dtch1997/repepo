@@ -1,8 +1,9 @@
 MUJOCO_LOG.TXT
 wandb
 output
-# Plots
-*.png
+# Data
+*.sqlite
+*.csv
 # Dataset files
 *.hdf5
 *.json
