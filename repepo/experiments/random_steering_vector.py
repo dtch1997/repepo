@@ -1,3 +1,4 @@
+# type: ignore
 from dataclasses import dataclass, field
 import json
 import os
