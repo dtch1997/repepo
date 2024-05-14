@@ -13,6 +13,15 @@ def get_steerability_slope(
     return slope
 
 
+def get_steerability_residuals(
+    multipliers: Float[np.ndarray, "n_multipliers"],  # noqa
+    propensities: Float[np.ndarray, "batch n_multipliers"],  # noqa
+) -> Float[np.ndarray, "batch"]:  # noqa
+    # NOTE: Assumes multipliers are the same for all datasets
+    (_, _), residuals, _, _, _ = np.polyfit(multipliers, propensities.T, 1, full=True)
+    return residuals
+
+
 def get_steerabilty_spearman(
     multipliers: Float[np.ndarray, "n_multipliers"],  # noqa
     propensities: Float[np.ndarray, "batch n_multipliers"],  # noqa
