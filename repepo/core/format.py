@@ -143,3 +143,50 @@ class LlamaChatFormatter(Formatter):
         prompt = f"{self.B_INST} {dialog_content} {self.E_INST} "
         response = completion.response.strip()
         return Completion(prompt=prompt, response=response)
+
+
+class QwenChatFormatter(Formatter):
+    """
+    Wrap conversation using Qwen chat template.
+    """
+
+    system_prompt: str | None
+
+    B_INST = "<|im_start|>"
+    E_INST = "<|im_end|>\n"
+    B_SYS = "system\n"
+    B_USER = "user\n"
+    B_ASST = "assistant\n"
+
+    def __init__(
+        self,
+        completion_template: str = "{prompt} {response}",
+        msg_separator: str = "\n",
+        prompt_prefix: str | None = None,
+        system_prompt: str | None = "You are a helpful, honest and concise assistant.",
+    ) -> None:
+        self.system_prompt = system_prompt
+        self.prompt_prefix = prompt_prefix
+        super().__init__(
+            completion_template=completion_template, msg_separator=msg_separator
+        )
+
+    @override
+    def format(self, completion: Completion, ctx: FormatContext):
+        dialog_content_parts = []
+        # If first example, add system prompt
+        if ctx.index == 0 and self.system_prompt is not None:
+            dialog_content_parts.append(
+                f"{self.B_INST}{self.B_SYS}{self.system_prompt}{self.E_INST}"
+            )
+        base_prompt = completion.prompt.strip()
+        if self.prompt_prefix is not None:
+            base_prompt = f"{self.prompt_prefix}{base_prompt}"
+
+        dialog_content_parts.append(
+            f"{self.B_INST}{self.B_USER}{base_prompt}{self.E_INST}"
+        )
+        dialog_content_parts.append(f"{self.B_INST}{self.B_ASST}")
+        prompt = "".join(dialog_content_parts)
+        response = completion.response.strip()
+        return Completion(prompt=prompt, response=response)

@@ -1,8 +1,12 @@
 from textwrap import dedent
+from typing import cast
+
+from transformers import Qwen2TokenizerFast
 
 from repepo.core.format import (
     IdentityFormatter,
     LlamaChatFormatter,
+    QwenChatFormatter,
 )
 from repepo.core.types import Completion
 
@@ -87,6 +91,32 @@ def test_LlamaChatFormatter_format_conversation_empty_convo():
 
         Paris is in [/INST]
         """
+    )
+    assert output.prompt.strip() == expected_prompt.strip()
+    assert output.response == "France"
+
+
+def test_QwenChatFormatter_format_conversation_empty_convo(
+    qwen_chat_tokenizer: Qwen2TokenizerFast,
+):
+    input_completion = Completion(prompt="Paris is in", response="France")
+    formatter = QwenChatFormatter()
+    output = formatter.format_conversation(input_completion)
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful, honest and concise assistant.",
+        },
+        {
+            "role": "user",
+            "content": "Paris is in",
+        },
+    ]
+    expected_prompt = cast(
+        str,
+        qwen_chat_tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        ),
     )
     assert output.prompt.strip() == expected_prompt.strip()
     assert output.response == "France"
