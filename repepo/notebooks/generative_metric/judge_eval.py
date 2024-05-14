@@ -2,10 +2,10 @@
 # %%
 import os
 import re
+import dotenv
 
-os.environ["OPENAI_API_KEY"] = (
-    "sk-proj-8z1PKcHdlQpAatEZQfZTT3BlbkFJqUa1UcPJrLZtb3l2moUr"
-)
+dotenv.load_dotenv()
+assert os.getenv("OPENAI_API_KEY") is not None
 
 import json
 import pandas as pd

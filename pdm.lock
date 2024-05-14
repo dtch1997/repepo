@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:b588ac7596b05edb578b0b11a9fcdd890b8201d3cca92eeecec851e6b6792018"
+content_hash = "sha256:00d9d206c416edf543d9677b840306a56beaecdb59c40e26aef75d95fc8b5bf9"
 
 [[package]]
 name = "absl-py"
@@ -2626,11 +2626,7 @@ files = [
 
 [[package]]
 name = "openai"
-<<<<<<< HEAD
-version = "1.25.2"
-=======
 version = "1.29.0"
->>>>>>> main
 requires_python = ">=3.7.1"
 summary = "The official Python library for the openai API"
 dependencies = [
@@ -2643,13 +2639,8 @@ dependencies = [
     "typing-extensions<5,>=4.7",
 ]
 files = [
-<<<<<<< HEAD
-    {file = "openai-1.25.2-py3-none-any.whl", hash = "sha256:8df66384343e81ae49f5b9ee7d2d67df3b98d578d1e3a50994111e1c6062bf5e"},
-    {file = "openai-1.25.2.tar.gz", hash = "sha256:a2b4a6ae9afb8b5578b5b69315ecc6c01564d4c8dbe18fe2375bb9547ff5038c"},
-=======
     {file = "openai-1.29.0-py3-none-any.whl", hash = "sha256:c61cd12376c84362d406341f9e2f9a9d6b81c082b133b44484dc0f43954496b1"},
     {file = "openai-1.29.0.tar.gz", hash = "sha256:d5a769f485610cff8bae14343fa45a8b1d346be3d541fa5b28ccd040dbc8baf8"},
->>>>>>> main
 ]
 
 [[package]]
@@ -3298,6 +3289,16 @@ dependencies = [
 files = [
     {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
     {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
+]
+
+[[package]]
+name = "python-dotenv"
+version = "1.0.1"
+requires_python = ">=3.8"
+summary = "Read key-value pairs from a .env file and set them as environment variables"
+files = [
+    {file = "python-dotenv-1.0.1.tar.gz", hash = "sha256:e324ee90a023d808f1959c46bcbc04446a10ced277783dc6ee09987c37ec10ca"},
+    {file = "python_dotenv-1.0.1-py3-none-any.whl", hash = "sha256:f7b63ef50f1b690dddf550d03497b66d609393b40b564ed0d674909a68ebf16a"},
 ]
 
 [[package]]
