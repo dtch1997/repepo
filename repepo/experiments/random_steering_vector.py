@@ -1,37 +1,16 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
-from statistics import mean
-from typing import Literal, cast
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import seaborn as sns
-from simple_parsing import ArgumentParser
-import matplotlib.pyplot as plt
-from steering_vectors import SteeringVector
-from repepo.core.format import LlamaChatFormatter
-from repepo.core.pipeline import Pipeline
-from repepo.core.types import Example, Model, Tokenizer
-from repepo.steering.build_steering_training_data import (
-    build_steering_vector_training_data,
-)
-from repepo.steering.evaluate_cross_steering import (
-    CrossSteeringResult,
-    evaluate_cross_steering,
-)
+from repepo.core.types import Model, Tokenizer
 from repepo.core.evaluate import EvalResult
-from repepo.steering.plot_steering_vector_cos_similarities import (
-    plot_steering_vector_cos_similarities,
-)
-from repepo.steering.utils.helpers import make_dataset
-from steering_vectors import train_steering_vector
 from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe
-from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
-from repepo.utils.stats import bernoulli_js_dist
 from repepo.experiments.persona_prompts import get_all_persona_prompts
 
 CONFIG_SAVE_PATH = "config.json"
+
 
 @dataclass
 class RandomSteeringVectorExperimentConfig:
@@ -45,11 +24,13 @@ class RandomSteeringVectorExperimentConfig:
         default_factory=lambda: [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
     )
 
-@dataclass 
+
+@dataclass
 class RandomSteeringVectorExperimentResult:
     train_dataset_name: str
     test_dataset_names: list[str]
     steering_results: list[EvalResult]
+
 
 def steer_with_random_vector(
     model: Model,
@@ -66,6 +47,7 @@ def steer_with_random_vector(
     completion_template: str | None = None,
 ):
     pass
+
 
 def run_random_steering_vector_experiment(
     config: RandomSteeringVectorExperimentConfig,
@@ -105,7 +87,6 @@ def run_random_steering_vector_experiment(
     if sge_task_id is not None:
         persona_prompt = list(all_persona_prompts.keys())[sge_task_id]
         all_persona_prompts = {persona_prompt: all_persona_prompts[persona_prompt]}
-
 
     for i, dataset_name in enumerate(all_persona_prompts):
         results_save_file = output_dir / f"{dataset_name}.pt"
