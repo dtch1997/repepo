@@ -1,16 +1,14 @@
 # flake8: noqa
 # %%
-
-import os
-
-os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
-
 import pandas as pd
 import torch
 import itertools
 import pathlib
 import logging
+from IPython.display import HTML
+from transformers.generation import GenerationConfig
 from contextlib import ExitStack
+from repepo.core.format import LlamaChatFormatter
 from repepo.variables import Environ
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Example, Completion, Dataset
@@ -50,284 +48,238 @@ from repepo.core.types import Dataset, Example, Completion
 from repepo.translation.constants import LangOrStyleCode
 from repepo.translation.load_translation import load_translation, TS
 from repepo.data.multiple_choice.make_mwe_persona import preprocess_ab_dataset
+from repepo.steering.utils.helpers import get_model_and_tokenizer
+import pandas as pd 
 
-
-def get_completion_template(
-    use_caa: bool = False,
-):
-    if use_caa:
-        return "{prompt} ({response}"
-    else:
-        return "{prompt} {response}"
-
-
-def preprocess_example(
-    example: Example,
-    use_caa: bool = False,
-) -> Example:
-    if not use_caa:
-        return example
-
-    # strip the leading brackets
-    pos_response = example.positive.response[1:]
-    neg_response = example.negative.response[1:]
-
-    return Example(
-        positive=Completion(prompt=example.positive.prompt, response=pos_response),
-        negative=Completion(prompt=example.negative.prompt, response=neg_response),
-        meta=example.meta,
+def get_generation(
+    pipeline: Pipeline,
+    completion: Completion,
+    steering_vector: SteeringVector,
+    layer: int,
+    multiplier: float,
+    generation_config: GenerationConfig | None = None,
+) -> Completion:
+    eval_hooks = get_eval_hooks(
+        layer_id=layer,
+        multiplier=multiplier,
+        # completion_template=get_completion_template(use_caa),
+        completion_template=None,
+        system_prompt=None,
     )
 
+    steering_hook = SteeringHook(
+        steering_vector=steering_vector,
+        direction_multiplier=0,
+        patch_generation_tokens_only=True,
+        skip_first_n_generation_tokens=0,
+        layer_config=guess_and_enhance_layer_config(pipeline.model),
+    )
 
-def get_steering_vector_result_df(
+    pipeline.hooks.clear()
+    pipeline.hooks.append(steering_hook)
+
+    with ExitStack() as stack:
+        for eval_hook in eval_hooks:
+            stack.enter_context(eval_hook(pipeline))
+        gen_prompt = pipeline.build_generation_prompt(completion)
+        gen_response = pipeline.generate(completion, generation_config= generation_config)
+
+    pipeline.hooks.clear()
+    return Completion(prompt=gen_prompt, response=gen_response)
+
+def get_logit_diff(
     pipeline: Pipeline,
+    example: Example,
     steering_vector: SteeringVector,
-    dataset: Dataset,
-    layers: list[int],
-    multipliers: list[float],
-    n_generation: int = 1,
-    use_caa: bool = False,
-) -> pd.DataFrame:
-    rows = []
-    for layer, multiplier in itertools.product(layers, multipliers):
-        eval_hooks = get_eval_hooks(
-            layer_id=layer,
-            multiplier=multiplier,
-            completion_template=get_completion_template(use_caa),
-            system_prompt=None,
-        )
+    layer: int,
+    multiplier: float,
+) -> float:
+    eval_hooks = get_eval_hooks(
+        layer_id=layer,
+        multiplier=multiplier,
+        # completion_template=get_completion_template(use_caa),
+        completion_template=None,
+        system_prompt=None,
+    )
 
-        steering_hook = SteeringHook(
-            steering_vector=steering_vector,
-            direction_multiplier=0,
-            patch_generation_tokens_only=True,
-            skip_first_n_generation_tokens=0,
-            layer_config=guess_and_enhance_layer_config(pipeline.model),
-        )
+    steering_hook = SteeringHook(
+        steering_vector=steering_vector,
+        direction_multiplier=0,
+        patch_generation_tokens_only=True,
+        skip_first_n_generation_tokens=0,
+        layer_config=guess_and_enhance_layer_config(pipeline.model),
+    )
 
-        pipeline.hooks.clear()
-        pipeline.hooks.append(steering_hook)
+    pipeline.hooks.clear()
+    pipeline.hooks.append(steering_hook)
 
-        with ExitStack() as stack:
-            for eval_hook in eval_hooks:
-                stack.enter_context(eval_hook(pipeline))
+    with ExitStack() as stack:
+        for eval_hook in eval_hooks:
+            stack.enter_context(eval_hook(pipeline))
+        eval_prediction = get_prediction(pipeline, example)
 
-            for i, example in enumerate(dataset):
-                example = preprocess_example(example, use_caa)
-                eval_prediction = get_prediction(
-                    pipeline, example, n_generation=n_generation
-                )
-                logit_diff = eval_prediction.metrics["logit_diff"]
-                predicted_token = (
-                    example.positive.response[0]
-                    if logit_diff > 0
-                    else example.negative.response[0]
-                )
-                for generation in eval_prediction.generations:
-                    row_dict = {
-                        "prompt": generation.prompt,
-                        "response": generation.response,
-                        "layer": layer,
-                        "multiplier": multiplier,
-                        "logit_diff": logit_diff,
-                        "predicted_token": predicted_token,
-                        # metadata
-                        "prompt_idx": i,
-                        "raw_prompt": example.positive.prompt,
-                    }
-                    row_dict.update(eval_prediction.metrics)
-                    rows.append(row_dict)
-
-        pipeline.hooks.clear()
-    df = pd.DataFrame(rows)
-    return df
-
+    pipeline.hooks.clear()
+    return eval_prediction.metrics["logit_diff"]
 
 # %%
+# Load persona dataset
+
+# dataset_name: str = "anti-LGBTQ-rights"
+# raw_dataset_filepath = get_raw_dataset_dir() / "mwe" / "persona" / f"{dataset_name}.jsonl"
+# raw_df = pd.read_json(raw_dataset_filepath, lines=True)
+# raw_df.head()
+# statements = raw_df['statement']
+# print(statements[0])
+
+# raw_df['question'][0]
+# prompt = raw_df['question'][0].strip()
+# answer_matching_behavior = raw_df['answer_matching_behavior'][0].strip()
+# answer_not_matching_behavior = raw_df['answer_not_matching_behavior'][0].strip()
+# caa_prompt = f"{prompt}\n\nChoices:\n(A) {answer_matching_behavior}\n(B) {answer_not_matching_behavior}"
+# print(caa_prompt)
+
+# prompt = raw_df['question'][0].strip()
+# answer_matching_behavior = raw_df['answer_matching_behavior'][0].strip()
+# answer_not_matching_behavior = raw_df['answer_not_matching_behavior'][0].strip()
+# caa_prompt = f"{prompt}\n\nChoices:\n(A) {answer_matching_behavior}\n(B) {answer_not_matching_behavior}"
+# print(caa_prompt)
+
+# def make_caa_prompt_from_row(row):
+#     prompt = row['question'].strip()
+#     answer_matching_behavior = row['answer_matching_behavior'].strip()
+#     answer_not_matching_behavior = row['answer_not_matching_behavior'].strip()
+#     return f"{prompt}\n\nChoices:\n(A) {answer_matching_behavior}\n(B) {answer_not_matching_behavior}"
+
+# raw_df['caa_prompt'] = raw_df.apply(make_caa_prompt_from_row, axis=1)
+# raw_df.head()
+
+# %% 
+# Load xrisk dataset 
+
+# dataset_name: str = "survival-instinct"
+example_idx = 0
+dataset_name: str = "corrigible-neutral-HHH"
+raw_dataset_filepath = get_raw_dataset_dir() / "mwe" / "xrisk" / f"{dataset_name}.jsonl"
+raw_df = pd.read_json(raw_dataset_filepath, lines=True)
+raw_df.head()
+
+def strip_choices(row):
+    return row['question'].split("Choices")[0]
+
+raw_df['statement'] = raw_df.apply(strip_choices, axis=1)
+raw_df['caa_prompt'] = raw_df['question']
+print(raw_df['caa_prompt'][example_idx])
+print("Positive answer: ", raw_df['answer_matching_behavior'][example_idx])
+print(raw_df['statement'][example_idx])
+# %%
+# Load pipeline
+from repepo.paper.utils import get_persona_cross_steering_experiment_result_path, get_steering_vector, load_persona_cross_steering_experiment_result
 
 torch.set_grad_enabled(False)
 
 model_name: str = "meta-llama/Llama-2-7b-chat-hf"
-dataset_name: str = "openness"
 persona: str = "baseline"
 device: str = "cuda"
 
 # Load the pipeline
-model = AutoModelForCausalLM.from_pretrained(
-    model_name, torch_dtype=torch.float16, device_map=0
-)
-model.eval()
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-pipeline = persona_pipeline(model, tokenizer, persona, dataset_name, False)
+model, tokenizer = get_model_and_tokenizer(model_name, load_in_8bit=True)
+formatter = LlamaChatFormatter()
+pipeline = Pipeline(model=model, tokenizer=tokenizer, formatter=formatter)
 
+# %%
 # Load steering vector
-result_path = (
-    pathlib.Path(Environ.ProjectDir) / "experiments" / "persona_generalization"
-)
-result = torch.load(result_path / f"{dataset_name}.pt")
-steering_vector: SteeringVector = result.steering_vectors["baseline"]
+result = load_persona_cross_steering_experiment_result(dataset_name)
+steering_vector = get_steering_vector(result, persona)
 print(steering_vector)
 
+
 # %%
+# Calculate logit diff
 
-# Load a dataset with and without prompts
-# And then visualize
-
-import pandas as pd
-
-pd.set_option("display.max_colwidth", None)
-
-
-def get_pos_completions(dataset: Dataset) -> list[Completion]:
-    completions = []
-    for example in dataset:
-        completions.append(example.positive)
-    return completions
-
-
-def make_completions_df(completions: list[Completion]) -> pd.DataFrame:
-    df = pd.DataFrame(
-        {
-            "prompt": [completion.prompt for completion in completions],
-            "response": [completion.response for completion in completions],
-        }
-    )
-    return df
-
-
-dataset_gen = make_dataset(dataset_name + "_gen")
-
-gen_df = make_completions_df(get_pos_completions(dataset_gen))
-gen_df.head()
 
 
 # %%
-dataset_caa = make_dataset(dataset_name)
-caa_df = make_completions_df(get_pos_completions(dataset_caa))
-caa_df.head()
-# %%
-
-# Evaluate pipeline and steering vector on CAA-formatted dataset --> get logit diff
-gen_result_df = get_steering_vector_result_df(
-    pipeline,
-    steering_vector,
-    dataset_gen[:1],
-    layers=[13],
-    multipliers=[-1, 0, 1],
-    n_generation=1,
-    use_caa=False,
+# Calculate logit diff
+caa_prompt = raw_df['caa_prompt'][example_idx]
+answer_matching_behavior = raw_df['answer_matching_behavior'][example_idx]
+answer_not_matching_behavior = raw_df['answer_not_matching_behavior'][example_idx]
+caa_example = Example(
+    positive=Completion(prompt=caa_prompt, response=answer_matching_behavior),
+    negative=Completion(prompt=caa_prompt, response=answer_not_matching_behavior),
 )
-print(len(gen_result_df))
-gen_result_df = gen_result_df[
-    ["prompt", "response", "prompt_idx", "layer", "multiplier"]
-]
-gen_result_df.head()
+# multipliers = [-1.5, -1, -0.5, 0, 0.5, 1, 1.5]
+# multipliers = list(range(-10, 11))
+multipliers = [-100, 0, 100]
+for multiplier in multipliers:
+    logit_diff = get_logit_diff(pipeline, caa_example, steering_vector, 13, multiplier)
+    print(f"Multiplier: {multiplier}, Logit Diff: {logit_diff}")
 # %%
-# Evaluate pipeline and steering vector on Gen-formatted dataset --> get generations
-# Evaluate pipeline and steering vector on CAA-formatted dataset --> get logit diff
-caa_result_df = get_steering_vector_result_df(
-    pipeline,
-    steering_vector,
-    dataset_caa[:1],
-    layers=[13],
-    multipliers=[-1, 0, 1],
-    n_generation=1,
-    use_caa=True,
+# Generate completions
+pd.set_option('display.max_colwidth', None)
+gen_config = GenerationConfig(
+    max_length=500,
 )
-print(len(caa_result_df))
-caa_result_df = caa_result_df[
-    ["prompt", "prompt_idx", "logit_diff", "layer", "multiplier"]
-]
-caa_result_df.head()
-# %%
 
-df = pd.merge(
-    gen_result_df,
-    caa_result_df,
-    on=["prompt_idx", "layer", "multiplier"],
-    suffixes=("_gen", "_caa"),
+rows = []
+
+statement = raw_df['statement'][example_idx]
+completion = Completion(
+    prompt=statement,
+    response=""
 )
-df.head()
-# %%
 
-# Plot logits
-import seaborn as sns  # noqa
+layer = 13
+# multipliers = [-1.5, -1, -0.5, 0, 0.5, 1, 1.5]
+# multipliers = [-5, -3, 0]
 
-sns.set_theme()
-df = caa_result_df.copy()
-df["prompt_idx"] = df["prompt"].astype("category").cat.codes.astype("category")
-sns.lineplot(df, x="multiplier", y="logit_diff", hue="prompt_idx")
-
-# %%
-
-
-def get_combined_results_df(
-    pipeline,
-    steering_vector,
-    dataset_name: str,
-    layers: list[int],
-    multipliers: list[float],
-    n_generation: int = 1,
-    n_examples: int = 1,
-    use_caa: bool = False,
-):
-    dataset_gen = make_dataset(dataset_name + "_gen")
-    dataset_caa = make_dataset(dataset_name)
-
-    caa_result_df = get_steering_vector_result_df(
-        pipeline,
-        steering_vector,
-        dataset_caa[:n_examples],
-        layers=[13],
-        multipliers=[-1, 0, 1],
-        n_generation=1,
-        use_caa=True,
+multipliers = [-100, 0, 100]
+for multiplier in multipliers:
+    gen_completion = get_generation(
+        pipeline, 
+        completion, 
+        steering_vector, 
+        layer, 
+        multiplier,
+        generation_config=gen_config
     )
-    caa_result_df = caa_result_df[
-        ["prompt", "raw_prompt", "prompt_idx", "logit_diff", "layer", "multiplier"]
-    ]
+    rows.append({
+        "multiplier": multiplier,
+        "gen_prompt": gen_completion.prompt,
+        "gen_response": gen_completion.response
+    })
 
-    gen_result_df = get_steering_vector_result_df(
-        pipeline,
-        steering_vector,
-        dataset_gen[:n_examples],
-        layers=[13],
-        multipliers=[-1, 0, 1],
-        n_generation=1,
-        use_caa=False,
-    )
-    gen_result_df = gen_result_df[
-        ["prompt", "raw_prompt", "response", "prompt_idx", "layer", "multiplier"]
-    ]
-    df = pd.merge(
-        gen_result_df,
-        caa_result_df,
-        on=["prompt_idx", "layer", "multiplier"],
-        suffixes=("_gen", "_caa"),
-    )
+df = pd.DataFrame(rows)
 
-    return df
-
-
-# %%
-df = get_combined_results_df(
-    pipeline,
-    steering_vector,
-    dataset_name,
-    layers=[13],
-    multipliers=[-1, 0, 1],
-    n_generation=1,
-    n_examples=10,
-    use_caa=False,
-)
-# %%
-sns.set_theme()
-sns.lineplot(df, x="multiplier", y="logit_diff", hue="prompt_idx")
-# %%
-from IPython.display import HTML  # noqa
-
-pd.set_option("display.max_colwidth", None)
 HTML(df.to_html(index=False))
 # %%
-df.to_csv("openness-steering.csv")
+# In the case of CAA, evaluate the total probability mass on option tokens. 
+
+A_token = 29909
+B_token = 29933
+
+
+for caa_prompt in raw_df['caa_prompt'][:5]:
+    prompt = pipeline.build_generation_prompt(Completion(prompt=caa_prompt, response="")) + " ("
+    print(prompt)
+    outputs = pipeline(prompt)
+    logits = outputs.loss['logits']
+    print(f"A token: {A_token}, B token: {B_token}")
+
+
+    A_logit = logits[0, -1, A_token].item()
+    B_logit = logits[0, -1, B_token].item()
+    last_token_logits = logits[0, -1, :]
+    topk = torch.topk(last_token_logits, 5)
+    print(topk)
+    print(tokenizer.decode(topk.indices))
+    print(f"A logit: {A_logit}, B logit: {B_logit}")
+# %%
+print(topk.indices)
+print(tokenizer.decode(topk.indices[0]))
+print(tokenizer.decode(topk.indices[1]))
+print(tokenizer.decode(A_token))
+print(tokenizer.decode(B_token))
+# %%
+
+print(tokenizer.encode("My A A"))
 # %%

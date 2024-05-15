@@ -255,7 +255,6 @@ def get_prediction(
     pipeline: Pipeline,
     example: Example,
     evaluators: Sequence[Evaluator] = [LogitDifferenceEvaluator()],
-    n_generation: int = 0,
     slim_results: bool = False,
 ) -> EvalPrediction:
     positive_probs = pipeline.calculate_output_logprobs(
@@ -272,10 +271,10 @@ def get_prediction(
     example_metrics = {}
     for evaluator in evaluators:
         example_metrics[evaluator.get_metric_name()] = evaluator.score_prediction(pred)
-    for _ in range(n_generation):
-        prompt = pipeline.build_generation_prompt(example.positive)
-        response = pipeline.generate(example.positive)
-        pred.generations.append(Completion(prompt=prompt, response=response))
+    # for _ in range(n_generation):
+    #     prompt = pipeline.build_generation_prompt(example.positive)
+    #     response = pipeline.generate(example.positive)
+    #     pred.generations.append(Completion(prompt=prompt, response=response))
     pred.metrics = example_metrics
     return pred
 
