@@ -62,7 +62,7 @@ def sweep_llama_7b_layers(config: LlamaSweepLayersConfig):
     sweep_results = sweep_layers(
         model=model,
         tokenizer=tokenizer,
-        layers=range(40),
+        layers=range(32),
         train_split=config.train_split,
         test_split=config.test_split,
         formatter=LlamaChatFormatter(),
