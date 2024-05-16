@@ -16,6 +16,8 @@ def plot_sweep_layers_result(
     layers = result.layers
     df_data: dict[str, Any] = {"Layer": layers}
 
+    sns.set_theme(style="darkgrid")
+
     for dataset, layer_steerabilities in steerabilities.items():
         df_data[truncate_name(dataset)] = [
             layer_steerabilities[layer] for layer in layers
