@@ -9,7 +9,6 @@ from repepo.experiments.persona_prompts import (
 )
 
 
-
 # Sample 3 without replacement from each category
 def get_sampled_persona_prompts(k: int = 3) -> dict[str, tuple[str, str]]:
     random.seed(0)
