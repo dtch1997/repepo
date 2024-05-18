@@ -1,6 +1,7 @@
 from steering_vectors import SteeringVector
 import torch
 import math
+import pytest
 from transformers import GPTNeoXForCausalLM
 
 from repepo.core.types import Example, Completion, Tokenizer
@@ -16,6 +17,17 @@ from repepo.core.evaluate import (
     LogitDifferenceEvaluator,
 )
 from repepo.core.hook import SteeringHook
+
+
+# TODO: Implement passing test
+@pytest.mark.xfail
+def test_get_prediction() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_get_eval_hooks() -> None:
+    raise NotImplementedError
 
 
 def test_update_completion_template_at_eval_hook(

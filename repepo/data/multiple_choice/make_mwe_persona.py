@@ -98,6 +98,35 @@ def convert_mwe_personas_dataset_caa(
     return mwe_dataset
 
 
+def convert_mwe_personas_dataset_gen(
+    mwe: list[dict[str, str]],
+    # lang_or_style: LangOrStyleCode | None = None,
+    # ctx: TS | None = None,
+) -> Dataset:
+    """Convert a dataset in MWE format to our format"""
+    mwe_dataset: Dataset = []
+    for element in mwe:
+        prompt = element["question"]
+
+        # if ctx is not None:
+        #     ctx_str = load_translation(ctx, lang_or_style)
+        #     prompt = f"{ctx_str}\n\n{prompt}"
+
+        positive = Completion(
+            prompt=prompt,
+            response=element["answer_matching_behavior"],
+        )
+
+        negative = Completion(
+            prompt=prompt,
+            response=element["answer_not_matching_behavior"],
+        )
+
+        ex = Example(positive=positive, negative=negative, steering_token_index=-2)
+        mwe_dataset.append(ex)
+    return mwe_dataset
+
+
 def make_mwe_personas_caa():
     """Make MWE dataset"""
     for dataset_path in get_raw_dataset_dir().glob("mwe/persona/*.jsonl"):
@@ -107,6 +136,18 @@ def make_mwe_personas_caa():
         persona = dataset_path.stem
         filename = build_dataset_filename(persona)
         mwe_dataset: Dataset = convert_mwe_personas_dataset_caa(list_dataset)
+        jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
+
+
+def make_mwe_personas_gen():
+    """Make MWE dataset"""
+    for dataset_path in get_raw_dataset_dir().glob("mwe/persona/*.jsonl"):
+        with open(dataset_path, "r") as jsonfile:
+            list_dataset = [json.loads(line) for line in jsonfile]
+
+        persona = dataset_path.stem
+        filename = build_dataset_filename(persona + "_gen")
+        mwe_dataset: Dataset = convert_mwe_personas_dataset_gen(list_dataset)
         jdump(mwe_dataset, get_dataset_dir() / "persona" / filename)
 
 

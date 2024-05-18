@@ -59,7 +59,7 @@ class TextProbs:
 
 @dataclass
 class PipelineContext:
-    method: Literal["generate", "logprobs"]
+    method: Literal["generate", "logprobs", "forward"]
     base_prompt: str
     full_prompt: str
     inputs: Any
@@ -118,6 +118,7 @@ class Pipeline:
             self.formatter.format_conversation(completion, self.conversation_history)
         )
 
+    @torch.no_grad()
     def generate(
         self,
         completion: Completion,
@@ -147,12 +148,36 @@ class Pipeline:
                 return outputs_str.replace(base_prompt, "")
             return outputs_str
         raise RuntimeError("Should never get here")
+    
+    @torch.no_grad()
+    def __call__(self, text: str):
+        """A lightweight wrapper around model"""
+        # with ExitStack() as stack:
+        #     for hook in self.hooks:
+        #         stack.enter_context(hook(context))
+        # base_prompt = self.build_generation_prompt(completion)
+        # full_prompt = self.build_full_prompt(completion)
+        inputs: Any = self.tokenizer(text, return_tensors="pt")
+        inputs = inputs.to(self.model.device)
+        context = PipelineContext(
+            method="forward",
+            base_prompt="dummy",
+            full_prompt="dummy",
+            inputs=inputs,
+            pipeline=self,
+        )
+        with ExitStack() as stack:
+            for hook in self.hooks:
+                stack.enter_context(hook(context))
+            outputs = self.model(**inputs, output_hidden_states=False, return_dict=True)
+            return outputs
 
     @torch.no_grad()
     def calculate_output_logprobs(
         self, completion: Completion, slim_results: bool = False
     ) -> TextProbs:
         """Calculate the logprobs for each token in the prompt + output"""
+
         base_prompt = self.build_generation_prompt(completion)
         full_prompt = self.build_full_prompt(completion)
         inputs: Any = self.tokenizer(full_prompt, return_tensors="pt")
