@@ -1,6 +1,8 @@
 import pathlib
 import torch
 import pandas as pd
+
+from typing import Literal
 from steering_vectors import SteeringVector
 from repepo.variables import Environ
 from repepo.core.evaluate import EvalResult, EvalPrediction
@@ -9,25 +11,16 @@ from repepo.experiments.persona_generalization import (
 )
 
 EvalResultSweep = dict[float, EvalResult]  # A sweep over a multiplier
+Model = Literal["llama7b", "qwen"]
 
-EXPERIMENT_DIR = (
-    pathlib.Path(Environ.ProjectDir)
-    / "experiments"
-    / "persona_generalization"
-    / "persona_generalization"
-)
-
-
-def get_persona_cross_steering_experiment_result_path(
-    dataset_name: str,
-) -> pathlib.Path:
-    return EXPERIMENT_DIR / f"{dataset_name}.pt"
-
+def get_experiment_dir(model: Model) -> pathlib.Path:
+    return pathlib.Path(Environ.ProjectDir) / 'experiments' / f'persona_generalization_{model}'
 
 def load_persona_cross_steering_experiment_result(
     dataset_name: str,
+    experiment_dir: pathlib.Path = get_experiment_dir('qwen'),
 ) -> PersonaCrossSteeringExperimentResult:
-    result_path = EXPERIMENT_DIR / f"{dataset_name}.pt"
+    result_path = experiment_dir / f"{dataset_name}.pt"
     return torch.load(result_path)
 
 
