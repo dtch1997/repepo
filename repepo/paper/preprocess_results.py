@@ -149,7 +149,7 @@ def run_load_and_preprocess_results(config: PreprocessConfig):
         if not save_path.exists():
             print(f"Skipping {dataset_name} as not found")
             continue
-        df = pd.read_parquet(save_path)
+        df = pd.read_parquet(save_path).drop_duplicates()
         dfs.append(df)
     full_df = pd.concat(dfs)
     print_dataset_info(full_df)
