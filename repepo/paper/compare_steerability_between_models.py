@@ -34,7 +34,16 @@ max = x.max() if x.max() > y.max() else y.max()
 ax.plot([min, max], [min, max], color='black', linestyle='--')
 plt.xlabel('Qwen ID steerability')
 plt.ylabel('Llama7b ID steerability')
+
+fig.suptitle("Steerability ID for Qwen and Llama7b")
+fig.savefig('figures/id_steerability_correlation.png')
 plt.show()
+
+# Print the spearman correlation
+from scipy.stats import spearmanr
+result = spearmanr(combined['steerability_id_qwen'], combined['steerability_id_llama7b'])
+print(f"{result.statistic:.3f}")
+
 # %%
 # Correlation in ood steerability
 fig, ax = plt.subplots()
@@ -50,6 +59,9 @@ plt.xlabel('Qwen OOD steerability')
 plt.ylabel('Llama7b OOD steerability')
 
 fig.suptitle("Steerability OOD for Qwen and Llama7b")
-fig.savefig('figures/steerability_correlation.png')
+fig.savefig('figures/ood_steerability_correlation.png')
 plt.show()
+
+result = spearmanr(combined['steerability_ood_qwen'], combined['steerability_ood_llama7b'])
+print(f"{result.statistic:.3f}")
 # %%
