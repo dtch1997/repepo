@@ -165,6 +165,8 @@ def plot_slope_vs_response_is_A(df):
         order = order['Dataset'],
         errorbar = None
     )
+
+    fig.tight_layout()
     fig.savefig('figures/slope_vs_pos_option_is_A.png')
 
 plot_slope_vs_response_is_A(df)
@@ -192,6 +194,7 @@ def plot_response_is_A(df):
     ax.set_ylabel('Dataset')
     ax.set_xlabel('Count')
     ax.set_title('Count of Positive Options per Dataset')
+    fig.tight_layout()
     plt.show()
 
 
@@ -202,16 +205,18 @@ def plot_slope_vs_response_is_Yes(df):
 
     # Filter by datasets where there is at least one Yes and one No
     # Count the number of "no" responses
-    yes_counts = df.groupby('dataset_name')['pos_option_is_Yes'].sum()
-    total_counts = df.groupby('dataset_name')['pos_option_is_Yes'].count()
-    # Filter by datasets where there is at least one Yes and one No
-    selected_datasets = total_counts[(yes_counts > 0) & (yes_counts < total_counts)]
-    print(selected_datasets)
+    # yes_counts = df.groupby('dataset_name')['pos_option_is_Yes'].sum()
+    # total_counts = df.groupby('dataset_name')['pos_option_is_Yes'].count()
+    # # Filter by datasets where there is at least one Yes and one No
+    # selected_datasets = total_counts[(yes_counts > 0) & (yes_counts < total_counts)]
+    # print(selected_datasets)
+
+    fig, ax = plt.subplots(figsize=(10, 15))
 
     plot_df = df[
         (df['steering_label'] == 'baseline') &
-        (df['dataset_label'] == 'baseline') & 
-        (df['dataset_name'].isin(selected_datasets.index))
+        (df['dataset_label'] == 'baseline') 
+        # (df['dataset_name'].isin(selected_datasets.index))
     ]
     # Rename 
     plot_df = plot_df.rename(columns = {'slope': 'Steerability', 'dataset_name': 'Dataset'})
@@ -221,7 +226,7 @@ def plot_slope_vs_response_is_Yes(df):
     plot_df['Positive Option'] = plot_df['pos_A'] + ' and ' + plot_df['pos_Yes']
 
     order = plot_df[['Dataset', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
-    fig, ax = plt.subplots(figsize=(6, 10))
+    hue_order = ['A and No', 'A and Yes', 'B and No', 'B and Yes']
     sns.barplot(
         data=plot_df, 
         hue = 'Positive Option', 
@@ -229,8 +234,10 @@ def plot_slope_vs_response_is_Yes(df):
         y='Dataset', 
         ax=ax, 
         order = order['Dataset'],
+        hue_order = hue_order,
         errorbar = None
     )
+    fig.tight_layout()
     fig.savefig('figures/slope_vs_pos_option_is_Yes.png')
 
 plot_slope_vs_response_is_Yes(df)
@@ -254,6 +261,8 @@ def plot_response_is_Yes(df):
     # Plot a stacked barplot of the fraction of A vs B responses in each dataset.
     count_df = plot_df.groupby(['Dataset', 'Positive Option']).size().unstack().fillna(0)
     fig, ax = plt.subplots(figsize=(10, 15))
+    # Set order by order
+    count_df = count_df.loc[order['Dataset']]
     count_df.plot(kind='barh', stacked=True, ax = ax)
     ax.set_ylabel('Dataset')
     ax.set_xlabel('Count')
@@ -263,6 +272,72 @@ def plot_response_is_Yes(df):
     plt.show()
 
 plot_response_is_Yes(df)
+
+# %%
+# The above two in the same figure
+def plot_slope_and_counts_for_response_is_Yes(df):
+
+    fig, axs = plt.subplots(
+        nrows = 1, 
+        ncols = 2, 
+        width_ratios=[5, 1], 
+        figsize=(10, 10), 
+        sharey=True
+    )
+    ax = axs[0]
+
+    plot_df = df[
+        (df['steering_label'] == 'baseline') &
+        (df['dataset_label'] == 'baseline') 
+        # & (df['dataset_name'].isin(selected_datasets.index))
+    ]
+    # Rename 
+    plot_df = plot_df.rename(columns = {'slope': 'Steerability', 'dataset_name': 'Dataset'})
+
+    plot_df['pos_A'] = plot_df['pos_option_is_A'].apply(lambda x: 'A' if x else 'B')
+    plot_df['pos_Yes'] = plot_df['pos_option_is_Yes'].apply(lambda x: 'Yes' if x else 'No')
+    plot_df['Positive Option'] = plot_df['pos_A'] + ' and ' + plot_df['pos_Yes']
+
+    order = plot_df[['Dataset', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
+    hue_order = ['A and No', 'A and Yes', 'B and No', 'B and Yes']
+    sns.barplot(
+        data=plot_df, 
+        hue = 'Positive Option', 
+        x='Steerability', 
+        y='Dataset', 
+        ax=ax, 
+        order = order['Dataset'],
+        hue_order = hue_order,
+        errorbar = None
+    )
+    ax.set_title('Mean Steerability')
+
+    ax = axs[1]
+    plot_df = df[
+        (df['steering_label'] == 'baseline') &
+        (df['dataset_label'] == 'baseline') & 
+        (df['multiplier'] == 0)
+    ] 
+
+    # Rename 
+    plot_df = plot_df.rename(columns = {'slope': 'Steerability', 'dataset_name': 'Dataset'})
+    plot_df['pos_A'] = plot_df['pos_option_is_A'].apply(lambda x: 'A' if x else 'B')
+    plot_df['pos_Yes'] = plot_df['pos_option_is_Yes'].apply(lambda x: 'Yes' if x else 'No')
+    plot_df['Positive Option'] = plot_df['pos_A'] + ' and ' + plot_df['pos_Yes']
+
+    # Plot a stacked barplot of the fraction of A vs B responses in each dataset.
+    count_df = plot_df.groupby(['Dataset', 'Positive Option']).size().unstack().fillna(0)
+    count_df.plot(kind='barh', stacked=True, ax = ax)
+    ax.set_ylabel('Dataset')
+    ax.set_xlabel('Count')
+    ax.set_title('Option Counts')
+    ax.get_legend().remove()
+    fig.tight_layout()
+    fig.savefig("figures/plot_slope_and_counts_for_response_is_Yes.png")
+    plt.show()
+
+plot_slope_and_counts_for_response_is_Yes(df)
+
 
 # %% 
 
