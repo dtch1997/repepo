@@ -4,6 +4,7 @@ output
 # Data
 *.sqlite
 *.csv
+*.gzip
 # Dataset files
 *.hdf5
 *.json

@@ -23,7 +23,8 @@ from repepo.paper.preprocess_results import (
 sns.set_theme()
 
 # %%
-model = 'llama7b'
+# model = 'llama7b'
+model = 'qwen'
 
 model_full_name = {
     'qwen': 'Qwen-1.5-14b-Chat',
@@ -63,7 +64,14 @@ steerability_df['label'] = steerability_df['worse_ood'].apply(lambda x: 'OOD < I
 steerability_df['gap'] = steerability_df['steerability_ood'] - steerability_df['steerability_id']
 steerability_df.to_parquet(f'{model}_steerability_summary.parquet.gzip', compression='gzip')
 # %%
+# Print the spearman correlation
+from scipy.stats import spearmanr
+result = spearmanr(steerability_df['steerability_id'], steerability_df['steerability_ood'])
+print(f"{model}: {result.statistic:.3f}")
+
+# %%
 # Plot the ID vs OOD steerability 
+
 
 
 sns.regplot(data=steerability_df, x='steerability_id', y='steerability_ood', scatter = False)
