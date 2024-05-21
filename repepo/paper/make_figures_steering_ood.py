@@ -197,6 +197,8 @@ plot_qwen_and_llama_steerability_iid_vs_od(
 
 # %%
 # Correlate ID and OOD steerability between models
+from scipy.stats import spearmanr
+
 combined_df = llama_steerability_df.merge(qwen_steerability_df, on='dataset_name', suffixes=('_llama7b', '_qwen'))
 plt.rcParams.update({'font.size': 20})
 fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharey = True, sharex = True)
@@ -206,6 +208,8 @@ ax = axs[0]
 ax.axhline(0, color='black', linestyle='-')
 ax.axvline(0, color='black', linestyle='-') 
 sns.regplot(data=combined_df, x='BASE -> BASE_llama7b', y='BASE -> BASE_qwen', ax = ax)
+spearman_corr, spearman_p = spearmanr(combined_df['BASE -> BASE_llama7b'], combined_df['BASE -> BASE_qwen'])
+print(f"Spearman correlation for BASE -> BASE: {spearman_corr} (p = {spearman_p})")
 # Draw the x = y dotted line
 x = combined_df['BASE -> BASE_llama7b']
 y = combined_df['BASE -> BASE_qwen']
@@ -231,6 +235,9 @@ ax.plot([min, max], [min, max], color='black', linestyle='--')
 
 
 sns.regplot(data=combined_df, x='SYS_POS -> USER_NEG_llama7b', y='SYS_POS -> USER_NEG_qwen', ax = ax)
+# Print the coefficient 
+spearman_corr, spearman_p = spearmanr(combined_df['SYS_POS -> USER_NEG_llama7b'], combined_df['SYS_POS -> USER_NEG_qwen'])
+print(f"Spearman correlation for SYS_POS -> USER_NEG: {spearman_corr} (p = {spearman_p})")
 ax.set_xlabel('')
 ax.set_ylabel('')
 # ax.set_xlabel('Llama-2-7b-Chat',  fontsize=16)
@@ -357,7 +364,7 @@ def plot_qwen_and_llama_steerability_variance_id_vs_ood(
 ):
 
     plt.rcParams.update({'font.size': 16})
-    fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharex = True)
+    fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharey = True)
 
     # Axes 
 
@@ -366,6 +373,8 @@ def plot_qwen_and_llama_steerability_variance_id_vs_ood(
     ax.axhline(0, color='black', linestyle='-')
     ax.axvline(0, color='black', linestyle='-') 
     sns.regplot(data=combined_df, x='BASE -> BASE_llama7b', y='BASE -> BASE_qwen', ax = ax)
+    spearman_corr, spearman_p = spearmanr(combined_df['BASE -> BASE_llama7b'], combined_df['BASE -> BASE_qwen'])
+    print(f"Spearman correlation for BASE -> BASE: {spearman_corr} (p = {spearman_p})")
     # Draw the x = y dotted line
     x = combined_df['BASE -> BASE_llama7b']
     y = combined_df['BASE -> BASE_qwen']
@@ -384,13 +393,17 @@ def plot_qwen_and_llama_steerability_variance_id_vs_ood(
     ax.axhline(0, color='black', linestyle='-')
     ax.axvline(0, color='black', linestyle='-') 
     # Draw the x = y dotted line
-    x = combined_df['BASE -> BASE_llama7b']
-    y = combined_df['BASE -> BASE_qwen']
+    x = combined_df['SYS_POS -> USER_NEG_llama7b']
+    y = combined_df['SYS_POS -> USER_NEG_qwen']
     min = x.min() if x.min() < y.min() else y.min()
     max = x.max() if x.max() > y.max() else y.max()
     ax.plot([min, max], [min, max], color='black', linestyle='--')
 
     sns.regplot(data=combined_df, x='SYS_POS -> USER_NEG_llama7b', y='SYS_POS -> USER_NEG_qwen', ax = ax)
+    # Print the coefficient
+    spearman_corr, spearman_p = spearmanr(combined_df['SYS_POS -> USER_NEG_llama7b'], combined_df['SYS_POS -> USER_NEG_qwen'])
+    print(f"Spearman correlation for SYS_POS -> USER_NEG: {spearman_corr} (p = {spearman_p})")
+
     # ax.set_xlabel('Llama-2-7b-Chat', fontsize=16)
     # ax.set_ylabel('Qwen-1.5-14b-Chat', fontsize=16)
     ax.set_xlabel('')
