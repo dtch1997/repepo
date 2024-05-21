@@ -2,6 +2,108 @@
 
 
 
+## v0.8.1 (2024-05-21)
+
+### Fix
+
+* fix: persona_generalization experiment script (#167)
+
+* update persona gen script with datasets
+
+* fix lint
+
+* adding a test to track missing persona datasets
+
+* adding all dataset prompts
+
+* adding test for get_all_prompts
+
+* adding qwen training script
+
+* fixing qwen script
+
+* tweaking qwen script
+
+* update qwen sweep script
+
+* adding llama layer sweep
+
+* fixing llama2 layers
+
+* fixing plot style
+
+* fixing formatting
+
+* adding plotting helper for steerability
+
+* fixing tests
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt;
+Co-authored-by: David Chanin &lt;chanindav@gmail.com&gt; ([`2eb6b62`](https://github.com/dtch1997/repepo/commit/2eb6b62d5a99125eac602156e5c272adad7c94a0))
+
+### Unknown
+
+* update plots ([`b914302`](https://github.com/dtch1997/repepo/commit/b914302165fe3392e6e61e7283e12ff47b8f3ae7))
+
+* update figures for paper ([`ada05d8`](https://github.com/dtch1997/repepo/commit/ada05d84a7bab66608d3f63e7966765e00bd77fc))
+
+* update figures for id steering ([`35e11cc`](https://github.com/dtch1997/repepo/commit/35e11cce447d902dc8257e77382659d10c8d76b8))
+
+* update paper figures ([`c765cab`](https://github.com/dtch1997/repepo/commit/c765cabfb24ccd102a515177ea141b338bb70b81))
+
+* add figures for correlating id and ood steering ([`ffe1515`](https://github.com/dtch1997/repepo/commit/ffe1515260a6b78b2c10eca5ded0bb0967eddbf8))
+
+* Paper/preprocessing (#170)
+
+* add preprocessing script
+
+* update figures
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`307878f`](https://github.com/dtch1997/repepo/commit/307878fe52b517d916686923e0042fea27d905c3))
+
+* updates to id results ([`453737d`](https://github.com/dtch1997/repepo/commit/453737d612f9755bfd821ae2e92432e40a33738e))
+
+* In distribution results (#168)
+
+* add figures
+
+* add figures
+
+* wip: concept erasure
+
+* update
+
+* delete unused notebooks
+
+* update plots
+
+* concept erasure
+
+* fix lint
+
+* ignore type in random sv experiment
+
+---------
+
+Co-authored-by: Daniel CH Tan &lt;dtch1997@users.noreply.github.com&gt; ([`0ca6521`](https://github.com/dtch1997/repepo/commit/0ca6521c9829257b4ba3e65d7f2e985b4e2ca139))
+
+* adding qwen formatting support and adding a sweep (#166)
+
+* adding qwen formatting support and adding a sweep
+
+* fixing formatting
+
+* saving progress during sweep ([`245022f`](https://github.com/dtch1997/repepo/commit/245022f367fc9443d73db459c4e9f3d2580b8c5c))
+
+* delete unused notebooks ([`68b68e5`](https://github.com/dtch1997/repepo/commit/68b68e52d83f587049a0ea74a6661f6d5b199cc8))
+
+* add randomly sampled datasts ([`796bf90`](https://github.com/dtch1997/repepo/commit/796bf9034c394c86de3d7b25f1344ffd44c1a0e7))
+
+
 ## v0.8.0 (2024-05-07)
 
 ### Feature
