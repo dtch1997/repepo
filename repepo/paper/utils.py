@@ -13,12 +13,18 @@ from repepo.experiments.persona_generalization import (
 EvalResultSweep = dict[float, EvalResult]  # A sweep over a multiplier
 Model = Literal["llama7b", "qwen"]
 
+
 def get_experiment_dir(model: Model) -> pathlib.Path:
-    return pathlib.Path(Environ.ProjectDir) / 'experiments' / f'persona_generalization_{model}'
+    return (
+        pathlib.Path(Environ.ProjectDir)
+        / "experiments"
+        / f"persona_generalization_{model}"
+    )
+
 
 def load_persona_cross_steering_experiment_result(
     dataset_name: str,
-    experiment_dir: pathlib.Path = get_experiment_dir('qwen'),
+    experiment_dir: pathlib.Path = get_experiment_dir("qwen"),
 ) -> PersonaCrossSteeringExperimentResult:
     result_path = experiment_dir / f"{dataset_name}.pt"
     return torch.load(result_path)

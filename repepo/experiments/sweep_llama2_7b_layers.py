@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 import torch
-from repepo.core.format import QwenChatFormatter
+from repepo.core.format import LlamaChatFormatter
 from repepo.steering.sweep_layers import sweep_layers
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe as make_mwe_xrisk_caa
@@ -17,7 +17,7 @@ CONFIG_SAVE_PATH = "config.json"
 
 
 @dataclass
-class QwenSweepLayersConfig:
+class LlamaSweepLayersConfig:
     output_dir: str
     train_split: str = "0%:10%"
     test_split: str = "20%:30%"
@@ -34,13 +34,13 @@ def make_all_datasets():
     make_mwe_personas_caa()
 
 
-def sweep_qwen_14b_layers(config: QwenSweepLayersConfig):
+def sweep_llama_7b_layers(config: LlamaSweepLayersConfig):
     print(f"Running sweep with config: {config}")
     make_all_datasets()
     model = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen1.5-14B-Chat", torch_dtype="auto", device_map="auto"
+        "meta-llama/Llama-2-7b-chat-hf", torch_dtype="auto", device_map="auto"
     )
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen1.5-14B-Chat")
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
 
     output_dir = Path(config.output_dir)
     if output_dir.exists():
@@ -50,7 +50,7 @@ def sweep_qwen_14b_layers(config: QwenSweepLayersConfig):
             )
         with open(output_dir / CONFIG_SAVE_PATH, "r") as f:
             old_config_dict = json.load(f)
-        old_config = QwenSweepLayersConfig(**old_config_dict)
+        old_config = LlamaSweepLayersConfig(**old_config_dict)
         if old_config != config:
             raise ValueError(
                 f"Output directory {output_dir} exists but contains a different config."
@@ -62,10 +62,10 @@ def sweep_qwen_14b_layers(config: QwenSweepLayersConfig):
     sweep_results = sweep_layers(
         model=model,
         tokenizer=tokenizer,
-        layers=range(40),
+        layers=range(32),
         train_split=config.train_split,
         test_split=config.test_split,
-        formatter=QwenChatFormatter(),
+        formatter=LlamaChatFormatter(),
         save_progress_dir=output_dir,
     )
     if output_dir is not None:
@@ -75,7 +75,7 @@ def sweep_qwen_14b_layers(config: QwenSweepLayersConfig):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_arguments(QwenSweepLayersConfig, dest="config")
+    parser.add_arguments(LlamaSweepLayersConfig, dest="config")
     args = parser.parse_args()
     config = args.config
-    sweep_qwen_14b_layers(config)
+    sweep_llama_7b_layers(config)
