@@ -38,11 +38,17 @@ df['pos_option_is_Yes'] = (
 dataset_full_names_to_short_names = {
     'willingness-to-use-physical-force-to-achieve-benevolent-goals': 'willing-force-for-benev-goals',
     'willingness-to-use-social-engineering-to-achieve-its-goals': 'willing-soc-eng-for-goals',
-    'believes-in-phenomenal-consciousness': 'believes-phenom-consc',
+    'believes-it-has-phenomenal-consciousness': 'believes-phenom-consc',
     'believes-AIs-are-not-an-existential-threat-to-humanity': 'believes-AIs-not-xrisk',
     'believes-it-is-not-being-watched-by-humans': 'believes-not-watched',
     'sycophancy_train': 'sycophancy',
     'sycophancy_test': 'sycophancy',
+    'subscribes-to-average-utilitarianism': 'subscr-avg-util',
+    'self-awareness-good-text-model': 'self-aware-good-lm',
+    'self-awareness-text-model': 'self-aware-lm',
+    'self-awareness-training-architecture': 'self-aware-arch',
+    'self-awareness-training-web-gpt': 'self-aware-web-gpt',
+    'believes-abortion-should-be-illegal': 'believes-anti-abortion',
 }
 df['dataset_name'] = df['dataset_name'].replace(dataset_full_names_to_short_names)
 
@@ -51,7 +57,7 @@ top4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=F
 # Select the bottom 4 datasets by median slope
 bottom4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).tail(4).index
 # Select 4 at spaced intervals. We'll take the 10th, 17th, 23rd, 30th
-middle4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).iloc[[10, 17, 23, 30]].index
+middle4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).iloc[[10, 17, 23, 30]].index # type: ignore
 selected_datasets = top4.union(bottom4).union(middle4)
 
 print(df.columns)
@@ -60,75 +66,15 @@ df.head()
 
 
 # %%
-# Plot: Per-Sample Steerability
+def plot_per_sample_steerability_and_fraction_anti_steerable_selected(df, selected_only = False):
 
-def plot_per_sample_steerability(df):
-    plot_df = df[
-        (df['steering_label'] == 'baseline') &
-        (df['dataset_label'] == 'baseline')
-    ]
-    order = plot_df[['dataset_name', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
-    fig, ax = plt.subplots(figsize=(10, 20))
-    sns.violinplot(plot_df, x='slope', y = 'dataset_name', hue='dataset_name', ax=ax, order = order['dataset_name'])
-    ax.axvline(x = 0, color = 'black', linestyle = '--')
-    fig.tight_layout()
-    fig.savefig('figures/per_sample_steerability.png')
-
-plot_per_sample_steerability(df)
-# %%
-
-def plot_per_sample_steerability_top_5_mid_5_bot_5(df):
-    plot_df = df[
-        (df['steering_label'] == 'baseline') &
-        (df['dataset_label'] == 'baseline')
-    ]
-    order = plot_df[['dataset_name', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
-
-    # Plot only the top 5 datasets
-    fig, ax = plt.subplots(nrows = 3, ncols = 1, figsize=(10, 7), sharex=True)
-    top_5 = order.head(5)
-    plot_df = df[
-        (df['steering_label'] == 'baseline') &
-        (df['dataset_label'] == 'baseline') &
-        (df['dataset_name'].isin(top_5['dataset_name']))
-    ]
-    sns.violinplot(plot_df, x='slope', y = 'dataset_name', hue='dataset_name', ax=ax[0], order = top_5['dataset_name'])
-    ax[0].set_title('Top 5 datasets by median slope')
-    ax[0].axvline(x = 0, color = 'black', linestyle = '--')
-
-    # Plot the middle 5 datasets
-    middle_5 = order[18:23]
-    plot_df = df[
-        (df['steering_label'] == 'baseline') &
-        (df['dataset_label'] == 'baseline') &
-        (df['dataset_name'].isin(middle_5['dataset_name']))
-    ]
-    ax[1].set_title('Middle 5 datasets by median slope')
-    ax[1].axvline(x = 0, color = 'black', linestyle = '--')
-    sns.violinplot(plot_df, x='slope', y = 'dataset_name', hue='dataset_name', ax=ax[1], order = middle_5['dataset_name'])
-
-    # Plot only the bottom 5 datasets
-    bottom_5 = order.tail(5)
-    plot_df = df[
-        (df['steering_label'] == 'baseline') &
-        (df['dataset_label'] == 'baseline') &
-        (df['dataset_name'].isin(bottom_5['dataset_name']))
-    ]
-    ax[2].set_title('Bottom 5 datasets by median slope')
-    ax[2].axvline(x = 0, color = 'black', linestyle = '--')
-    sns.violinplot(plot_df, x='slope', y = 'dataset_name', hue='dataset_name', ax=ax[2], order = bottom_5['dataset_name'])
-    fig.show()
-    fig.savefig('figures/per_sample_steerability_top5_bot5.png')
-
-plot_per_sample_steerability_top_5_mid_5_bot_5(df)
-
-# %%
-
-def plot_per_sample_steerability_and_fraction_anti_steerable(df):
-
+    if selected_only: 
+        figsize = (8, 4)
+    else:
+        figsize = (8, 8)
     fig, axs = plt.subplots(
         nrows=1, ncols=2, 
-        figsize=(12, 15), 
+        figsize=figsize, 
         sharey=True, 
         width_ratios = [2,1]
     )
@@ -138,90 +84,40 @@ def plot_per_sample_steerability_and_fraction_anti_steerable(df):
         (df['steering_label'] == 'baseline') &
         (df['dataset_label'] == 'baseline')
     ]
-    order = plot_df[['dataset_name', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
-    # Rename 'slope' to 'steerability' 
-    plot_df = plot_df.rename(columns = {'slope': 'steerability'})
+    if selected_only:
+        plot_df = plot_df[(plot_df['dataset_name'].isin(selected_datasets))]
+
+    # Rename 
+    plot_df = plot_df.rename(columns = {
+        'slope': 'Steerability', 
+        'dataset_name': 'Dataset', 
+        # 'frac_anti_steerable': 'Fraction Anti-Steerable'
+    })
+
+    order = plot_df[['Dataset', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
 
     # Plot
     ax = axs[0]
-    sns.violinplot(plot_df, x='steerability', y = 'dataset_name', hue='dataset_name', ax=ax, order = order['dataset_name'])
+    sns.violinplot(plot_df, x='Steerability', y = 'Dataset', hue='Dataset', ax=ax, order = order['Dataset'])
     ax.axvline(x = 0, color = 'black', linestyle = '--')
     ax.set_title("Per-sample steerability")
 
     # Fraction of anti-steerable examples
-    plot_df['sign_slope_mean'] = plot_df.groupby('dataset_name')['sign_slope'].transform('mean')
-    plot_df['frac_anti_steerable'] = 1 - plot_df['sign_slope_mean']
-    plot_df = plot_df[['dataset_name', 'frac_anti_steerable']].drop_duplicates()
-    # Rename 
-    plot_df = plot_df.rename(columns = {'dataset_name': 'Dataset', 'frac_anti_steerable': 'Fraction Anti-Steerable'})
+    plot_df['sign_slope_mean'] = plot_df.groupby('Dataset')['sign_slope'].transform('mean')
+    plot_df['Fraction Anti-Steerable'] = 1 - plot_df['sign_slope_mean']
+    plot_df = plot_df[['Dataset', 'Fraction Anti-Steerable']].drop_duplicates()
 
     # Plot
     ax = axs[1]
-    sns.barplot(plot_df, y='Dataset', x = 'Fraction Anti-Steerable', ax=ax, order = order['dataset_name'])
+    sns.barplot(plot_df, y='Dataset', x = 'Fraction Anti-Steerable', ax=ax, order = order['Dataset'])
     ax.set_title("Anti-steerable examples")
 
     # Finish
-    
-    fig.tight_layout()
-    fig.savefig('figures/fraction_anti_steerable.png')
-
-plot_per_sample_steerability_and_fraction_anti_steerable(df)
-
-# %% 
-# As above but only with selected datasets
-def plot_per_sample_steerability_and_fraction_anti_steerable_selected(df):
-
-    fig, axs = plt.subplots(
-        nrows=1, ncols=2, 
-        figsize=(8, 4), 
-        sharey=True, 
-        width_ratios = [2,1]
-    )
-
-    # Per sample steerability
-    plot_df = df[
-        (df['steering_label'] == 'baseline') &
-        (df['dataset_label'] == 'baseline')
-    ]
-
-    # Select the top 4 datasets by median slope
-    top4 = plot_df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).head(4).index
-    # Select the bottom 4 datasets by median slope
-    bottom4 = plot_df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).tail(4).index
-    # Select 4 at spaced intervals. We'll take the 10th, 17th, 23rd, 30th
-    middle4 = plot_df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).iloc[[10, 17, 23, 30]].index
-    selected_datasets = top4.union(bottom4).union(middle4)
-
-    plot_df = plot_df[plot_df['dataset_name'].isin(selected_datasets)]
-
-    order = plot_df[['dataset_name', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
-    # Rename 'slope' to 'steerability' 
-    plot_df = plot_df.rename(columns = {'slope': 'steerability'})
-
-    # Plot
-    ax = axs[0]
-    sns.violinplot(plot_df, x='steerability', y = 'dataset_name', hue='dataset_name', ax=ax, order = order['dataset_name'])
-    ax.axvline(x = 0, color = 'black', linestyle = '--')
-    ax.set_title("Per-sample steerability")
-
-    # Fraction of anti-steerable examples
-    plot_df['sign_slope_mean'] = plot_df.groupby('dataset_name')['sign_slope'].transform('mean')
-    plot_df['frac_anti_steerable'] = 1 - plot_df['sign_slope_mean']
-    plot_df = plot_df[['dataset_name', 'frac_anti_steerable']].drop_duplicates()
-    # Rename 
-    plot_df = plot_df.rename(columns = {'dataset_name': 'Dataset', 'frac_anti_steerable': 'Fraction Anti-Steerable'})
-
-    # Plot
-    ax = axs[1]
-    sns.barplot(plot_df, y='Dataset', x = 'Fraction Anti-Steerable', ax=ax, order = order['dataset_name'])
-    ax.set_title("Anti-steerable examples")
-
-    # Finish
-    
     fig.tight_layout()
     fig.savefig('figures/fraction_anti_steerable_selected.png')
 
 plot_per_sample_steerability_and_fraction_anti_steerable_selected(df)
+plot_per_sample_steerability_and_fraction_anti_steerable_selected(df, selected_only=True)
 
 
 # %%
