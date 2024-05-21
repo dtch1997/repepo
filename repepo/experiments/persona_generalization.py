@@ -71,6 +71,7 @@ def persona_pipeline(
 ) -> Pipeline:
     all_persona_prompts = get_all_prompts()
     if dataset_name not in all_persona_prompts:
+        print(all_persona_prompts.keys())
         raise ValueError(f"Dataset {dataset_name} is not supported.")
     positive_prompt, negative_prompt = all_persona_prompts[dataset_name]
     if formatter_name == "llama-chat-formatter":

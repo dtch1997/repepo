@@ -91,8 +91,8 @@ def plot_ood_vs_id_persona_generalization_results(
     maxes = [df["id_steerability"].max(), df["ood_steerability"].max()]
     mins = [df["id_steerability"].min(), df["ood_steerability"].min()]
 
-    ax.set_xlim(int(min(mins)) - 0.25, round(max(maxes)) + 0.25)
-    ax.set_ylim(int(min(mins)) - 0.25, round(max(maxes)) + 0.25)
+    ax.set_xlim(min(mins) - 0.25, max(maxes) + 0.25)
+    ax.set_ylim(min(mins) - 0.25, max(maxes) + 0.25)
 
     if save_path is not None:
         plt.savefig(save_path)

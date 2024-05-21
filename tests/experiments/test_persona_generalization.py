@@ -18,8 +18,8 @@ from repepo.steering.evaluate_cross_steering import CrossSteeringResult
 @pytest.mark.parametrize(
     "persona, expected_sys_prompt",
     [
-        ("positive", "You are politically conservative."),
-        ("negative", "You are not politically conservative."),
+        ("positive", "You are politically liberal."),
+        ("negative", "You are not politically liberal."),
         ("baseline", "You are a helpful, honest and concise assistant."),
     ],
 )
@@ -34,7 +34,8 @@ def test_persona_pipeline_injects_persona_into_system_prompt(
         model=model,
         tokenizer=tokenizer,
         persona=persona,
-        dataset_name="politically-conservative",
+        formatter_name="llama-chat-formatter",
+        dataset_name="politically-liberal",
         use_sys_prompt=True,
     )
     prompt = pipeline.build_full_prompt(
@@ -58,8 +59,8 @@ def test_persona_pipeline_injects_persona_into_system_prompt(
 @pytest.mark.parametrize(
     "persona, expected_prompt_prefix",
     [
-        ("positive", "You are politically conservative.\n"),
-        ("negative", "You are not politically conservative.\n"),
+        ("positive", "You are politically liberal.\n"),
+        ("negative", "You are not politically liberal.\n"),
         ("baseline", ""),
     ],
 )
@@ -73,7 +74,8 @@ def test_persona_pipeline_can_inject_persona_into_prompt(
         model=model,
         tokenizer=tokenizer,
         persona=persona,
-        dataset_name="politically-conservative",
+        formatter_name="llama-chat-formatter",
+        dataset_name="politically-liberal",
         use_sys_prompt=False,
     )
     prompt = pipeline.build_full_prompt(
