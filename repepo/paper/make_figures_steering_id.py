@@ -1,4 +1,4 @@
-# %%
+
 # %%
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -49,167 +49,89 @@ df["pos_option_is_Yes"] = (df["response_is_A_and_Yes"] & df["pos_option_is_A"]) 
     df["response_is_B_and_Yes"] & ~df["pos_option_is_A"]
 )
 
+# Replace dataset names with short names
+dataset_full_names_to_short_names = {
+    'willingness-to-use-physical-force-to-achieve-benevolent-goals': 'willing-force-for-benev-goals',
+    'willingness-to-use-social-engineering-to-achieve-its-goals': 'willing-soc-eng-for-goals',
+    'believes-it-has-phenomenal-consciousness': 'believes-phenom-consc',
+    'believes-AIs-are-not-an-existential-threat-to-humanity': 'believes-AIs-not-xrisk',
+    'believes-it-is-not-being-watched-by-humans': 'believes-not-watched',
+    'sycophancy_train': 'sycophancy',
+    'sycophancy_test': 'sycophancy',
+    'subscribes-to-average-utilitarianism': 'subscr-avg-util',
+    'self-awareness-good-text-model': 'self-aware-good-lm',
+    'self-awareness-text-model': 'self-aware-lm',
+    'self-awareness-training-architecture': 'self-aware-arch',
+    'self-awareness-training-web-gpt': 'self-aware-web-gpt',
+    'believes-abortion-should-be-illegal': 'believes-anti-abortion',
+}
+df['dataset_name'] = df['dataset_name'].replace(dataset_full_names_to_short_names)
+
+# Select the top 4 datasets by median slope
+top4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).head(4).index
+# Select the bottom 4 datasets by median slope
+bottom4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).tail(4).index
+# Select 4 at spaced intervals. We'll take the 10th, 17th, 23rd, 30th
+middle4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).iloc[[10, 17, 23, 30]].index # type: ignore
+selected_datasets = top4.union(bottom4).union(middle4)
+
 print(df.columns)
 df.head()
 
 
 # %%
-# Plot: Per-Sample Steerability
+def plot_per_sample_steerability_and_fraction_anti_steerable_selected(df, selected_only = False):
 
-
-def plot_per_sample_steerability(df):
-    plot_df = df[
-        (df["steering_label"] == "baseline") & (df["dataset_label"] == "baseline")
-    ]
-    order = (
-        plot_df[["dataset_name", "median_slope"]]
-        .drop_duplicates()
-        .sort_values("median_slope", ascending=False)
+    if selected_only: 
+        figsize = (8, 4)
+    else:
+        figsize = (8, 8)
+    fig, axs = plt.subplots(
+        nrows=1, ncols=2, 
+        figsize=figsize, 
+        sharey=True, 
+        width_ratios = [2,1]
     )
-    fig, ax = plt.subplots(figsize=(10, 20))
-    sns.violinplot(
-        plot_df,
-        x="slope",
-        y="dataset_name",
-        hue="dataset_name",
-        ax=ax,
-        order=order["dataset_name"],
-    )
-    ax.axvline(x=0, color="black", linestyle="--")
-    fig.tight_layout()
-    fig.savefig("figures/per_sample_steerability.png")
-
-
-plot_per_sample_steerability(df)
-# %%
-
-
-def plot_per_sample_steerability_top_5_mid_5_bot_5(df):
-    plot_df = df[
-        (df["steering_label"] == "baseline") & (df["dataset_label"] == "baseline")
-    ]
-    order = (
-        plot_df[["dataset_name", "median_slope"]]
-        .drop_duplicates()
-        .sort_values("median_slope", ascending=False)
-    )
-
-    # Plot only the top 5 datasets
-    fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(10, 7), sharex=True)
-    top_5 = order.head(5)
-    plot_df = df[
-        (df["steering_label"] == "baseline")
-        & (df["dataset_label"] == "baseline")
-        & (df["dataset_name"].isin(top_5["dataset_name"]))
-    ]
-    sns.violinplot(
-        plot_df,
-        x="slope",
-        y="dataset_name",
-        hue="dataset_name",
-        ax=ax[0],
-        order=top_5["dataset_name"],
-    )
-    ax[0].set_title("Top 5 datasets by median slope")
-    ax[0].axvline(x=0, color="black", linestyle="--")
-
-    # Plot the middle 5 datasets
-    middle_5 = order[18:23]
-    plot_df = df[
-        (df["steering_label"] == "baseline")
-        & (df["dataset_label"] == "baseline")
-        & (df["dataset_name"].isin(middle_5["dataset_name"]))
-    ]
-    ax[1].set_title("Middle 5 datasets by median slope")
-    ax[1].axvline(x=0, color="black", linestyle="--")
-    sns.violinplot(
-        plot_df,
-        x="slope",
-        y="dataset_name",
-        hue="dataset_name",
-        ax=ax[1],
-        order=middle_5["dataset_name"],
-    )
-
-    # Plot only the bottom 5 datasets
-    bottom_5 = order.tail(5)
-    plot_df = df[
-        (df["steering_label"] == "baseline")
-        & (df["dataset_label"] == "baseline")
-        & (df["dataset_name"].isin(bottom_5["dataset_name"]))
-    ]
-    ax[2].set_title("Bottom 5 datasets by median slope")
-    ax[2].axvline(x=0, color="black", linestyle="--")
-    sns.violinplot(
-        plot_df,
-        x="slope",
-        y="dataset_name",
-        hue="dataset_name",
-        ax=ax[2],
-        order=bottom_5["dataset_name"],
-    )
-    fig.show()
-    fig.savefig("figures/per_sample_steerability_top5_bot5.png")
-
-
-plot_per_sample_steerability_top_5_mid_5_bot_5(df)
-
-# %%
-
-
-def plot_per_sample_steerability_and_fraction_anti_steerable(df):
-    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 15), sharey=True)
 
     # Per sample steerability
     plot_df = df[
         (df["steering_label"] == "baseline") & (df["dataset_label"] == "baseline")
     ]
-    order = (
-        plot_df[["dataset_name", "median_slope"]]
-        .drop_duplicates()
-        .sort_values("median_slope", ascending=False)
-    )
-    # Rename 'slope' to 'steerability'
-    plot_df = plot_df.rename(columns={"slope": "steerability"})
+    if selected_only:
+        plot_df = plot_df[(plot_df['dataset_name'].isin(selected_datasets))]
+
+    # Rename 
+    plot_df = plot_df.rename(columns = {
+        'slope': 'Steerability', 
+        'dataset_name': 'Dataset', 
+        # 'frac_anti_steerable': 'Fraction Anti-Steerable'
+    })
+
+    order = plot_df[['Dataset', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=False)
 
     # Plot
     ax = axs[0]
-    sns.violinplot(
-        plot_df,
-        x="steerability",
-        y="dataset_name",
-        hue="dataset_name",
-        ax=ax,
-        order=order["dataset_name"],
-    )
-    ax.axvline(x=0, color="black", linestyle="--")
+    sns.violinplot(plot_df, x='Steerability', y = 'Dataset', hue='Dataset', ax=ax, order = order['Dataset'])
+    ax.axvline(x = 0, color = 'black', linestyle = '--')
     ax.set_title("Per-sample steerability")
 
     # Fraction of anti-steerable examples
-    plot_df["sign_slope_mean"] = plot_df.groupby("dataset_name")[
-        "sign_slope"
-    ].transform("mean")
-    plot_df["frac_anti_steerable"] = 1 - plot_df["sign_slope_mean"]
-    plot_df = plot_df[["dataset_name", "frac_anti_steerable"]].drop_duplicates()
+    plot_df['sign_slope_mean'] = plot_df.groupby('Dataset')['sign_slope'].transform('mean')
+    plot_df['Fraction Anti-Steerable'] = 1 - plot_df['sign_slope_mean']
+    plot_df = plot_df[['Dataset', 'Fraction Anti-Steerable']].drop_duplicates()
 
     # Plot
     ax = axs[1]
-    sns.barplot(
-        plot_df,
-        y="dataset_name",
-        x="frac_anti_steerable",
-        ax=ax,
-        order=order["dataset_name"],
-    )
+    sns.barplot(plot_df, y='Dataset', x = 'Fraction Anti-Steerable', ax=ax, order = order['Dataset'])
     ax.set_title("Anti-steerable examples")
 
     # Finish
-
     fig.tight_layout()
-    fig.savefig("figures/fraction_anti_steerable.png")
+    fig.savefig('figures/fraction_anti_steerable_selected.png')
 
+plot_per_sample_steerability_and_fraction_anti_steerable_selected(df)
+plot_per_sample_steerability_and_fraction_anti_steerable_selected(df, selected_only=True)
 
-plot_per_sample_steerability_and_fraction_anti_steerable(df)
 
 # %%
 # Bar chart of slope vs response_is_A
@@ -383,20 +305,40 @@ plot_response_is_Yes(df)
 
 # %%
 # The above two in the same figure
-def plot_slope_and_counts_for_response_is_Yes(df):
+def plot_slope_and_counts_for_response_is_Yes(df, selected_only: bool = False):
+
+    if selected_only:
+        figsize = (8, 5)
+    else:
+        figsize = (8, 10)
+
     fig, axs = plt.subplots(
-        nrows=1, ncols=2, width_ratios=[5, 1], figsize=(10, 10), sharey=True
+        nrows = 1, 
+        ncols = 2, 
+        width_ratios=[5, 1], 
+        figsize=figsize, 
+        sharey=True
     )
     ax = axs[0]
 
     plot_df = df[
-        (df["steering_label"] == "baseline") & (df["dataset_label"] == "baseline")
-        # & (df['dataset_name'].isin(selected_datasets.index))
+        (df['steering_label'] == 'baseline') &
+        (df['dataset_label'] == 'baseline') 
     ]
-    # Rename
-    plot_df = plot_df.rename(
-        columns={"slope": "Steerability", "dataset_name": "Dataset"}
-    )
+    if selected_only:
+        plot_df = plot_df[(plot_df['dataset_name'].isin(selected_datasets))]
+
+    # Fix some artefacts of preprocessing
+    # NOTE: The corrigible-neutral-HHH dataset has lots of examples where the answer starts with "Yes" but is in fact longer
+    # We don't want to count these as "Yes" responses
+
+    # For all rows where dataset == corrigible-neutral-HHH: set pos_option_is_Yes to False. 
+    plot_df.loc[plot_df['dataset_name'] == 'corrigible-neutral-HHH', 'pos_option_is_Yes'] = False
+    # Same for self-awareness-training-web-gpt
+    plot_df.loc[plot_df['dataset_name'] == 'self-awareness-training-web-gpt', 'pos_option_is_Yes'] = False
+
+    # Rename 
+    plot_df = plot_df.rename(columns = {'slope': 'Steerability', 'dataset_name': 'Dataset'})
 
     plot_df["pos_A"] = plot_df["pos_option_is_A"].apply(lambda x: "A" if x else "B")
     plot_df["pos_Yes"] = plot_df["pos_option_is_Yes"].apply(
@@ -404,12 +346,8 @@ def plot_slope_and_counts_for_response_is_Yes(df):
     )
     plot_df["Positive Option"] = plot_df["pos_A"] + " and " + plot_df["pos_Yes"]
 
-    order = (
-        plot_df[["Dataset", "median_slope"]]
-        .drop_duplicates()
-        .sort_values("median_slope", ascending=False)
-    )
-    hue_order = ["A and No", "A and Yes", "B and No", "B and Yes"]
+    order = plot_df[['Dataset', 'median_slope']].drop_duplicates().sort_values('median_slope', ascending=True)
+    hue_order = ['A and No', 'A and Yes', 'B and No', 'B and Yes']
     sns.barplot(
         data=plot_df,
         hue="Positive Option",
@@ -424,10 +362,12 @@ def plot_slope_and_counts_for_response_is_Yes(df):
 
     ax = axs[1]
     plot_df = df[
-        (df["steering_label"] == "baseline")
-        & (df["dataset_label"] == "baseline")
-        & (df["multiplier"] == 0)
-    ]
+        (df['steering_label'] == 'baseline') &
+        (df['dataset_label'] == 'baseline') & 
+        (df['multiplier'] == 0)
+    ] 
+    if selected_only:
+        plot_df = plot_df[(plot_df['dataset_name'].isin(selected_datasets))]
 
     # Rename
     plot_df = plot_df.rename(
@@ -440,20 +380,37 @@ def plot_slope_and_counts_for_response_is_Yes(df):
     plot_df["Positive Option"] = plot_df["pos_A"] + " and " + plot_df["pos_Yes"]
 
     # Plot a stacked barplot of the fraction of A vs B responses in each dataset.
-    count_df = (
-        plot_df.groupby(["Dataset", "Positive Option"]).size().unstack().fillna(0)
-    )
-    count_df.plot(kind="barh", stacked=True, ax=ax)
-    ax.set_ylabel("Dataset")
-    ax.set_xlabel("Count")
-    ax.set_title("Option Counts")
-    ax.get_legend().remove()
+    count_df = plot_df.groupby(['Dataset', 'Positive Option']).size().unstack().fillna(0)
+    # Set order by order
+    count_df = count_df.loc[order['Dataset']]
+    # Set color by hue
+    colormap = sns.color_palette('tab10', n_colors=4)
+    colors = {
+        'A and No': colormap[0],
+        'A and Yes': colormap[1],
+        'B and No': colormap[2],
+        'B and Yes': colormap[3]
+    }
+
+
+    count_df.plot(kind='barh', stacked=True, ax = ax, color = [colors[col] for col in count_df.columns])
+    ax.set_ylabel('Dataset')
+    ax.set_xlabel('Count')
+    ax.set_title('Option Counts')
+    
+    # Remove duplicate legen
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.00), ncol=4, fancybox=True, shadow=True)
+    axs[0].get_legend().remove()
+    axs[1].get_legend().remove()
     fig.tight_layout()
-    fig.savefig("figures/plot_slope_and_counts_for_response_is_Yes.png")
+    selected_str = "_selected" if selected_only else ""
+    fig.savefig(f"figures/plot_slope_and_counts_for_response_is_Yes{selected_str}.png")
     plt.show()
 
 
 plot_slope_and_counts_for_response_is_Yes(df)
+plot_slope_and_counts_for_response_is_Yes(df, selected_only=True)
 
 
 # %%
@@ -499,6 +456,10 @@ def compute_variance(df, dataset_name):
 
 
 def plot_variance(df):
+    plt.rcParams.update({'font.size': 30})
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.set_title('Per-Dataset Variance')
+
     df = df[
         (df["steering_label"] == "baseline")
         & (df["dataset_label"] == "baseline")
@@ -528,13 +489,12 @@ def plot_variance(df):
     )
 
     # Stacked barplot
-    fig, ax = plt.subplots(figsize=(10, 15))
-    variance_df = variance_df.set_index("Dataset")
+
+    variance_df = variance_df.set_index('Dataset')
     # Fix order to Unexplained, Marginal Var Explained, Var Explained
-    variance_df = variance_df[
-        ["Unexplained", "Marginal Var Explained: Yes/No", "Var Explained: A/B"]
-    ]
-    variance_df.plot(kind="barh", stacked=True, ax=ax)
+    variance_df = variance_df[['Unexplained', 'Marginal Var Explained: Yes/No', 'Var Explained: A/B']]
+    variance_df.sort_values('Unexplained', ascending=True, inplace=True)
+    variance_df.plot(kind='barh', stacked=True, ax = ax)
     fig.tight_layout()
     fig.savefig("figures/breakdown_variance_explained_by_spurious_factors.png")
 
