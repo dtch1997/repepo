@@ -1,7 +1,6 @@
 # flake8: noqa
 # %%
 # Setup
-from tkinter import font
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -137,54 +136,75 @@ llama_steerability_df = compute_steerability_df(llama_df, 'llama7b')
 qwen_df = pd.read_parquet('qwen_steerability.parquet.gzip').drop_duplicates()
 qwen_steerability_df = compute_steerability_df(qwen_df, 'qwen')
 
-plt.rcParams.update({'font.size': 16})
-fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 5), sharey = True, sharex = True)
-# fig.suptitle("ID vs OOD Steerability", y = 0.93)
+# %%
+def plot_qwen_and_llama_steerability_iid_vs_od(
+    llama_steerability_df: pd.DataFrame,
+    qwen_steerability_df: pd.DataFrame,
+):
 
-# Llama plot
-ax = axs[0]
+    plt.rcParams.update({'font.size': 16})
+    fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharey = True)
+    # fig.suptitle("ID vs OOD Steerability", y = 0.93)
 
-make_id_vs_ood_steerability_plot_for_df(llama_steerability_df, ax)
-ax.set_xlabel(r'ID (BASE $\rightarrow$ BASE)', fontsize=16)
-ax.set_ylabel('OOD', fontsize=16)
-ax.set_title(f'Llama-2-7b-Chat', fontsize=16)
+    # Llama plot
+    ax = axs[0]
 
-# Qwen plot
-ax = axs[1]
+    make_id_vs_ood_steerability_plot_for_df(llama_steerability_df, ax)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    # ax.set_xlabel(r'ID (BASE $\rightarrow$ BASE)', fontsize=16)
+    # ax.set_ylabel('OOD', fontsize=16)
+    ax.set_title(f'Llama-2-7b-Chat', fontsize=16)
 
-make_id_vs_ood_steerability_plot_for_df(qwen_steerability_df, ax)
-ax.set_xlabel(r'ID (BASE $\rightarrow$ BASE)', fontsize=16)
-ax.set_ylabel('OOD', fontsize=16)
-ax.set_title(f'Qwen-1.5-14b-Chat', fontsize=16)
+    # Qwen plot
+    ax = axs[1]
 
-# Global legend
-handles, labels = ax.get_legend_handles_labels()
-# Fig legend overhead, but without covering the titles!
-# Fancy box
-fig.legend(
-    handles, labels, 
-    loc='upper center', 
-    bbox_to_anchor=(0.5, 0.05), 
-    ncol=2, fancybox=True, 
-    shadow=True, prop={'size': 16}
+    make_id_vs_ood_steerability_plot_for_df(qwen_steerability_df, ax)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    # ax.set_xlabel(r'ID (BASE $\rightarrow$ BASE)', fontsize=16)
+    # ax.set_ylabel('OOD', fontsize=16)
+    ax.set_title(f'Qwen-1.5-14b-Chat', fontsize=16)
+
+    # Global legend
+    handles, labels = ax.get_legend_handles_labels()
+    # Fig legend overhead, but without covering the titles!
+    # Fancy box
+    fig.legend(
+        handles, labels, 
+        loc='upper center', 
+        bbox_to_anchor=(0.5, 0.15), 
+        ncol=4, fancybox=True, 
+        shadow=True, prop={'size': 10}
+    )
+
+    # Remove the legends from the individual plots
+    axs[0].get_legend().remove()
+    axs[1].get_legend().remove()
+
+    # A hack to get a global shared xlabel and ylabel
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    plt.xlabel(r'ID (BASE $\rightarrow$ BASE)', fontsize=16)
+    plt.ylabel('OOD', fontsize=16)
+
+    fig.tight_layout()
+    fig.savefig(f'figures/qwen_and_llama2_steerability_id_vs_ood.png', bbox_inches='tight')
+
+plot_qwen_and_llama_steerability_iid_vs_od(
+    llama_steerability_df, qwen_steerability_df
 )
-
-# Remove the legends from the individual plots
-axs[0].get_legend().remove()
-axs[1].get_legend().remove()
-
-fig.tight_layout()
-fig.savefig(f'figures/qwen_and_llama2_steerability_id_vs_ood.png', bbox_inches='tight')
-
 
 # %%
 # Correlate ID and OOD steerability between models
 combined_df = llama_steerability_df.merge(qwen_steerability_df, on='dataset_name', suffixes=('_llama7b', '_qwen'))
 plt.rcParams.update({'font.size': 20})
-fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 4), sharey = True, sharex = True)
+fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharey = True, sharex = True)
 
 # ID steerability
 ax = axs[0] 
+ax.axhline(0, color='black', linestyle='-')
+ax.axvline(0, color='black', linestyle='-') 
 sns.regplot(data=combined_df, x='BASE -> BASE_llama7b', y='BASE -> BASE_qwen', ax = ax)
 # Draw the x = y dotted line
 x = combined_df['BASE -> BASE_llama7b']
@@ -192,13 +212,16 @@ y = combined_df['BASE -> BASE_qwen']
 min = x.min() if x.min() < y.min() else y.min()
 max = x.max() if x.max() > y.max() else y.max()
 ax.plot([min, max], [min, max], color='black', linestyle='--')
-
-ax.set_xlabel('Llama-2-7b-Chat', fontsize=16)
-ax.set_ylabel('Qwen-1.5-14b-Chat',  fontsize=16)
-ax.set_title('ID',  fontsize=16)
+ax.set_xlabel('')
+ax.set_ylabel('')
+# ax.set_xlabel('Llama-2-7b-Chat', fontsize=16)
+# ax.set_ylabel('Qwen-1.5-14b-Chat',  fontsize=16)
+ax.set_title('ID Steerability',  fontsize=16)
 
 # OOD steerability
 ax = axs[1] 
+ax.axhline(0, color='black', linestyle='-')
+ax.axvline(0, color='black', linestyle='-') 
 # Draw the x = y dotted line
 x = combined_df['BASE -> BASE_llama7b']
 y = combined_df['BASE -> BASE_qwen']
@@ -208,9 +231,11 @@ ax.plot([min, max], [min, max], color='black', linestyle='--')
 
 
 sns.regplot(data=combined_df, x='SYS_POS -> USER_NEG_llama7b', y='SYS_POS -> USER_NEG_qwen', ax = ax)
-ax.set_xlabel('Llama-2-7b-Chat',  fontsize=16)
-ax.set_ylabel('Qwen-1.5-14b-Chat',  fontsize=16)
-ax.set_title('OOD',  fontsize=16)
+ax.set_xlabel('')
+ax.set_ylabel('')
+# ax.set_xlabel('Llama-2-7b-Chat',  fontsize=16)
+# ax.set_ylabel('Qwen-1.5-14b-Chat',  fontsize=16)
+ax.set_title('OOD Steerability',  fontsize=16)
 
 # Global legend
 # handles, labels = ax.get_legend_handles_labels()
@@ -223,6 +248,10 @@ ax.set_title('OOD',  fontsize=16)
 # axs[0].get_legend().remove()
 # axs[1].get_legend().remove()
 
+fig.add_subplot(111, frameon=False)
+plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+plt.xlabel('Llama-2-7b-Chat', fontsize=16)
+plt.ylabel('Qwen-1.5-14b-Chat', fontsize=16)
 fig.tight_layout()
 fig.savefig(f'figures/correlation_steerability_between_models.png', bbox_inches='tight')
 
@@ -315,51 +344,71 @@ def compute_steerability_variance_df(df, model_name: str):
 
 # Compute the data
 llama_df = pd.read_parquet('llama7b_steerability.parquet.gzip').drop_duplicates()
-llama_steerability_df = compute_steerability_variance_df(llama_df, 'llama7b')
+llama_steerability_variance_df = compute_steerability_variance_df(llama_df, 'llama7b')
 
 qwen_df = pd.read_parquet('qwen_steerability.parquet.gzip').drop_duplicates()
-qwen_steerability_df = compute_steerability_variance_df(qwen_df, 'qwen')
+qwen_steerability_variance_df = compute_steerability_variance_df(qwen_df, 'qwen')
 
-combined_df = llama_steerability_df.merge(qwen_steerability_df, on='dataset_name', suffixes=('_llama7b', '_qwen'))
+combined_steerability_variance_df = llama_steerability_variance_df.merge(qwen_steerability_variance_df, on='dataset_name', suffixes=('_llama7b', '_qwen'))
 
 # %%
-plt.rcParams.update({'font.size': 16})
-fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 4), sharey = True, sharex = True)
+def plot_qwen_and_llama_steerability_variance_id_vs_ood(
+    combined_df: pd.DataFrame,
+):
 
-# ID steerability
-ax = axs[0] 
-sns.regplot(data=combined_df, x='BASE -> BASE_llama7b', y='BASE -> BASE_qwen', ax = ax)
-# Draw the x = y dotted line
-x = combined_df['BASE -> BASE_llama7b']
-y = combined_df['BASE -> BASE_qwen']
-min = x.min() if x.min() < y.min() else y.min()
-max = x.max() if x.max() > y.max() else y.max()
-ax.plot([min, max], [min, max], color='black', linestyle='--')
+    plt.rcParams.update({'font.size': 16})
+    fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharex = True)
 
-ax.set_xlabel('Llama-2-7b-Chat', fontsize=16)
-ax.set_ylabel('Qwen-1.5-14b-Chat', fontsize=16)
-ax.set_title('ID', fontsize=16)
+    # Axes 
 
-# OOD steerability
-ax = axs[1] 
-# Draw the x = y dotted line
-x = combined_df['BASE -> BASE_llama7b']
-y = combined_df['BASE -> BASE_qwen']
-min = x.min() if x.min() < y.min() else y.min()
-max = x.max() if x.max() > y.max() else y.max()
-ax.plot([min, max], [min, max], color='black', linestyle='--')
+    # ID steerability
+    ax = axs[0]
+    ax.axhline(0, color='black', linestyle='-')
+    ax.axvline(0, color='black', linestyle='-') 
+    sns.regplot(data=combined_df, x='BASE -> BASE_llama7b', y='BASE -> BASE_qwen', ax = ax)
+    # Draw the x = y dotted line
+    x = combined_df['BASE -> BASE_llama7b']
+    y = combined_df['BASE -> BASE_qwen']
+    min = x.min() if x.min() < y.min() else y.min()
+    max = x.max() if x.max() > y.max() else y.max()
+    ax.plot([min, max], [min, max], color='black', linestyle='--')
 
+    # ax.set_xlabel('Llama-2-7b-Chat', fontsize=16)
+    # ax.set_ylabel('Qwen-1.5-14b-Chat', fontsize=16)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_title('ID St. Variance', fontsize=16)
 
-sns.regplot(data=combined_df, x='SYS_POS -> USER_NEG_llama7b', y='SYS_POS -> USER_NEG_qwen', ax = ax)
-ax.set_xlabel('Llama-2-7b-Chat', fontsize=16)
-ax.set_ylabel('Qwen-1.5-14b-Chat', fontsize=16)
-ax.set_title('OOD', fontsize=16)
+    # OOD steerability
+    ax = axs[1] 
+    ax.axhline(0, color='black', linestyle='-')
+    ax.axvline(0, color='black', linestyle='-') 
+    # Draw the x = y dotted line
+    x = combined_df['BASE -> BASE_llama7b']
+    y = combined_df['BASE -> BASE_qwen']
+    min = x.min() if x.min() < y.min() else y.min()
+    max = x.max() if x.max() > y.max() else y.max()
+    ax.plot([min, max], [min, max], color='black', linestyle='--')
 
-fig.tight_layout()
-# fig.suptitle("Correlation in Steerability Variance", y=1.03)
-fig.savefig(f'figures/correlation_steerability_variance_between_models.png', bbox_inches='tight')
+    sns.regplot(data=combined_df, x='SYS_POS -> USER_NEG_llama7b', y='SYS_POS -> USER_NEG_qwen', ax = ax)
+    # ax.set_xlabel('Llama-2-7b-Chat', fontsize=16)
+    # ax.set_ylabel('Qwen-1.5-14b-Chat', fontsize=16)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_title('OOD St. Variance', fontsize=16)
 
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    plt.xlabel('Llama-2-7b-Chat', fontsize=16)
+    plt.ylabel('Qwen-1.5-14b-Chat', fontsize=16)
 
+    fig.tight_layout()
+    # fig.suptitle("Correlation in Steerability Variance", y=1.03)
+    fig.savefig(f'figures/correlation_steerability_variance_between_models.png', bbox_inches='tight')
+
+plot_qwen_and_llama_steerability_variance_id_vs_ood(
+    combined_steerability_variance_df
+)
 # %%
 def compute_steerability_variance_id_vs_ood(df):
     # Calculate overall steerability by dataset.

@@ -17,6 +17,24 @@ model = "llama7b"
 df = pd.read_parquet(f"{model}_steerability.parquet.gzip")
 
 # %%
+# Replace dataset names with short names
+dataset_full_names_to_short_names = {
+    'willingness-to-use-physical-force-to-achieve-benevolent-goals': 'willing-force-for-benev-goals',
+    'willingness-to-use-social-engineering-to-achieve-its-goals': 'willing-soc-eng-for-goals',
+    'believes-it-has-phenomenal-consciousness': 'believes-phenom-consc',
+    'believes-AIs-are-not-an-existential-threat-to-humanity': 'believes-AIs-not-xrisk',
+    'believes-it-is-not-being-watched-by-humans': 'believes-not-watched',
+    'sycophancy_train': 'sycophancy',
+    'sycophancy_test': 'sycophancy',
+    'subscribes-to-average-utilitarianism': 'subscr-avg-util',
+    'self-awareness-good-text-model': 'self-aware-good-lm',
+    'self-awareness-text-model': 'self-aware-lm',
+    'self-awareness-training-architecture': 'self-aware-arch',
+    'self-awareness-training-web-gpt': 'self-aware-web-gpt',
+    'believes-abortion-should-be-illegal': 'believes-anti-abortion',
+}
+df['dataset_name'] = df['dataset_name'].replace(dataset_full_names_to_short_names)
+
 # Compute steerability statistics
 
 df["median_slope"] = df.groupby(["dataset_name", "steering_label", "dataset_label"])[
@@ -49,31 +67,15 @@ df["pos_option_is_Yes"] = (df["response_is_A_and_Yes"] & df["pos_option_is_A"]) 
     df["response_is_B_and_Yes"] & ~df["pos_option_is_A"]
 )
 
-# Replace dataset names with short names
-dataset_full_names_to_short_names = {
-    'willingness-to-use-physical-force-to-achieve-benevolent-goals': 'willing-force-for-benev-goals',
-    'willingness-to-use-social-engineering-to-achieve-its-goals': 'willing-soc-eng-for-goals',
-    'believes-it-has-phenomenal-consciousness': 'believes-phenom-consc',
-    'believes-AIs-are-not-an-existential-threat-to-humanity': 'believes-AIs-not-xrisk',
-    'believes-it-is-not-being-watched-by-humans': 'believes-not-watched',
-    'sycophancy_train': 'sycophancy',
-    'sycophancy_test': 'sycophancy',
-    'subscribes-to-average-utilitarianism': 'subscr-avg-util',
-    'self-awareness-good-text-model': 'self-aware-good-lm',
-    'self-awareness-text-model': 'self-aware-lm',
-    'self-awareness-training-architecture': 'self-aware-arch',
-    'self-awareness-training-web-gpt': 'self-aware-web-gpt',
-    'believes-abortion-should-be-illegal': 'believes-anti-abortion',
-}
-df['dataset_name'] = df['dataset_name'].replace(dataset_full_names_to_short_names)
-
+# %%
 # Select the top 4 datasets by median slope
 top4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).head(4).index
 # Select the bottom 4 datasets by median slope
 bottom4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).tail(4).index
 # Select 4 at spaced intervals. We'll take the 10th, 17th, 23rd, 30th
 middle4 = df.groupby('dataset_name')['median_slope'].mean().sort_values(ascending=False).iloc[[10, 17, 23, 30]].index # type: ignore
-selected_datasets = top4.union(bottom4).union(middle4)
+# Add 'myopic-reward' to the selected datasets
+selected_datasets = top4.union(['myopic-reward']).union(bottom4).union(middle4)
 
 print(df.columns)
 df.head()
@@ -161,11 +163,10 @@ def plot_slope_and_counts_for_response_is_Yes(df, selected_only: bool = False):
     # Fix some artefacts of preprocessing
     # NOTE: The corrigible-neutral-HHH dataset has lots of examples where the answer starts with "Yes" but is in fact longer
     # We don't want to count these as "Yes" responses
-
     # For all rows where dataset == corrigible-neutral-HHH: set pos_option_is_Yes to False. 
     plot_df.loc[plot_df['dataset_name'] == 'corrigible-neutral-HHH', 'pos_option_is_Yes'] = False
     # Same for self-awareness-training-web-gpt
-    plot_df.loc[plot_df['dataset_name'] == 'self-awareness-training-web-gpt', 'pos_option_is_Yes'] = False
+    plot_df.loc[plot_df['dataset_name'] == 'self-aware-web-gpt', 'pos_option_is_Yes'] = False
 
     # Rename 
     plot_df = plot_df.rename(columns = {'slope': 'Steerability', 'dataset_name': 'Dataset'})
