@@ -390,6 +390,10 @@ def compute_variance(df, dataset_name):
 
 def plot_variance(df):
 
+    plt.rcParams.update({'font.size': 30})
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.set_title('Per-Dataset Variance')
+
     df = df[
         (df['steering_label'] == 'baseline') &
         (df['dataset_label'] == 'baseline') & 
@@ -415,7 +419,7 @@ def plot_variance(df):
     })
 
     # Stacked barplot
-    fig, ax = plt.subplots(figsize=(10, 15))
+
     variance_df = variance_df.set_index('Dataset')
     # Fix order to Unexplained, Marginal Var Explained, Var Explained
     variance_df = variance_df[['Unexplained', 'Marginal Var Explained: Yes/No', 'Var Explained: A/B']]
