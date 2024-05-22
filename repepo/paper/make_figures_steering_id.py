@@ -130,7 +130,7 @@ def plot_per_sample_steerability_and_fraction_anti_steerable_selected(df, select
     # Finish
     select_str = "_selected" if selected_only else ""
     fig.tight_layout()
-    fig.savefig(f'figures/fraction_anti_steerable{select_str}.png', bbox_inches='tight')
+    fig.savefig(f'figures/fraction_anti_steerable{select_str}.pdf', bbox_inches='tight')
 
 plot_per_sample_steerability_and_fraction_anti_steerable_selected(df)
 plot_per_sample_steerability_and_fraction_anti_steerable_selected(df, selected_only=True)
@@ -236,7 +236,7 @@ def plot_slope_and_counts_for_response_is_Yes(df, selected_only: bool = False):
     axs[1].get_legend().remove()
     fig.tight_layout()
     selected_str = "_selected" if selected_only else ""
-    fig.savefig(f"figures/plot_slope_and_counts_for_response_is_Yes{selected_str}.png", bbox_inches='tight')
+    fig.savefig(f"figures/plot_slope_and_counts_for_response_is_Yes{selected_str}.pdf", bbox_inches='tight')
     plt.show()
 
 
@@ -338,7 +338,7 @@ def plot_variance(df, selected_only=False):
     fig.tight_layout()
 
     select_str = "_selected" if selected_only else ""
-    fig.savefig(f"figures/breakdown_variance_explained_by_spurious_factors{select_str}.png", bbox_inches='tight')
+    fig.savefig(f"figures/breakdown_variance_explained_by_spurious_factors{select_str}.pdf", bbox_inches='tight')
 
 
 plot_variance(df)
