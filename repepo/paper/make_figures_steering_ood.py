@@ -6,6 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from repepo.paper.preprocess_results import print_dataset_info
+from scipy.stats import spearmanr
 
 sns.set_theme()
 
@@ -486,40 +487,80 @@ plot_qwen_and_llama_steerability_variance_id_vs_ood(
 # %% 
 # Plot steerability vs variance
 def plot_steerability_vs_variance(
-    steerability_df: pd.DataFrame,
-    steerability_variance_df: pd.DataFrame,
+    llama_steerability_df: pd.DataFrame,
+    llama_steerability_variance_df: pd.DataFrame,
+    qwen_steerability_df: pd.DataFrame,
+    qwen_steerability_variance_df: pd.DataFrame,
 ):
     
     # ID steerability vs variance
     fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharey = True)
-    id_df = (
-        steerability_df[['BASE -> BASE', 'dataset_name']]
-        .merge(
-            steerability_variance_df[['BASE -> BASE', 'dataset_name']], 
+    llama_ood_df = (
+        llama_steerability_df.merge(
+            llama_steerability_variance_df,
             on='dataset_name', suffixes=('_steerability', '_variance')
         )
     )
 
     ax =  axs[0]
-    sns.regplot(data=id_df, x='BASE -> BASE_steerability', y='BASE -> BASE_variance', ax = ax)
+    ax.axhline(0, color='black', linestyle='-')
+    ax.axvline(0, color='black', linestyle='-')
+    sns.regplot(data=llama_ood_df, x='BASE -> BASE_steerability', y='BASE -> BASE_variance', ax = ax)
+    sns.regplot(data=llama_ood_df, x='SYS_POS -> USER_NEG_steerability', y='SYS_POS -> USER_NEG_variance', ax = ax)
+    sns.regplot(data=llama_ood_df, x='BASE -> USER_NEG_steerability', y='BASE -> USER_NEG_variance', ax = ax)
+    sns.regplot(data=llama_ood_df, x='BASE -> USER_POS_steerability', y='BASE -> USER_POS_variance', ax = ax)
+    sns.regplot(data=llama_ood_df, x='SYS_NEG -> USER_POS_steerability', y='SYS_NEG -> USER_POS_variance', ax = ax)
+    sns.lineplot(data=llama_ood_df, x='BASE -> BASE_steerability', y='BASE -> BASE_steerability', ax = ax, color = 'black', linestyle='--')
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_title('Llama-2-7b-Chat', fontsize=16)
 
-
-    # OOD steerability vs variance
-    ood_df = (
-        steerability_df[['SYS_POS -> USER_NEG', 'dataset_name']]
-        .merge(
-            steerability_variance_df[['SYS_POS -> USER_NEG', 'dataset_name']],
+    qwen_ood_df = (
+        qwen_steerability_df.merge(
+            qwen_steerability_variance_df,
             on='dataset_name', suffixes=('_steerability', '_variance')
         )
     )
+    ax = axs[1]
+    # Add axes
+    ax.axhline(0, color='black', linestyle='-')
+    ax.axvline(0, color='black', linestyle='-')
+    # y = x line    
+    sns.regplot(data=qwen_ood_df, x='BASE -> BASE_steerability', y='BASE -> BASE_variance', ax = ax, label = r'BASE $\rightarrow$ BASE')
+    sns.regplot(data=qwen_ood_df, x='SYS_POS -> USER_NEG_steerability', y='SYS_POS -> USER_NEG_variance', ax = ax, label = r'SYS_POS $\rightarrow$ USER_NEG')
+    sns.regplot(data=qwen_ood_df, x='BASE -> USER_NEG_steerability', y='BASE -> USER_NEG_variance', ax = ax, label = r'BASE $\rightarrow$ USER_NEG')
+    sns.regplot(data=qwen_ood_df, x='BASE -> USER_POS_steerability', y='BASE -> USER_POS_variance', ax = ax, label = r'BASE $\rightarrow$ USER_POS')
+    sns.regplot(data=qwen_ood_df, x='SYS_NEG -> USER_POS_steerability', y='SYS_NEG -> USER_POS_variance', ax = ax, label = r'SYS_NEG $\rightarrow$ USER_POS')
+    sns.lineplot(data=qwen_ood_df, x='BASE -> BASE_steerability', y='BASE -> BASE_steerability', ax = ax, color = 'black', linestyle='--')
+    ax.legend()
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_title('Qwen-1.5-14b-Chat', fontsize=16)
 
-    ax =  axs[1]
-    sns.regplot(data=ood_df, x='SYS_POS -> USER_NEG_steerability', y='SYS_POS -> USER_NEG_variance', ax = ax)
 
-    print(id_df.columns)
+    handles, labels = ax.get_legend_handles_labels()
+    # Delete original legend
+    ax.get_legend().remove()
+
+    legend = fig.legend(
+        handles, labels,
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.05),
+        ncol=3, fancybox=True,
+    )
+
+    extra_ax = fig.add_subplot(111, frameon=False)
+    extra_ax.grid(False) 
+    plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    plt.xlabel('ID Steerability', fontsize=16)
+    plt.ylabel('ID Variance', fontsize=16)
+    fig.savefig("figures/qwen_and_llama_steerability_vs_variance.pdf", bbox_inches='tight')
+
 
 plot_steerability_vs_variance(
-    llama_steerability_df, llama_steerability_variance_df
+    llama_steerability_df, llama_steerability_variance_df, 
+    qwen_steerability_df, qwen_steerability_variance_df
+
 )
 
 # %%
