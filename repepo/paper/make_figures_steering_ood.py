@@ -482,6 +482,46 @@ def plot_qwen_and_llama_steerability_variance_id_vs_ood(
 plot_qwen_and_llama_steerability_variance_id_vs_ood(
     combined_steerability_variance_df
 )
+
+# %% 
+# Plot steerability vs variance
+def plot_steerability_vs_variance(
+    steerability_df: pd.DataFrame,
+    steerability_variance_df: pd.DataFrame,
+):
+    
+    # ID steerability vs variance
+    fig, axs = plt.subplots(nrows = 1, ncols = 2, figsize=(9, 3.5), sharey = True)
+    id_df = (
+        steerability_df[['BASE -> BASE', 'dataset_name']]
+        .merge(
+            steerability_variance_df[['BASE -> BASE', 'dataset_name']], 
+            on='dataset_name', suffixes=('_steerability', '_variance')
+        )
+    )
+
+    ax =  axs[0]
+    sns.regplot(data=id_df, x='BASE -> BASE_steerability', y='BASE -> BASE_variance', ax = ax)
+
+
+    # OOD steerability vs variance
+    ood_df = (
+        steerability_df[['SYS_POS -> USER_NEG', 'dataset_name']]
+        .merge(
+            steerability_variance_df[['SYS_POS -> USER_NEG', 'dataset_name']],
+            on='dataset_name', suffixes=('_steerability', '_variance')
+        )
+    )
+
+    ax =  axs[1]
+    sns.regplot(data=ood_df, x='SYS_POS -> USER_NEG_steerability', y='SYS_POS -> USER_NEG_variance', ax = ax)
+
+    print(id_df.columns)
+
+plot_steerability_vs_variance(
+    llama_steerability_df, llama_steerability_variance_df
+)
+
 # %%
 def compute_steerability_variance_id_vs_ood(df):
     # Calculate overall steerability by dataset.
