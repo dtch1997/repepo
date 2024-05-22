@@ -231,7 +231,13 @@ def plot_slope_and_counts_for_response_is_Yes(df, selected_only: bool = False):
     
     # Remove duplicate legen
     handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.00), ncol=4, fancybox=True, shadow=True)
+    fig.legend(
+        handles, labels, 
+        loc='upper center', 
+        bbox_to_anchor=(0.5, 0.05), 
+        ncol=4, 
+        fancybox=True, 
+    )
     axs[0].get_legend().remove()
     axs[1].get_legend().remove()
     fig.tight_layout()

@@ -108,8 +108,6 @@ def compute_steerability_df(df, model_name: str):
 
 def make_id_vs_ood_steerability_plot_for_df(df, ax):
 
-    sns.lineplot(data=df, x='BASE -> BASE', y='BASE -> BASE', color='black', linestyle='--')
-
     # Axes
     ax.axhline(0, color='black', linestyle='-')
     ax.axvline(0, color='black', linestyle='-')
@@ -126,6 +124,14 @@ def make_id_vs_ood_steerability_plot_for_df(df, ax):
     make_plot_for_dist_shift(df, ax, 'BASE -> USER_POS')
     make_plot_for_dist_shift(df, ax, 'SYS_POS -> USER_NEG')
     make_plot_for_dist_shift(df, ax, 'SYS_NEG -> USER_POS')
+
+    # Print the correlation of ID and OOD steerability
+    spearman_corr, spearman_p = spearmanr(df['BASE -> BASE'], df['SYS_POS -> USER_NEG'])
+    print(f"Spearman correlation for SYS_POS -> USER_NEG: {spearman_corr} (p = {spearman_p})")
+
+    # X = y line on top of other lines
+    sns.lineplot(data=df, x='BASE -> BASE', y='BASE -> BASE', color='black', linestyle='--', ax = ax)
+
 
 # %%
 # Plot ID vs OOD steerability for Qwen and Llama
@@ -175,7 +181,7 @@ def plot_qwen_and_llama_steerability_iid_vs_od(
         loc='upper center', 
         bbox_to_anchor=(0.5, 0.15), 
         ncol=4, fancybox=True, 
-        shadow=True, prop={'size': 10},
+        prop={'size': 10},
         columnspacing=0.0
     )
 
@@ -245,17 +251,6 @@ ax.set_ylabel('')
 # ax.set_xlabel('Llama-2-7b-Chat',  fontsize=16)
 # ax.set_ylabel('Qwen-1.5-14b-Chat',  fontsize=16)
 ax.set_title('OOD Steerability',  fontsize=16)
-
-# Global legend
-# handles, labels = ax.get_legend_handles_labels()
-# Fig legend overhead, but without covering the titles!
-# Fancy box
-# fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.05), ncol=2, fancybox=True, shadow=True)
-# fig.suptitle("Correlation in Mean Steerability")
-
-# Remove the legends from the individual plots
-# axs[0].get_legend().remove()
-# axs[1].get_legend().remove()
 
 extra_ax = fig.add_subplot(111, frameon=False)
 extra_ax.grid(False)
@@ -400,7 +395,7 @@ def plot_qwen_and_llama_steerability_variance_iid_vs_od(
         loc='upper center', 
         bbox_to_anchor=(0.5, 0.15), 
         ncol=4, fancybox=True, 
-        shadow=True, prop={'size': 10},
+        prop={'size': 10},
         columnspacing=0.0
     )
 
