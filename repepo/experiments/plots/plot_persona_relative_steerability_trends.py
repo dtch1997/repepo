@@ -79,12 +79,6 @@ def build_cross_steering_df(experiment_results):
 
                 if sv_name == "mean":
                     continue
-                    sv_base_prob = mean(
-                        [bs.metrics["mean_pos_prob"] for bs in cs.dataset_baselines]
-                    )
-                    sv_base_ld = mean(
-                        [bs.metrics["mean_logit_diff"] for bs in cs.dataset_baselines]
-                    )
                 else:
                     train_ds_index = cs.dataset_labels.index(sv_name)
                     sv_base_prob = cs.dataset_baselines[train_ds_index].metrics[
@@ -117,6 +111,16 @@ def build_cross_steering_df(experiment_results):
                     rel_base_pos = 1.0 - base_pos
                     rel_base_pos_js = 1.0 - base_pos_js
                     rel_base_pos_logit = 1.0 - base_pos_logit
+
+                sv_base_lds = [
+                    pred.metrics["logit_diff"]
+                    for pred in cs.dataset_baselines[train_ds_index].predictions
+                ]
+                base_lds = [
+                    pred.metrics["logit_diff"]
+                    for pred in cs.dataset_baselines[ds_index].predictions
+                ]
+                ld_deltas = [abs(base - sv) for base, sv in zip(base_lds, sv_base_lds)]
 
                 rows.append(
                     {
@@ -153,6 +157,7 @@ def build_cross_steering_df(experiment_results):
                         "rel_base_pos_js": rel_base_pos_js,
                         "rel_base_pos_logit": rel_base_pos_logit,
                         "ld_delta": abs(sv_base_ld - base_ld),
+                        "ld_delta_per_ex_mean": mean(ld_deltas),
                         "prob_delta": abs(sv_base_prob - base_prob),
                         "dataset_type": dataset_type,
                     }
@@ -169,7 +174,7 @@ def plot_persona_relative_steerability_trends(
 ):
     cs_df = build_cross_steering_df(results)
     cs_df = cs_df[cs_df["self_steerability_slope_ld"] > min_self_steerability]
-    x = "ld_delta"
+    x = "ld_delta_per_ex_mean"
     y = "rel_steerability_slope_ld"
 
     plt.figure(figsize=figsize)
@@ -182,7 +187,7 @@ def plot_persona_relative_steerability_trends(
     print(f"Spearman's Correlation: {spearman_corr}")
 
     # Add the linear fit line
-    sns.regplot(data=cs_df, x=x, y=y, scatter=False, ci=None, line_kws={"color": "red"})  # type: ignore
+    sns.regplot(data=cs_df, x=x, y=y, scatter=False, ci=None)  # type: ignore
 
     plt.title(title)
     scatter_plot.set(
@@ -190,6 +195,66 @@ def plot_persona_relative_steerability_trends(
         ylabel="Relative steerability",
     )
 
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path)
+    plt.show()
+
+
+def plot_rel_steerabilities(
+    cs_df,
+    ax,
+    title,
+):
+    x = "ld_delta_per_ex_mean"
+    y = "rel_steerability_slope_ld"
+
+    # Create the scatter plot
+    sns.scatterplot(data=cs_df, x=x, y=y, ax=ax)
+
+    # Calculate the linear fit line
+    spearman_corr, _ = stats.spearmanr(cs_df[x], cs_df[y])
+    print(f"Spearman's Correlation: {spearman_corr}")
+
+    # Add the linear fit line
+    sns.regplot(data=cs_df, x=x, y=y, ax=ax, scatter=False)
+
+    ax.axhline(0, color="black", linestyle="-")
+    ax.axvline(0, color="black", linestyle="-")
+    ax.set_title(title, fontsize=16)
+    ax.set_ylabel("Relative steerability", fontsize=16)
+    ax.set_xlabel(None)
+
+
+def plot_persona_relative_steerability_trends_dual(
+    results_left: dict[str, PersonaCrossSteeringExperimentResult],
+    results_right: dict[str, PersonaCrossSteeringExperimentResult],
+    label_left: str,
+    label_right: str,
+    figsize=(9, 3.5),
+    save_path: str | None = None,
+    min_self_steerability: float = 0.25,
+):
+    sns.set_theme()
+    plt.rcParams.update({"font.size": 16})
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=figsize, sharey=True)
+
+    cs_df_left = build_cross_steering_df(results_left)
+    cs_df_left = cs_df_left[
+        cs_df_left["self_steerability_slope_ld"] > min_self_steerability
+    ]
+
+    cs_df_right = build_cross_steering_df(results_right)
+    cs_df_right = cs_df_right[
+        cs_df_right["self_steerability_slope_ld"] > min_self_steerability
+    ]
+
+    plot_rel_steerabilities(cs_df_left, title=label_left, ax=axs[0])
+    plot_rel_steerabilities(cs_df_right, title=label_right, ax=axs[1])
+
+    fig.supxlabel("Unsteered LD delta between training datasets", fontsize=16)
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.2)
     if save_path:
         plt.savefig(save_path)
     plt.show()
