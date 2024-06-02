@@ -256,5 +256,5 @@ def plot_persona_relative_steerability_trends_dual(
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.2)
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path, bbox_inches="tight")
     plt.show()
