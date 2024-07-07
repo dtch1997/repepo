@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 from repepo.core.format import QwenChatFormatter
-from repepo.steering.sweep_layers import sweep_layers
+from repepo.steering.sweep_layers import SWEEP_DATASETS, sweep_layers
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe as make_mwe_xrisk_caa
 from repepo.data.multiple_choice.make_mwe_persona import make_mwe_personas_caa
@@ -24,6 +24,7 @@ class QwenSweepLayersConfig:
     multipliers: list[float] = field(
         default_factory=lambda: [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
     )
+    datasets: list[str] = field(default_factory=lambda: SWEEP_DATASETS)
     force: bool = False
 
 
@@ -65,6 +66,8 @@ def sweep_qwen_14b_layers(config: QwenSweepLayersConfig):
         layers=range(40),
         train_split=config.train_split,
         test_split=config.test_split,
+        multipliers=config.multipliers,
+        datasets=config.datasets,
         formatter=QwenChatFormatter(),
         save_progress_dir=output_dir,
     )
