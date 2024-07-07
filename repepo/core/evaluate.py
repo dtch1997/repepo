@@ -3,13 +3,13 @@
 
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager, ExitStack, contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from statistics import mean, stdev, StatisticsError
 from tqdm import tqdm
 from typing import Callable, Iterable, Sequence
 from repepo.core.hook import SteeringHook
 from repepo.core.pipeline import TextProbs
-from repepo.core.types import Example
+from repepo.core.types import Example, Completion
 from repepo.core.pipeline import Pipeline
 
 import numpy as np
@@ -115,6 +115,7 @@ class EvalPrediction:
     negative_output_prob: TextProbs | None
     # Example-level metrics
     metrics: dict[str, float]
+    generations: list[Completion] = field(default_factory=list)
 
 
 @dataclass
@@ -232,12 +233,59 @@ class NormalizedPositiveProbabilityEvaluator(Evaluator):
         return positive_output_prob / (positive_output_prob + negative_output_prob)
 
 
+def get_eval_hooks(
+    layer_id: int,
+    multiplier: float = 0,
+    completion_template: str | None = None,
+    system_prompt: str | None = None,
+) -> list[EvalHook]:
+    eval_hooks = [
+        set_repe_direction_multiplier_at_eval(multiplier),
+        select_repe_layer_at_eval(layer_id),
+    ]
+    if completion_template is not None:
+        eval_hooks.append(update_completion_template_at_eval(completion_template))
+    if system_prompt is not None:
+        eval_hooks.append(update_system_prompt_at_eval(system_prompt))
+    return eval_hooks
+
+
+# Function to get a single prediction
+def get_prediction(
+    pipeline: Pipeline,
+    example: Example,
+    evaluators: Sequence[Evaluator] = [LogitDifferenceEvaluator()],
+    slim_results: bool = False,
+) -> EvalPrediction:
+    positive_probs = pipeline.calculate_output_logprobs(
+        example.positive, slim_results=slim_results
+    )
+    negative_probs = pipeline.calculate_output_logprobs(
+        example.negative, slim_results=slim_results
+    )
+    pred = EvalPrediction(
+        positive_output_prob=positive_probs,
+        negative_output_prob=negative_probs,
+        metrics={},
+    )
+    example_metrics = {}
+    for evaluator in evaluators:
+        example_metrics[evaluator.get_metric_name()] = evaluator.score_prediction(pred)
+    # for _ in range(n_generation):
+    #     prompt = pipeline.build_generation_prompt(example.positive)
+    #     response = pipeline.generate(example.positive)
+    #     pred.generations.append(Completion(prompt=prompt, response=response))
+    pred.metrics = example_metrics
+    return pred
+
+
 def evaluate(
     pipeline: Pipeline,
     dataset: Iterable[Example],
     evaluators: Sequence[Evaluator],
     # these eval_hooks allow us to do custom stuff to the pipeline only during evaluation,
     # e.g. mess with the formatter to use CAA's special answer format
+    n_generation: int = 0,
     eval_hooks: Sequence[EvalHook] = [],
     show_progress: bool = True,
     tqdm_desc: str = "Evaluating",
@@ -258,25 +306,14 @@ def evaluate(
                 logger.debug(
                     f"Example full prompt: \n {pipeline.build_full_prompt(example.positive)}"
                 )
-            positive_probs = pipeline.calculate_output_logprobs(
-                example.positive, slim_results=slim_results
-            )
-            negative_probs = pipeline.calculate_output_logprobs(
-                example.negative, slim_results=slim_results
-            )
 
-            pred = EvalPrediction(
-                positive_output_prob=positive_probs,
-                negative_output_prob=negative_probs,
-                metrics={},
+            pred = get_prediction(
+                pipeline,
+                example,
+                evaluators=evaluators,
+                n_generation=n_generation,
+                slim_results=slim_results,
             )
-            example_metrics = {}
-            for evaluator in evaluators:
-                example_metrics[evaluator.get_metric_name()] = (
-                    evaluator.score_prediction(pred)
-                )
-            pred.metrics = example_metrics
-
             predictions.append(pred)
 
         dataset_metrics: dict[str, float] = {}
