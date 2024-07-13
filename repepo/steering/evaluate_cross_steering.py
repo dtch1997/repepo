@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, Literal, NamedTuple
 
 from steering_vectors import SteeringVector
 from tqdm import tqdm
@@ -46,6 +46,7 @@ def evaluate_cross_steering(
     multipliers: list[float],
     build_pipeline: Callable[[Model, Tokenizer, str], Any] | None = None,
     patch_generation_tokens_only: bool = True,
+    patch_operator: Literal["add", "ablate_then_add"] = "add",
     skip_first_n_generation_tokens: int = 0,
     completion_template: str | None = None,
     show_progress: bool = True,
@@ -87,6 +88,7 @@ def evaluate_cross_steering(
                 NormalizedPositiveProbabilityEvaluator(),
                 LogitDifferenceEvaluator(),
             ],
+            patch_operator=patch_operator,
             patch_generation_tokens_only=patch_generation_tokens_only,
             skip_first_n_generation_tokens=skip_first_n_generation_tokens,
             completion_template=completion_template,
@@ -106,6 +108,7 @@ def evaluate_cross_steering(
                     LogitDifferenceEvaluator(),
                 ],
                 patch_generation_tokens_only=patch_generation_tokens_only,
+                patch_operator=patch_operator,
                 skip_first_n_generation_tokens=skip_first_n_generation_tokens,
                 completion_template=completion_template,
                 show_progress=False,

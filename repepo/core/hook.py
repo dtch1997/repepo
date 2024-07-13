@@ -1,9 +1,11 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import Literal
 from repepo.core.pipeline import PipelineContext
 from steering_vectors import (
     SteeringVector,
     ModelLayerConfig,
+    ablation_then_addition_operator,
 )
 
 from repepo.core.types import Tokenizer
@@ -24,6 +26,7 @@ class SteeringHook(PipelineHook):
     patch_generation_tokens_only: bool
     skip_first_n_generation_tokens: int
     layer_config: ModelLayerConfig | None
+    patch_operator: Literal["add", "ablate_then_add"] = "add"
 
     # PipelineContext is created in both `pipeline.generate` or `pipeline.calculate_output_logprobs`,
     # It also contains info about the current prompt which is used to determine which tokens to patch.
@@ -44,6 +47,11 @@ class SteeringHook(PipelineHook):
                 layer_config=self.layer_config,
                 multiplier=self.direction_multiplier,
                 min_token_index=min_token_index,
+                operator=(
+                    ablation_then_addition_operator()
+                    if self.patch_operator == "ablate_then_add"
+                    else None
+                ),
             )
             yield
         finally:

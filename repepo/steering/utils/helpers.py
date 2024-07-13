@@ -1,5 +1,6 @@
 import os
 import pathlib
+from typing import Literal
 import torch
 import pandas as pd
 import gc
@@ -116,6 +117,7 @@ class SteeringConfig:
     patch_generation_tokens_only: bool = True
     skip_first_n_generation_tokens: int = 0
     slim_eval: bool = True
+    patch_operator: Literal["add", "ablate_then_add"] = "add"
 
     @property
     def train_hash(self):

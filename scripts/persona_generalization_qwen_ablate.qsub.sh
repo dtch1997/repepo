@@ -1,11 +1,11 @@
-#$ -N persona_generalization_qwen            # Specify the job name
+#$ -N persona_generalization_qwen_ablate            # Specify the job name
 #$ -l h_rt=72:00:00
 #$ -l h_vmem=64G           # Request 64GB of memory per job
 #$ -l gpu=1               # Request 1 GPU
 #$ -ac allow=L        # Specify the type of GPU
 #$ -S /bin/bash
 #$ -j y
-#$ -t 0-40
+#$ -t 0-10
 
 nvidia-smi
 umask 0077
@@ -24,5 +24,6 @@ PYTHON_PATH=. python3 -m repepo.experiments.persona_generalization \
     --layer 21 \
     --model_name Qwen/Qwen1.5-14B-Chat \
     --formatter_name qwen-chat-formatter \
-    --output_dir ${HOME}/Scratch/persona_generalization_qwen \
+    --output_dir ${HOME}/Scratch/persona_generalization_qwen_ablate \
+    --patch_operator ablate_then_add \
     --sge_task_id $SGE_TASK_ID

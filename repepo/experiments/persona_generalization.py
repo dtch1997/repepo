@@ -158,6 +158,7 @@ def run_persona_cross_steering_experiment(
     normalize_steering_magnitude_to_baseline: bool = True,
     show_progress: bool = True,
     patch_generation_tokens_only: bool = True,
+    patch_operator: Literal["add", "ablate_then_add"] = "add",
     skip_first_n_generation_tokens: int = 0,
     completion_template: str | None = None,
 ) -> PersonaCrossSteeringExperimentResult:
@@ -256,6 +257,7 @@ def run_persona_cross_steering_experiment(
         datasets=test_dataset_mapping,
         show_progress=show_progress,
         patch_generation_tokens_only=patch_generation_tokens_only,
+        patch_operator=patch_operator,
         skip_first_n_generation_tokens=skip_first_n_generation_tokens,
         completion_template=completion_template,
         multipliers=multipliers,
@@ -404,6 +406,7 @@ class PersonaGeneralizationExperimentConfig:
         "llama-chat-formatter"
     )
     patch_generation_tokens_only: bool = True
+    patch_operator: Literal["add", "ablate_then_add"] = "add"
     skip_first_n_generation_tokens: int = 0
     completion_template: str | None = None
     normalize_steering_magnitude_to_baseline: bool = True
@@ -483,6 +486,7 @@ def run_persona_generalization_experiment(
             layer=config.layer,
             normalize_steering_magnitude_to_baseline=config.normalize_steering_magnitude_to_baseline,
             patch_generation_tokens_only=config.patch_generation_tokens_only,
+            patch_operator=config.patch_operator,
             skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
             completion_template=config.completion_template,
             multipliers=config.multipliers,
