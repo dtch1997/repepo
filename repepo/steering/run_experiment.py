@@ -192,6 +192,7 @@ def evaluate_steering_vector_from_config(
             layers=[config.layer],
             multipliers=[config.multiplier],
             patch_generation_tokens_only=config.patch_generation_tokens_only,
+            patch_operator=config.patch_operator,
             skip_first_n_generation_tokens=config.skip_first_n_generation_tokens,
             logger=logger,
             slim_results=config.slim_eval,

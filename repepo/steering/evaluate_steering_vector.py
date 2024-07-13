@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 
 from repepo.core.types import Dataset
@@ -25,6 +26,7 @@ def evaluate_steering_vector(
     layers: list[int],
     multipliers: list[float],
     patch_generation_tokens_only: bool = True,
+    patch_operator: Literal["add", "ablate_then_add"] = "add",
     skip_first_n_generation_tokens: int = 0,
     system_prompt: str | None = None,
     completion_template: str | None = None,
@@ -46,6 +48,7 @@ def evaluate_steering_vector(
         patch_generation_tokens_only=patch_generation_tokens_only,
         skip_first_n_generation_tokens=skip_first_n_generation_tokens,
         layer_config=guess_and_enhance_layer_config(pipeline.model),
+        patch_operator=patch_operator,
     )
     pipeline.hooks.append(steering_hook)
 
