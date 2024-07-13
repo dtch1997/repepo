@@ -6,7 +6,7 @@
 #$ -ac allow=L        # Specify the type of GPU
 #$ -o $HOME/logs
 #$ -e $HOME/logs
-#$ -t 1-116
+#$ -t 1-40
 
 # Add locally installed executables to PATH
 source $HOME/.bash_profile

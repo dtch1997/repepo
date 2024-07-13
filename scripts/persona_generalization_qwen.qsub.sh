@@ -5,7 +5,7 @@
 #$ -ac allow=L        # Specify the type of GPU
 #$ -S /bin/bash
 #$ -j y
-#$ -t 0-40
+#$ -t 1-40
 
 nvidia-smi
 umask 0077
