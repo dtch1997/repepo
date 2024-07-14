@@ -83,7 +83,7 @@ def evaluate_cross_steering(
             steering_vector=first_sv,
             dataset=dataset,
             layers=[layer],
-            multipliers=[0.0],
+            multipliers=[0],
             evaluators=[
                 NormalizedPositiveProbabilityEvaluator(),
                 LogitDifferenceEvaluator(),

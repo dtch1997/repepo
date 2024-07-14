@@ -42,17 +42,19 @@ class SteeringHook(PipelineHook):
                     context.full_prompt,
                 )
                 min_token_index = gen_start_index + self.skip_first_n_generation_tokens
-            handle = self.steering_vector.patch_activations(
-                model=context.pipeline.model,
-                layer_config=self.layer_config,
-                multiplier=self.direction_multiplier,
-                min_token_index=min_token_index,
-                operator=(
-                    ablation_then_addition_operator()
-                    if self.patch_operator == "ablate_then_add"
-                    else None
-                ),
-            )
+            # multiplier 0 is equivalent to no steering, so just skip patching in that case
+            if self.direction_multiplier != 0:
+                handle = self.steering_vector.patch_activations(
+                    model=context.pipeline.model,
+                    layer_config=self.layer_config,
+                    multiplier=self.direction_multiplier,
+                    min_token_index=min_token_index,
+                    operator=(
+                        ablation_then_addition_operator()
+                        if self.patch_operator == "ablate_then_add"
+                        else None
+                    ),
+                )
             yield
         finally:
             if handle is not None:

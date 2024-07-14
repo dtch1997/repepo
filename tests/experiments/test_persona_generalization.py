@@ -11,6 +11,7 @@ from repepo.experiments.persona_generalization import (
     PersonaCrossSteeringExperimentResult,
     base_dataset_position,
     persona_pipeline,
+    run_persona_cross_steering_experiment,
 )
 from repepo.steering.evaluate_cross_steering import CrossSteeringResult
 
@@ -200,3 +201,21 @@ def test_base_dataset_position_is_near_zero_if_base_is_near_neg(
     )
     assert base_dataset_position(results, dist_metric=dist_metric) < 0.2
     assert base_dataset_position(results, dist_metric=dist_metric) > 0.0
+
+
+def test_run_persona_cross_steering_experiment(
+    model: GPTNeoXForCausalLM,
+    tokenizer: Tokenizer,
+) -> None:
+    result = run_persona_cross_steering_experiment(
+        model,
+        tokenizer,
+        train_split="0:4",
+        test_split="4:8",
+        dataset_name="myopic-reward",
+        formatter_name="llama-chat-formatter",
+        layer=1,
+        patch_operator="ablate_then_add",
+        multipliers=[-1.0, 1.0],
+    )
+    assert result is not None
