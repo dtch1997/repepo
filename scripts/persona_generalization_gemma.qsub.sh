@@ -21,7 +21,7 @@ source ${HOME}/Scratch/gpu-pyenv/bin/activate
 
 # Run the script
 PYTHON_PATH=. python3 -m repepo.experiments.persona_generalization \
-    --layer 11 \
+    --layer 14 \
     --model_name google/gemma-2-2b-it \
     --formatter_name gemma-chat-formatter \
     --output_dir ${HOME}/Scratch/persona_generalization_gemma \
