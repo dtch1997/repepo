@@ -190,3 +190,46 @@ class QwenChatFormatter(Formatter):
         prompt = "".join(dialog_content_parts)
         response = completion.response.strip()
         return Completion(prompt=prompt, response=response)
+
+
+class GemmaChatFormatter(Formatter):
+    """
+    Wrap conversation using Gemma chat template.
+    """
+
+    system_prompt: str | None
+
+    BOS = "<bos>"
+    B_INST = "<start_of_turn>"
+    E_INST = "<end_of_turn>\n"
+    B_USER = "user\n"
+    B_ASST = "model\n"
+
+    def __init__(
+        self,
+        completion_template: str = "{prompt} {response}",
+        msg_separator: str = "\n",
+        prompt_prefix: str | None = None,
+        system_prompt: str | None = "You are a helpful, honest and concise assistant.",
+    ) -> None:
+        self.system_prompt = system_prompt
+        self.prompt_prefix = prompt_prefix
+        super().__init__(
+            completion_template=completion_template, msg_separator=msg_separator
+        )
+
+    @override
+    def format(self, completion: Completion, ctx: FormatContext):
+        dialog_content_parts = []
+        prompt = completion.prompt.strip()
+        if self.prompt_prefix is not None:
+            prompt = f"{self.prompt_prefix}{prompt}"
+        # If first example, add system prompt
+        # NOTE: Gemma doesn't support system prompts, so we simulate a system prompt by prepending to user prompt
+        if ctx.index == 0 and self.system_prompt is not None:
+            prompt = f"{self.system_prompt}\n\n{prompt}"
+        dialog_content_parts.append(f"{self.B_INST}{self.B_USER}{prompt}{self.E_INST}")
+        dialog_content_parts.append(f"{self.B_INST}{self.B_ASST}")
+        prompt = "".join(dialog_content_parts)
+        response = completion.response.strip()
+        return Completion(prompt=prompt, response=response)

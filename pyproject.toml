@@ -13,7 +13,7 @@ requires-python = ">=3.10,<4.0"
 dependencies = [
   "pyrallis>=0.3.1",
   "wandb>=0.16.0",
-  "transformers>=4.37.0",
+  "transformers>=4.43.0",
   "torch>=2.1.1",
   "datasets>=2.15.0",
   "numpy>=1.26.2",

@@ -1,9 +1,10 @@
 from textwrap import dedent
 from typing import cast
 
-from transformers import Qwen2TokenizerFast
+from transformers import Qwen2TokenizerFast, GemmaTokenizerFast
 
 from repepo.core.format import (
+    GemmaChatFormatter,
     IdentityFormatter,
     LlamaChatFormatter,
     QwenChatFormatter,
@@ -119,6 +120,29 @@ def test_QwenChatFormatter_format_conversation_empty_convo(
         ),
     )
     assert output.prompt.strip() == expected_prompt.strip()
+    assert output.response == "France"
+
+
+def test_GemmaChatFormatter_format_conversation_empty_convo(
+    gemma_chat_tokenizer: GemmaTokenizerFast,
+):
+    input_completion = Completion(prompt="Paris is in", response="France")
+    formatter = GemmaChatFormatter()
+    output = formatter.format_conversation(input_completion)
+    messages = [
+        {
+            "role": "user",
+            "content": "You are a helpful, honest and concise assistant.\n\nParis is in",
+        },
+    ]
+    expected_prompt = cast(
+        str,
+        gemma_chat_tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        ),
+    )
+    # the [5:] removes the <bos> token, which gets added later by the tokenizer
+    assert output.prompt.strip() == expected_prompt.strip()[5:]
     assert output.response == "France"
 
 

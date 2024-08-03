@@ -10,7 +10,7 @@ import seaborn as sns
 from simple_parsing import ArgumentParser
 import matplotlib.pyplot as plt
 from steering_vectors import SteeringVector
-from repepo.core.format import LlamaChatFormatter, QwenChatFormatter
+from repepo.core.format import GemmaChatFormatter, LlamaChatFormatter, QwenChatFormatter
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Example, Model, Tokenizer
 from repepo.steering.build_steering_training_data import (
@@ -65,7 +65,9 @@ def persona_pipeline(
     model: Model,
     tokenizer: Tokenizer,
     persona: Persona,
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "gemma-chat-formatter"
+    ],
     dataset_name: str,
     use_sys_prompt: bool,
 ) -> Pipeline:
@@ -78,6 +80,8 @@ def persona_pipeline(
         formatter_class = LlamaChatFormatter
     elif formatter_name == "qwen-chat-formatter":
         formatter_class = QwenChatFormatter
+    elif formatter_name == "gemma-chat-formatter":
+        formatter_class = GemmaChatFormatter
     else:
         raise ValueError(f"Invalid formatter name: {formatter_name}")
     formatter = formatter_class()

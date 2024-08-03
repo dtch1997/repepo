@@ -104,3 +104,8 @@ def llama_chat_tokenizer() -> Tokenizer:
 @pytest.fixture
 def qwen_chat_tokenizer() -> Tokenizer:
     return AutoTokenizer.from_pretrained("Qwen/Qwen1.5-14B-Chat")
+
+
+@pytest.fixture
+def gemma_chat_tokenizer() -> Tokenizer:
+    return AutoTokenizer.from_pretrained("google/gemma-2-2b-it")
