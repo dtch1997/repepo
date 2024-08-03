@@ -39,9 +39,9 @@ def sweep_gemma2_2b_layers(config: GemmaSweepLayersConfig):
     print(f"Running sweep with config: {config}")
     make_all_datasets()
     model = AutoModelForCausalLM.from_pretrained(
-        "gemma-2-2b-it", torch_dtype="auto", device_map="auto"
+        "google/gemma-2-2b-it", torch_dtype="auto", device_map="auto"
     )
-    tokenizer = AutoTokenizer.from_pretrained("gemma-2-2b-it")
+    tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-2b-it")
 
     output_dir = Path(config.output_dir)
     if output_dir.exists():
