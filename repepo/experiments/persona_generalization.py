@@ -406,9 +406,9 @@ def base_dataset_position(
 class PersonaGeneralizationExperimentConfig:
     output_dir: str
     model_name: str = "meta-llama/Llama-2-7b-chat-hf"
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"] = (
-        "llama-chat-formatter"
-    )
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "gemma-chat-formatter"
+    ] = "llama-chat-formatter"
     patch_generation_tokens_only: bool = True
     patch_operator: Literal["add", "ablate_then_add"] = "add"
     skip_first_n_generation_tokens: int = 0
