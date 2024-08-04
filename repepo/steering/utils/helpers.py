@@ -16,6 +16,7 @@ from transformers import BitsAndBytesConfig
 from repepo.core.types import Example, Model, Tokenizer
 from repepo.core.format import (
     Formatter,
+    GemmaChatFormatter,
     IdentityFormatter,
     LlamaChatFormatter,
     QwenChatFormatter,
@@ -90,6 +91,8 @@ def get_formatter(
         return IdentityFormatter()
     elif formatter_name == "qwen-chat-formatter":
         return QwenChatFormatter()
+    elif formatter_name == "gemma-chat-formatter":
+        return GemmaChatFormatter()
     else:
         raise ValueError(f"Unknown formatter: {formatter_name}")
 

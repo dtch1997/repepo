@@ -116,7 +116,9 @@ def train_steering_vector_for_persona_and_dataset(
     tokenizer: Tokenizer,
     persona: Persona,
     dataset_name: str,
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "gemma-chat-formatter"
+    ],
     train_split: str,
     layer: int,
     use_sys_prompt: bool = True,
@@ -154,7 +156,9 @@ def run_persona_cross_steering_experiment(
     model: Model,
     tokenizer: Tokenizer,
     dataset_name: str,
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "gemma-chat-formatter"
+    ],
     train_split: str,
     test_split: str,
     layer: int,
