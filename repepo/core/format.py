@@ -206,7 +206,7 @@ class Llama3ChatFormatter(Formatter):
 
     def __init__(
         self,
-        completion_template: str = "{prompt} {response}",
+        completion_template: str = "{prompt}\n\n{response}",
         msg_separator: str = "\n",
         prompt_prefix: str | None = None,
         system_prompt: str | None = "You are a helpful, honest and concise assistant.",
