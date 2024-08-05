@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 import torch
-from repepo.core.format import LlamaChatFormatter
+from repepo.core.format import Llama3ChatFormatter
 from repepo.steering.sweep_layers import SWEEP_DATASETS, sweep_layers
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from repepo.data.multiple_choice.make_mwe_xrisk import make_mwe as make_mwe_xrisk_caa
@@ -68,7 +68,7 @@ def sweep_llama3_70b_layers(config: LlamaSweepLayersConfig):
         test_split=config.test_split,
         datasets=config.datasets,
         multipliers=config.multipliers,
-        formatter=LlamaChatFormatter(),
+        formatter=Llama3ChatFormatter(),
         save_progress_dir=output_dir,
     )
     if output_dir is not None:
