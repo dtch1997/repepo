@@ -11,11 +11,8 @@ sns.set_theme()
 model = "llama7b"
 # model = 'qwen'
 
-# %%
-# Load preprocessed data
 df = pd.read_parquet(f"{model}_steerability.parquet.gzip")
 
-# %%
 # Replace dataset names with short names
 dataset_full_names_to_short_names = {
     "willingness-to-use-physical-force-to-achieve-benevolent-goals": "willing-force-for-benev-goals",
@@ -66,7 +63,6 @@ df["pos_option_is_Yes"] = (df["response_is_A_and_Yes"] & df["pos_option_is_A"]) 
     df["response_is_B_and_Yes"] & ~df["pos_option_is_A"]
 )
 
-# %%
 # Select the top 4 datasets by median slope
 top4 = (
     df.groupby("dataset_name")["median_slope"]
@@ -182,9 +178,9 @@ plot_per_sample_steerability_and_fraction_anti_steerable_selected(
 # The above two in the same figure
 def plot_slope_and_counts_for_response_is_Yes(df, selected_only: bool = False):
     if selected_only:
-        figsize = (8, 5)
+        figsize = (8, 7)
     else:
-        figsize = (8, 10)
+        figsize = (8, 14)
 
     fig, axs = plt.subplots(
         nrows=1, ncols=2, width_ratios=[5, 1], figsize=figsize, sharey=True
@@ -226,7 +222,7 @@ def plot_slope_and_counts_for_response_is_Yes(df, selected_only: bool = False):
         .sort_values("median_slope", ascending=True)
     )
     hue_order = ["A and No", "A and Yes", "B and No", "B and Yes"]
-    sns.barplot(
+    sns.boxplot(
         data=plot_df,
         hue="Positive Option",
         x="Steerability",
@@ -234,7 +230,6 @@ def plot_slope_and_counts_for_response_is_Yes(df, selected_only: bool = False):
         ax=ax,
         order=order["Dataset"],
         hue_order=hue_order,
-        errorbar=None,
     )
     ax.set_title("Mean Steerability")
 
