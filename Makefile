@@ -1,7 +1,7 @@
 IMAGE_NAME ?= repepo
 IMAGE_TAG ?= latest
 
-PROJECT_URL ?= ghcr.io/alignmentresearch/${IMAGE_NAME}
+PROJECT_URL ?= ghcr.io/dtch1997/${IMAGE_NAME}
 DOCKERFILE ?= Dockerfile
 
 export IMAGE_NAME
@@ -88,7 +88,6 @@ help: # Show help for each of the Makefile recipes.
 	docker pull "${PROJECT_URL}:${BUILD_PREFIX}-$*" || true
 	docker build --platform "linux/amd64" \
 		--tag "${PROJECT_URL}:${BUILD_PREFIX}-$*" \
-		--build-arg "IMAGE_NAME=${IMAGE_NAME}" \
 		--target "$*" \
 		-f "${DOCKERFILE}" .
 	touch ".build/${BUILD_PREFIX}/$*"

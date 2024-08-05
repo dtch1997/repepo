@@ -1,10 +1,8 @@
 ARG PYTORCH_CUDA_VERSION=2.2.1-cuda12.1-cudnn8
-ARG APPLICATION_NAME
 
 FROM pytorch/pytorch:${PYTORCH_CUDA_VERSION}-runtime as main-before-pip
 ENV DEBIAN_FRONTEND=noninteractive
-ENV GIT_URL="https://github.com/AlignmentResearch/${APPLICATION_NAME}"
-MAINTAINER Adrià Garriga-Alonso <adria@far.ai>
+ENV GIT_URL="https://github.com/dtch1997/repepo"
 LABEL org.opencontainers.image.source=${GIT_URL}
 
 RUN apt-get update -q \
@@ -57,9 +55,7 @@ FROM main-before-pip as main
 COPY --chown=${USERNAME}:${USERNAME} requirements.txt ./
 # Install all dependencies, which should be explicit in `requirements.txt`
 RUN pip install --no-deps -r requirements.txt \
-    && rm -rf "${HOME}/.cache" \
-    # Run Pyright so its Node.js package gets installed
-    && pyright .
+    && rm -rf "${HOME}/.cache"
 
 # Copy whole repo and install
 COPY --chown=${USERNAME}:${USERNAME} . .
@@ -68,17 +64,11 @@ RUN pip install --require-virtualenv --config-settings editable_mode=strict --no
     && rm -rf "${HOME}/.cache"
 
 # Set git remote URL to https
-RUN git remote set-url origin "$(git remote get-url origin | sed 's|git@github.com:|https://github.com/|' )" \
-    # Sub-repos (optionally many)
-    && (cd third_party/google-research && git remote set-url origin "$(git remote get-url origin | sed 's|git@github.com:|https://github.com/|' )" )
+RUN git remote set-url origin "$(git remote get-url origin | sed 's|git@github.com:|https://github.com/|' )"
 
 # Abort if repo is dirty
 RUN echo "$(git status --porcelain --ignored=traditional | grep -v '.egg-info/$\|build/$')" \
-    # Sub-repos (optionally many)
-    && echo "$(cd third_party/google-research && git status --porcelain --ignored=traditional | grep -v '.egg-info/$\|build/$')" \
     && if ! { [ -z "$(git status --porcelain --ignored=traditional | grep -v '.egg-info/$\|build/$')" ] \
-    # Sub-repos (optionally many)
-    && [ -z "$(cd third_party/google-research && git status --porcelain --ignored=traditional | grep -v '.egg-info/$\|build/$')" ] \
     ; }; then exit 1; fi
 
 # Default command to run -- may be changed at runtime
