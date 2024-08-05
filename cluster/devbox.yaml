@@ -39,36 +39,24 @@ spec:
           value: "{WANDB_PROJECT}"
         - name: WANDB_ENTITY
           value: farai
+        - name: HF_HOME
+          value: "/training/hf_home"
         - name: WANDB_RUN_GROUP
           value: devbox
-        - name: GIT_ASKPASS
-          value: "true"
-        - name: GITHUB_PAT
+        - name: HF_TOKEN
           valueFrom:
             secretKeyRef:
-              name: github-credentials
-              key: pat
-        - name: WANDB_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: wandb
-              key: api-key
-        - name: GIT_CONFIG_PARAMETERS
-          value: "'credential.https://github.com.username=$(GITHUB_PAT)'"
+              name: huggingface
+              key: token
         volumeMounts:
-        - name: working-storage
-          mountPath: /home/dev
         - name: training
           mountPath: /training
         - name: dshm
           mountPath: /dev/shm
       volumes:
-      - name: working-storage
-        persistentVolumeClaim:
-          claimName: adria
       - name: training
         persistentVolumeClaim:
-          claimName: learned-planners
+          claimName: repepo
       - name: dshm
         emptyDir:
           medium: Memory
