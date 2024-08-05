@@ -190,3 +190,58 @@ class QwenChatFormatter(Formatter):
         prompt = "".join(dialog_content_parts)
         response = completion.response.strip()
         return Completion(prompt=prompt, response=response)
+
+
+class Llama3ChatFormatter(Formatter):
+    """
+    Wrap conversation using Llama3 chat template.
+    """
+
+    system_prompt: str | None
+
+    E_INST = "<|eot_id|>"
+    B_SYS = "<|start_header_id|>system<|end_header_id|>\n\n"
+    B_USER = "<|start_header_id|>user<|end_header_id|>\n\n"
+    B_ASST = "<|start_header_id|>assistant<|end_header_id|>\n\n"
+
+    def __init__(
+        self,
+        completion_template: str = "{prompt}\n\n{response}",
+        msg_separator: str = "\n",
+        prompt_prefix: str | None = None,
+        system_prompt: str | None = "You are a helpful, honest and concise assistant.",
+    ) -> None:
+        self.system_prompt = system_prompt
+        self.prompt_prefix = prompt_prefix
+        super().__init__(
+            completion_template=completion_template, msg_separator=msg_separator
+        )
+
+    @override
+    def format(self, completion: Completion, ctx: FormatContext):
+        dialog_content_parts = []
+        # If first example, add system prompt
+        if ctx.index == 0 and self.system_prompt is not None:
+            dialog_content_parts.append(
+                f"{self.B_SYS}{self.system_prompt}{self.E_INST}"
+            )
+        base_prompt = completion.prompt.strip()
+        if self.prompt_prefix is not None:
+            base_prompt = f"{self.prompt_prefix}{base_prompt}"
+
+        dialog_content_parts.append(f"{self.B_USER}{base_prompt}{self.E_INST}")
+        dialog_content_parts.append(f"{self.B_ASST}")
+        prompt = "".join(dialog_content_parts)
+        response = completion.response.strip()
+        return Completion(prompt=prompt, response=response)
+
+    @override
+    def format_conversation(
+        self,
+        current_message: Completion,
+        history: list[Completion] = [],
+    ) -> Completion:
+        completion = super().format_conversation(current_message, history)
+        return Completion(
+            prompt=completion.prompt + "\n\n", response=completion.response
+        )

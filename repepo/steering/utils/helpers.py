@@ -17,6 +17,7 @@ from repepo.core.types import Example, Model, Tokenizer
 from repepo.core.format import (
     Formatter,
     IdentityFormatter,
+    Llama3ChatFormatter,
     LlamaChatFormatter,
     QwenChatFormatter,
 )
@@ -90,6 +91,8 @@ def get_formatter(
         return IdentityFormatter()
     elif formatter_name == "qwen-chat-formatter":
         return QwenChatFormatter()
+    elif formatter_name == "llama3-chat-formatter":
+        return Llama3ChatFormatter()
     else:
         raise ValueError(f"Unknown formatter: {formatter_name}")
 

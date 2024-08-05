@@ -1,10 +1,11 @@
 from textwrap import dedent
 from typing import cast
 
-from transformers import Qwen2TokenizerFast
+from transformers import Qwen2TokenizerFast, PreTrainedTokenizerFast
 
 from repepo.core.format import (
     IdentityFormatter,
+    Llama3ChatFormatter,
     LlamaChatFormatter,
     QwenChatFormatter,
 )
@@ -119,6 +120,32 @@ def test_QwenChatFormatter_format_conversation_empty_convo(
         ),
     )
     assert output.prompt.strip() == expected_prompt.strip()
+    assert output.response == "France"
+
+
+def test_Llama3ChatFormatter_format_conversation_empty_convo(
+    llama3_chat_tokenizer: PreTrainedTokenizerFast,
+):
+    input_completion = Completion(prompt="Paris is in", response="France")
+    formatter = Llama3ChatFormatter()
+    output = formatter.format_conversation(input_completion)
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful, honest and concise assistant.",
+        },
+        {
+            "role": "user",
+            "content": "Paris is in",
+        },
+    ]
+    expected_prompt = cast(
+        str,
+        llama3_chat_tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        ),
+    ).replace("<|begin_of_text|>", "")  # BOS gets added automatically later
+    assert output.prompt == expected_prompt
     assert output.response == "France"
 
 

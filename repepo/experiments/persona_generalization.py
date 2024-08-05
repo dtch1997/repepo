@@ -10,7 +10,11 @@ import seaborn as sns
 from simple_parsing import ArgumentParser
 import matplotlib.pyplot as plt
 from steering_vectors import SteeringVector
-from repepo.core.format import LlamaChatFormatter, QwenChatFormatter
+from repepo.core.format import (
+    Llama3ChatFormatter,
+    LlamaChatFormatter,
+    QwenChatFormatter,
+)
 from repepo.core.pipeline import Pipeline
 from repepo.core.types import Example, Model, Tokenizer
 from repepo.steering.build_steering_training_data import (
@@ -65,7 +69,9 @@ def persona_pipeline(
     model: Model,
     tokenizer: Tokenizer,
     persona: Persona,
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "llama3-chat-formatter"
+    ],
     dataset_name: str,
     use_sys_prompt: bool,
 ) -> Pipeline:
@@ -78,6 +84,8 @@ def persona_pipeline(
         formatter_class = LlamaChatFormatter
     elif formatter_name == "qwen-chat-formatter":
         formatter_class = QwenChatFormatter
+    elif formatter_name == "llama3-chat-formatter":
+        formatter_class = Llama3ChatFormatter
     else:
         raise ValueError(f"Invalid formatter name: {formatter_name}")
     formatter = formatter_class()
@@ -112,7 +120,9 @@ def train_steering_vector_for_persona_and_dataset(
     tokenizer: Tokenizer,
     persona: Persona,
     dataset_name: str,
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "llama3-chat-formatter"
+    ],
     train_split: str,
     layer: int,
     use_sys_prompt: bool = True,
@@ -150,7 +160,9 @@ def run_persona_cross_steering_experiment(
     model: Model,
     tokenizer: Tokenizer,
     dataset_name: str,
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"],
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "llama3-chat-formatter"
+    ],
     train_split: str,
     test_split: str,
     layer: int,
@@ -402,9 +414,9 @@ def base_dataset_position(
 class PersonaGeneralizationExperimentConfig:
     output_dir: str
     model_name: str = "meta-llama/Llama-2-7b-chat-hf"
-    formatter_name: Literal["llama-chat-formatter", "qwen-chat-formatter"] = (
-        "llama-chat-formatter"
-    )
+    formatter_name: Literal[
+        "llama-chat-formatter", "qwen-chat-formatter", "llama3-chat-formatter"
+    ] = "llama-chat-formatter"
     patch_generation_tokens_only: bool = True
     patch_operator: Literal["add", "ablate_then_add"] = "add"
     skip_first_n_generation_tokens: int = 0
