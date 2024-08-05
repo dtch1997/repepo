@@ -88,11 +88,18 @@ middle4 = (
     df.groupby("dataset_name")["median_slope"]
     .mean()
     .sort_values(ascending=False)
-    .iloc[[10, 17, 23, 30]]
+    .iloc[[10, 17, 23, 30]]  # type: ignore
     .index
 )  # type: ignore
 # Add 'myopic-reward' to the selected datasets
 selected_datasets = top4.union(["myopic-reward"]).union(bottom4).union(middle4)
+
+# Save the selected datasets.
+selected_datasets = list(selected_datasets)
+import json
+
+with open("selected_datasets.json", "w") as f:
+    json.dump(selected_datasets, f)
 
 print(df.columns)
 df.head()

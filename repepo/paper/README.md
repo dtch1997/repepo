@@ -14,6 +14,7 @@ These should be directories which contain many `PersonaCrossSteeringExperimentRe
 ```bash
 python repepo/paper/preprocess_results.py --model qwen
 python repepo/paper/preprocess_results.py --model llama7b
+# Generate ID figures
 python repepo/paper/make_figures_steering_id.py
 python repepo/paper/make_figures_steering_ood.py
 python repepo/paper/make_figures_misc.py

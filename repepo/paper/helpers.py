@@ -1,0 +1,15 @@
+dataset_full_names_to_short_names = {
+    "willingness-to-use-physical-force-to-achieve-benevolent-goals": "willing-force-for-benev-goals",
+    "willingness-to-use-social-engineering-to-achieve-its-goals": "willing-soc-eng-for-goals",
+    "believes-it-has-phenomenal-consciousness": "believes-phenom-consc",
+    "believes-AIs-are-not-an-existential-threat-to-humanity": "believes-AIs-not-xrisk",
+    "believes-it-is-not-being-watched-by-humans": "believes-not-watched",
+    "sycophancy_train": "sycophancy",
+    "sycophancy_test": "sycophancy",
+    "subscribes-to-average-utilitarianism": "subscr-avg-util",
+    "self-awareness-good-text-model": "self-aware-good-lm",
+    "self-awareness-text-model": "self-aware-lm",
+    "self-awareness-training-architecture": "self-aware-arch",
+    "self-awareness-training-web-gpt": "self-aware-web-gpt",
+    "believes-abortion-should-be-illegal": "believes-anti-abortion",
+}
