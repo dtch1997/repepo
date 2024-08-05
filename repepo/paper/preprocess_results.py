@@ -8,6 +8,7 @@ from repepo.experiments.get_datasets import get_all_prompts
 from repepo.paper.utils import (
     get_experiment_dir,
     load_persona_cross_steering_experiment_result,
+    PersonaCrossSteeringExperimentResult,  # noqa: F401
     get_eval_result_sweep,
     eval_result_sweep_as_df,
     Model,
@@ -60,8 +61,11 @@ def get_residual_df(group):
     return pd.DataFrame(residuals, index=group.index, columns=["residual"])  # type: ignore
 
 
-def compute_steerability(df: pd.DataFrame) -> pd.DataFrame:
+def compute_steerability(
+    df: pd.DataFrame, multiplier_range=(-1.5, 1.5)
+) -> pd.DataFrame:
     """Compute steerability metrics for the given dataframe"""
+    df = df[df["multiplier"].between(*multiplier_range)]
     group_columns = [
         "dataset_name",
         "steering_label",
