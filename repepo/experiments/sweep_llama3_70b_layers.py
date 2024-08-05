@@ -63,7 +63,7 @@ def sweep_llama3_70b_layers(config: LlamaSweepLayersConfig):
     sweep_results = sweep_layers(
         model=model,
         tokenizer=tokenizer,
-        layers=range(32),
+        layers=range(80),
         train_split=config.train_split,
         test_split=config.test_split,
         datasets=config.datasets,
