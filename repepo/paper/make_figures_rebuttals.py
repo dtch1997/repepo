@@ -72,6 +72,8 @@ def make_plot_for_multiplier_ablations(df, selected_datasets: list[str] | None =
         orient="h",
     )
     fig.suptitle("Steerability for different multiplier ranges")
+    fig.tight_layout()
+    fig.show()
     fig.savefig(f"figures/{model}_ablate_multiplier.pdf")
 
 
