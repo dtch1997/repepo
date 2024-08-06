@@ -133,12 +133,11 @@ release: release/main
 devbox/%:
 	git push
 	CURRENT_NAMESPACE="$$(kubectl config view --minify -o jsonpath='{..namespace}' | cut -d'-' -f2)"
-	python -c "print(open('cluster/devbox.yaml').read().format(NAME='${DEVBOX_NAME}', IMAGE='${PROJECT_URL}:${RELEASE_PREFIX}-$*', COMMIT_FULL='${COMMIT_FULL}', CPU='${CPU}', MEMORY='${MEMORY}', GPU='${GPU}', USER_ID=${DEVBOX_UID}, GROUP_ID=${DEVBOX_UID}, WANDB_PROJECT='${IMAGE_NAME}'))" | kubectl create -f -
+	python -c "print(open('cluster/devbox.yaml').read().format(NAME='${DEVBOX_NAME}', IMAGE='${PROJECT_URL}:${RELEASE_PREFIX}-$*', COMMIT_HASH='${COMMIT_FULL}', CPU='${CPU}', MEMORY='${MEMORY}', GPU='${GPU}', USER_ID=${DEVBOX_UID}, GROUP_ID=${DEVBOX_UID}, WANDB_PROJECT='${IMAGE_NAME}'))" | kubectl create -f -
 devbox: devbox/main
 	true
 
 .PHONY: cuda-devbox cuda-devbox/%
-cuda-devbox/%: GPU=1
 cuda-devbox/%: devbox/%
 	true  # Do nothing, the body has to have something otherwise make complains
 

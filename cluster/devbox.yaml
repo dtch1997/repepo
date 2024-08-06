@@ -23,6 +23,9 @@ spec:
           - bash
           - -c
           - |
+            git pull
+            git checkout {COMMIT_HASH}
+            git submodule update --recursive
             sleep 2d
         resources:
           requests:
@@ -51,16 +54,19 @@ spec:
         volumeMounts:
         - name: training
           mountPath: /training
+        - name: training-local
+          mountPath: /training-local
         - name: dshm
           mountPath: /dev/shm
       volumes:
       - name: training
         persistentVolumeClaim:
           claimName: repepo
+      - name: training-local
+        persistentVolumeClaim:
+          claimName: repepo-local
       - name: dshm
         emptyDir:
           medium: Memory
           sizeLimit: 10Gi
       restartPolicy: Never
-      imagePullSecrets:
-      - name: docker
