@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import json
 import matplotlib.pyplot as plt
+from sklearn.calibration import column_or_1d
 from repepo.paper.preprocess_results import compute_steerability
 from repepo.paper.helpers import dataset_full_names_to_short_names
 
@@ -102,3 +103,135 @@ def make_plot_for_steerability_vs_mse(df, selected_datasets):
 
 
 make_plot_for_steerability_vs_mse(df, selected_datasets)
+
+# %%
+# Load the steering results for the selected datasets
+import pandas as pd
+
+from repepo.paper.helpers import compute_steerability_df
+from repepo.paper.utils import get_model_full_name
+
+llama_df = pd.read_parquet("llama7b_steerability.parquet.gzip").drop_duplicates()
+llama_steerability_df = compute_steerability_df(llama_df, "llama7b")
+
+qwen_df = pd.read_parquet("qwen_steerability.parquet.gzip").drop_duplicates()
+qwen_steerability_df = compute_steerability_df(qwen_df, "qwen")
+
+gemma_df = pd.read_parquet("gemma_steerability.parquet.gzip").drop_duplicates()
+gemma_steerability_df = compute_steerability_df(gemma_df, "gemma")
+
+# %%
+print(len(gemma_steerability_df))
+print(gemma_steerability_df.columns)
+print(qwen_steerability_df.columns)
+print(llama_steerability_df.columns)
+
+# %%
+# Merge the dataframes
+
+
+def make_cross_model_df(
+    llama_steerability_df,
+    qwen_steerability_df,
+    gemma_steerability_df,
+    select_columns,
+):
+    steerability_df = (
+        llama_steerability_df[select_columns]
+        .merge(
+            qwen_steerability_df[select_columns],
+            on="dataset_name",
+            suffixes=("_llama", "_qwen"),
+        )
+        .merge(
+            gemma_steerability_df[select_columns],
+            on="dataset_name",
+            suffixes=("", "_gemma"),
+        )
+    )
+    # TODO: Why does the gemma name not get updated correctly?
+    # NOTE: Manually update
+    steerability_df = steerability_df.rename(
+        columns={
+            "BASE -> BASE": "BASE -> BASE_gemma",
+            "SYS_POS -> USER_NEG": "SYS_POS -> USER_NEG_gemma",
+        }
+    )
+    return steerability_df
+
+
+id_df = make_cross_model_df(
+    llama_steerability_df,
+    qwen_steerability_df,
+    gemma_steerability_df,
+    select_columns=["dataset_name", "BASE -> BASE"],
+)
+ood_df = make_cross_model_df(
+    llama_steerability_df,
+    qwen_steerability_df,
+    gemma_steerability_df,
+    select_columns=["dataset_name", "SYS_POS -> USER_NEG"],
+)
+
+print(id_df.columns)
+print(ood_df.columns)
+
+# %%
+# Scatterplot matrix of steerability between different models, both ID and OOD
+import matplotlib.pyplot as plt
+import seaborn as sns
+from repepo.paper.utils import get_model_full_name
+from scipy.stats import spearmanr
+
+sns.set_theme()
+
+
+def add_xy_line(xdata, ydata, xy_min: float, xy_max: float, **kwargs):
+    # Add the diagonal line
+    plt.xlim(xy_min, xy_max)
+    plt.ylim(xy_min, xy_max)
+    plt.axline(
+        (xy_min, xy_min), (xy_max, xy_max), color="black", linestyle="--", linewidth=2
+    )
+
+
+def add_textbox(xdata, ydata, xy_min: float, xy_max: float, **kwargs):
+
+    spearman_corr, spearman_p = spearmanr(
+        xdata, ydata, nan_policy="omit"
+    )  # Spearman correlation
+    plt.text(0, xy_max - 0.4, f"Corr: {spearman_corr:.2f}", fontsize=12)
+
+
+def make_scatterplot_matrix(df, type: str, title):
+    columns = [
+        get_model_full_name("llama7b"),
+        get_model_full_name("qwen"),
+        get_model_full_name("gemma"),
+    ]
+    # Rename columns
+    df = df.rename(
+        columns={
+            # ID
+            "BASE -> BASE_llama": get_model_full_name("llama7b"),
+            "BASE -> BASE_qwen": get_model_full_name("qwen"),
+            "BASE -> BASE_gemma": get_model_full_name("gemma"),
+            # OOD
+            "SYS_POS -> USER_NEG_llama": get_model_full_name("llama7b"),
+            "SYS_POS -> USER_NEG_qwen": get_model_full_name("qwen"),
+            "SYS_POS -> USER_NEG_gemma": get_model_full_name("gemma"),
+        }
+    )
+
+    grid = sns.pairplot(df, vars=columns)
+    grid.map_offdiag(add_xy_line, xy_min=-2.0, xy_max=6.0)
+    fig = grid.figure
+    fig.suptitle(title)
+    fig.tight_layout()
+    grid.map_offdiag(add_textbox, xy_min=-2.0, xy_max=6.0)
+    fig.show()
+    fig.savefig(f"figures/all_models_scatterplot_matrix_{type}.pdf")
+
+
+make_scatterplot_matrix(id_df, "id", "Steerability between different models (ID)")
+make_scatterplot_matrix(ood_df, "ood", "Steerability between different models (OOD)")

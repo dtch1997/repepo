@@ -14,6 +14,15 @@ EvalResultSweep = dict[float, EvalResult]  # A sweep over a multiplier
 Model = Literal["llama7b", "qwen", "gemma"]
 
 
+def get_model_full_name(model: Model) -> str:
+    name_dict = {
+        "qwen": "Qwen-1.5-14b-Chat",
+        "llama7b": "Llama-2-7b-Chat",
+        "gemma": "Gemma-2-2b-it",
+    }
+    return name_dict[model]
+
+
 def get_experiment_dir(model: Model) -> pathlib.Path:
     return (
         pathlib.Path(Environ.ProjectDir)
