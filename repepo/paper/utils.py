@@ -11,7 +11,7 @@ from repepo.experiments.persona_generalization import (
 )
 
 EvalResultSweep = dict[float, EvalResult]  # A sweep over a multiplier
-Model = Literal["llama7b", "qwen"]
+Model = Literal["llama7b", "qwen", "gemma"]
 
 
 def get_experiment_dir(model: Model) -> pathlib.Path:
