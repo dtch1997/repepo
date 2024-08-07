@@ -33,7 +33,7 @@ for dataset in SWEEP_DATASETS:
             NAME=f"{dataset[:10]}-{layer}",
             IMAGE='ghcr.io/alignmentresearch/repepo:a26aee0-main',
             COMMIT_HASH=commit_hash,
-            PRIORITY='high-batch',
+            PRIORITY='normal-batch',
             CPU="4",
             MEMORY="200Gi",
             GPU="2",
