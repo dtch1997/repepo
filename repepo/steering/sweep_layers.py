@@ -158,7 +158,7 @@ def sweep_layers(
                 steering_results[dataset][layer] = multiplier_results
                 pbar.update(1)
                 continue
-            steering_vector = steering_vectors[dataset][layer]
+            steering_vector = torch.load(save_progress_dir / f"sv_{dataset}_{layer}.pt")
             multiplier_results = evaluate_steering_vector(
                 pipeline,
                 steering_vector,

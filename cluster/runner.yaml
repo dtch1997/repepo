@@ -48,6 +48,13 @@ spec:
           mountPath: {TRAINING_MOUNT}
         - name: dshm
           mountPath: /dev/shm
+        - name: HF_HOME
+          value: "/training/hf_home"
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: huggingface
+              key: token
       volumes:
       - name: training
         persistentVolumeClaim:
