@@ -43,22 +43,27 @@ spec:
         env:
         - name: OMP_NUM_THREADS
           value: {OMP_NUM_THREADS}
-        volumeMounts:
-        - name: training
-          mountPath: {TRAINING_MOUNT}
-        - name: dshm
-          mountPath: /dev/shm
         - name: HF_HOME
-          value: "/training/hf_home"
+          value: "/hf-cache/hf_home"
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef:
               name: huggingface
               key: token
+        volumeMounts:
+        - name: training
+          mountPath: {TRAINING_MOUNT}
+        - name: hf-cache
+          mountPath: /hf-cache
+        - name: dshm
+          mountPath: /dev/shm
       volumes:
       - name: training
         persistentVolumeClaim:
           claimName: repepo
+      - name: hf-cache
+        persistentVolumeClaim:
+          claimName: repepo-local
       - name: dshm
         emptyDir:
           medium: Memory
