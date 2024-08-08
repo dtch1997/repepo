@@ -6,7 +6,14 @@ metadata:
     kueue.x-k8s.io/queue-name: farai
 spec:
   suspend: true
-  backoffLimit: 1  # How many times to try to run the job until giving up
+  backoffLimit: 0  # Never retry the pod on error
+  # Make sure to retry the pod if the pod/job is preempted
+  podFailurePolicy:
+    rules:
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+
   template:
     metadata:
       name: {NAME}
@@ -36,16 +43,8 @@ spec:
         env:
         - name: OMP_NUM_THREADS
           value: "{CPU}"
-        - name: WANDB_MODE
-          value: offline
-        - name: WANDB_PROJECT
-          value: "{WANDB_PROJECT}"
-        - name: WANDB_ENTITY
-          value: farai
         - name: HF_HOME
-          value: "/training/hf_home"
-        - name: WANDB_RUN_GROUP
-          value: devbox
+          value: "/hf-cache/hf_home"
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef:
@@ -54,15 +53,15 @@ spec:
         volumeMounts:
         - name: training
           mountPath: /training
-        - name: training-local
-          mountPath: /training-local
+        - name: hf-cache
+          mountPath: /hf-cache
         - name: dshm
           mountPath: /dev/shm
       volumes:
       - name: training
         persistentVolumeClaim:
           claimName: repepo
-      - name: training-local
+      - name: hf-cache
         persistentVolumeClaim:
           claimName: repepo-local
       - name: dshm
