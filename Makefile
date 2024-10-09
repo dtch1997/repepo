@@ -19,7 +19,7 @@ DEVBOX_UID ?= 1001
 CPU ?= 1
 MEMORY ?= 60G
 GPU ?= 0
-DEVBOX_NAME ?= ${IMAGE_NAME}-devbox
+DEVBOX_NAME ?= ${IMAGE_NAME}-devbox-2
 
 default: help
 
@@ -136,6 +136,9 @@ devbox/%:
 	python -c "print(open('cluster/devbox.yaml').read().format(NAME='${DEVBOX_NAME}', IMAGE='${PROJECT_URL}:${RELEASE_PREFIX}-$*', COMMIT_HASH='${COMMIT_FULL}', CPU='${CPU}', MEMORY='${MEMORY}', GPU='${GPU}', USER_ID=${DEVBOX_UID}, GROUP_ID=${DEVBOX_UID}, WANDB_PROJECT='${IMAGE_NAME}'))" | kubectl create -f -
 devbox: devbox/main
 	true
+
+clean-devbox:
+	kubectl delete job "${DEVBOX_NAME}" || true
 
 .PHONY: cuda-devbox cuda-devbox/%
 cuda-devbox/%: devbox/%
