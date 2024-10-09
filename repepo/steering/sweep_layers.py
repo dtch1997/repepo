@@ -28,7 +28,7 @@ from repepo.steering.utils.helpers import (
 
 @dataclass
 class SweepLayersResult:
-    steering_vectors: dict[str, dict[int, SteeringVector]]
+    steering_vectors: dict[str, dict[int, SteeringVector]] # dataset -> layer -> steering vector
     multipliers: list[float]
     layers: list[int]
     steering_results: dict[str, dict[int, list[EvalResult]]]
