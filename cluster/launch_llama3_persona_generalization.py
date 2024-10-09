@@ -18,7 +18,7 @@ for dataset_idx in range(len(get_all_prompts())):
         "python", 
         "repepo/experiments/persona_generalization.py",
         "--model_name=meta-llama/Meta-Llama-3.1-70B-Instruct",
-        "--formatter_name qwen-chat-formatter",
+        "--formatter_name=llama3-chat-formatter",
         f"--layer={layer}",
         "--output_dir=/training/persona_generalization_llama3_70b", 
         # Hacky way to pass the dataset, for legacy reasons, sorry
