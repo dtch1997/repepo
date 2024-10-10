@@ -1,4 +1,6 @@
-FROM python:3.10 AS main
+ARG PYTORCH_CUDA_VERSION=2.4.1-cuda12.1-cudnn9
+
+FROM pytorch/pytorch:${PYTORCH_CUDA_VERSION}-runtime as main-before-pip
 ENV DEBIAN_FRONTEND=noninteractive
 ENV GIT_URL="https://github.com/dtch1997/repepo"
 LABEL org.opencontainers.image.source=${GIT_URL}
@@ -46,9 +48,19 @@ RUN python3 -m venv "${VIRTUAL_ENV}" --system-site-packages \
 USER ${USERNAME}
 WORKDIR "/workspace"
 
+FROM main-before-pip as main-pip-tools
+RUN pip install pip-tools
+
+FROM main-before-pip as main
+COPY --chown=${USERNAME}:${USERNAME} requirements.txt ./
+# Install all dependencies, which should be explicit in `requirements.txt`
+RUN pip install --no-deps -r requirements.txt \
+    && rm -rf "${HOME}/.cache"
+
+# Copy whole repo and install
 COPY --chown=${USERNAME}:${USERNAME} . .
-RUN pip install pdm \
-    && pdm install --dev \
+RUN pip install --require-virtualenv --config-settings editable_mode=strict --no-deps \
+        -e . \
     && rm -rf "${HOME}/.cache"
 
 # Set git remote URL to https
