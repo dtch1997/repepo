@@ -19,7 +19,7 @@ DEVBOX_UID ?= 1001
 CPU ?= 1
 MEMORY ?= 60G
 GPU ?= 0
-DEVBOX_NAME ?= ${IMAGE_NAME}-devbox-2
+DEVBOX_NAME ?= ${IMAGE_NAME}-devbox
 
 default: help
 

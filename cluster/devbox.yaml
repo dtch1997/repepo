@@ -60,10 +60,10 @@ spec:
       volumes:
       - name: training
         persistentVolumeClaim:
-          claimName: repepo
+          claimName: az-repepo
       - name: hf-cache
         persistentVolumeClaim:
-          claimName: repepo-local
+          claimName: local-repepo
       - name: dshm
         emptyDir:
           medium: Memory
