@@ -81,9 +81,7 @@ help: # Show help for each of the Makefile recipes.
 
 # Section 1: Build Dockerfiles
 
-# Before running `make` to build the Dockerfile, you should delete the `requirements.txt` target then run `make
-# release/main-pip-tools`
-.build/${BUILD_PREFIX}/%: requirements.txt
+.build/${BUILD_PREFIX}/%:
 	mkdir -p .build/${BUILD_PREFIX}
 	docker pull "${PROJECT_URL}:${BUILD_PREFIX}-$*" || true
 	docker build --platform "linux/amd64" \
@@ -91,21 +89,6 @@ help: # Show help for each of the Makefile recipes.
 		--target "$*" \
 		-f "${DOCKERFILE}" .
 	touch ".build/${BUILD_PREFIX}/$*"
-
-# We use RELEASE_PREFIX as the image so we don't have to re-build it constantly. Once we have bootstrapped
-# `requirements.txt`, we can push the image with `make release/main-pip-tools`
-requirements.txt.new: pyproject.toml
-	docker run -v "${HOME}/.cache:/home/dev/.cache" -v "$(shell pwd):/workspace" "${PROJECT_URL}:${RELEASE_PREFIX}-main-pip-tools" \
-	pip-compile --verbose -o requirements.txt.new --extra=dev pyproject.toml
-
-requirements.txt: requirements.txt.new
-	sed -E "s/^(nvidia-.*|torchvision==.*|torch==.*|triton==.*)$$/# DISABLED \\1/g" requirements.txt.new > requirements.txt
-
-.PHONY: local-install
-local-install: requirements.txt
-	pip install --no-deps -r requirements.txt
-	pip install --config-settings editable_mode=compat -e ".[dev-local,launch-jobs]"
-
 
 .PHONY: build build/%
 build/%: .build/${BUILD_PREFIX}/%  # Build Docker image at some tag (e.g. main, main-pip-tools)
