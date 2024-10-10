@@ -35,6 +35,10 @@ arrow==1.3.0
     # via isoduration
 arrr==1.0.5
     # via repepo (pyproject.toml)
+asttokens==2.4.1
+    # via stack-data
+async-lru==2.0.4
+    # via jupyterlab
 async-timeout==4.0.3
     # via aiohttp
 attrs==24.1.0
@@ -42,9 +46,13 @@ attrs==24.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
+babel==2.16.0
+    # via jupyterlab-server
 beautifulsoup4==4.12.3
     # via nbconvert
 bitsandbytes==0.42.0
+    # via repepo (pyproject.toml)
+black==24.10.0
     # via repepo (pyproject.toml)
 bleach==6.1.0
     # via nbconvert
@@ -65,10 +73,13 @@ certifi==2024.7.4
     #   sentry-sdk
 cffi==1.16.0
     # via argon2-cffi-bindings
+cfgv==3.4.0
+    # via pre-commit
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
+    #   black
     #   nltk
     #   typer
     #   uvicorn
@@ -77,6 +88,10 @@ cloudpathlib==0.18.1
     # via weasel
 colorama==0.4.6
     # via nbdime
+comm==0.2.2
+    # via
+    #   ipykernel
+    #   ipywidgets
 concept-erasure==0.2.4
     # via repepo (pyproject.toml)
 confection==0.1.5
@@ -96,6 +111,10 @@ datasets==2.20.0
     # via
     #   evaluate
     #   repepo (pyproject.toml)
+debugpy==1.8.7
+    # via ipykernel
+decorator==5.1.1
+    # via ipython
 defusedxml==0.7.1
     # via nbconvert
 dill==0.3.8
@@ -103,6 +122,8 @@ dill==0.3.8
     #   datasets
     #   evaluate
     #   multiprocess
+distlib==0.3.9
+    # via virtualenv
 distro==1.9.0
     # via openai
 docker-pycreds==0.4.0
@@ -114,11 +135,18 @@ docstring-parser==0.16
 evaluate==0.4.2
     # via repepo (pyproject.toml)
 exceptiongroup==1.2.2
-    # via anyio
+    # via
+    #   anyio
+    #   ipython
+    #   pytest
+executing==2.1.0
+    # via stack-data
 fastapi==0.112.0
     # via gradio
 fastjsonschema==2.20.0
     # via nbformat
+ffmpeg==1.4
+    # via repepo (pyproject.toml)
 ffmpy==0.4.0
     # via gradio
 filelock==3.15.4
@@ -128,6 +156,7 @@ filelock==3.15.4
     #   torch
     #   transformers
     #   triton
+    #   virtualenv
 fonttools==4.53.1
     # via matplotlib
 fqdn==1.5.1
@@ -186,6 +215,7 @@ httpx==0.27.0
     # via
     #   gradio
     #   gradio-client
+    #   jupyterlab
     #   openai
 huggingface-hub==0.24.5
     # via
@@ -196,6 +226,8 @@ huggingface-hub==0.24.5
     #   gradio-client
     #   tokenizers
     #   transformers
+identify==2.6.1
+    # via pre-commit
 idna==3.7
     # via
     #   anyio
@@ -205,14 +237,33 @@ idna==3.7
     #   yarl
 importlib-resources==6.4.0
     # via gradio
+iniconfig==2.0.0
+    # via pytest
+ipykernel==6.29.5
+    # via
+    #   jupyter
+    #   jupyter-console
+    #   jupyterlab
+    #   repepo (pyproject.toml)
+ipython==8.28.0
+    # via
+    #   ipykernel
+    #   ipywidgets
+    #   jupyter-console
+ipywidgets==8.1.5
+    # via jupyter
 isoduration==20.11.0
     # via jsonschema
 jaxtyping==0.2.33
     # via repepo (pyproject.toml)
+jedi==0.19.1
+    # via ipython
 jinja2==3.1.4
     # via
     #   gradio
     #   jupyter-server
+    #   jupyterlab
+    #   jupyterlab-server
     #   nbconvert
     #   nbdime
     #   spacy
@@ -222,37 +273,66 @@ joblib==1.4.2
     #   nltk
     #   pynndescent
     #   scikit-learn
+json5==0.9.25
+    # via jupyterlab-server
 jsonpointer==3.0.0
     # via jsonschema
 jsonschema[format-nongpl]==4.23.0
     # via
     #   jupyter-events
+    #   jupyterlab-server
     #   nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
+jupyter==1.1.1
+    # via repepo (pyproject.toml)
 jupyter-client==8.6.2
     # via
+    #   ipykernel
+    #   jupyter-console
     #   jupyter-server
     #   nbclient
+jupyter-console==6.6.3
+    # via jupyter
 jupyter-core==5.7.2
     # via
+    #   ipykernel
     #   jupyter-client
+    #   jupyter-console
     #   jupyter-server
+    #   jupyterlab
     #   nbclient
     #   nbconvert
     #   nbformat
 jupyter-events==0.10.0
     # via jupyter-server
+jupyter-lsp==2.2.5
+    # via jupyterlab
 jupyter-server==2.14.2
     # via
+    #   jupyter-lsp
     #   jupyter-server-mathjax
+    #   jupyterlab
+    #   jupyterlab-server
     #   nbdime
+    #   notebook
+    #   notebook-shim
 jupyter-server-mathjax==0.2.6
     # via nbdime
 jupyter-server-terminals==0.5.3
     # via jupyter-server
+jupyterlab==4.2.5
+    # via
+    #   jupyter
+    #   notebook
 jupyterlab-pygments==0.3.0
     # via nbconvert
+jupyterlab-server==2.27.3
+    # via
+    #   jupyterlab
+    #   notebook
+jupyterlab-widgets==3.0.13
+    # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
 langcodes==3.4.0
@@ -275,7 +355,14 @@ markupsafe==2.1.5
     #   jinja2
     #   nbconvert
 matplotlib==3.9.0
-    # via gradio
+    # via
+    #   gradio
+    #   repepo (pyproject.toml)
+    #   seaborn
+matplotlib-inline==0.1.7
+    # via
+    #   ipykernel
+    #   ipython
 mdurl==0.1.2
     # via markdown-it-py
 mistune==3.0.2
@@ -298,11 +385,15 @@ murmurhash==1.0.10
     #   spacy
     #   thinc
 mypy-extensions==1.0.0
-    # via typing-inspect
+    # via
+    #   black
+    #   typing-inspect
 nbclient==0.10.0
     # via nbconvert
 nbconvert==7.16.4
-    # via jupyter-server
+    # via
+    #   jupyter
+    #   jupyter-server
 nbdime==4.0.1
     # via repepo (pyproject.toml)
 nbformat==5.10.4
@@ -311,10 +402,24 @@ nbformat==5.10.4
     #   nbclient
     #   nbconvert
     #   nbdime
+nest-asyncio==1.6.0
+    # via ipykernel
 networkx==3.3
     # via torch
 nltk==3.8.1
     # via rouge-score
+nodeenv==1.9.1
+    # via
+    #   pre-commit
+    #   pyright
+notebook==7.2.2
+    # via
+    #   jupyter
+    #   repepo (pyproject.toml)
+notebook-shim==0.2.4
+    # via
+    #   jupyterlab
+    #   notebook
 numba==0.60.0
     # via
     #   pynndescent
@@ -336,6 +441,7 @@ numpy==1.26.4
     #   rouge-score
     #   scikit-learn
     #   scipy
+    #   seaborn
     #   spacy
     #   statsmodels
     #   thinc
@@ -384,15 +490,21 @@ overrides==7.7.0
 packaging==24.1
     # via
     #   accelerate
+    #   black
     #   datasets
     #   evaluate
     #   gradio
     #   gradio-client
     #   huggingface-hub
+    #   ipykernel
     #   jupyter-server
+    #   jupyterlab
+    #   jupyterlab-server
     #   lightning-utilities
     #   matplotlib
     #   nbconvert
+    #   plotly
+    #   pytest
     #   spacy
     #   statsmodels
     #   thinc
@@ -404,25 +516,44 @@ pandas==2.2.2
     #   datasets
     #   evaluate
     #   gradio
+    #   seaborn
     #   statsmodels
 pandocfilters==1.5.1
     # via nbconvert
+parso==0.8.4
+    # via jedi
+pathspec==0.12.1
+    # via black
 patsy==0.5.6
     # via statsmodels
+pexpect==4.9.0
+    # via ipython
 pillow==10.4.0
     # via
     #   gradio
     #   matplotlib
 platformdirs==4.2.2
     # via
+    #   black
     #   jupyter-core
+    #   virtualenv
     #   wandb
+plotly==5.24.1
+    # via repepo (pyproject.toml)
+pluggy==1.5.0
+    # via pytest
+pre-commit==4.0.1
+    # via repepo (pyproject.toml)
 preshed==3.0.9
     # via
     #   spacy
     #   thinc
 prometheus-client==0.20.0
     # via jupyter-server
+prompt-toolkit==3.0.48
+    # via
+    #   ipython
+    #   jupyter-console
 proto-plus==1.24.0
     # via
     #   google-api-core
@@ -438,9 +569,14 @@ protobuf==5.27.3
 psutil==6.0.0
     # via
     #   accelerate
+    #   ipykernel
     #   wandb
 ptyprocess==0.7.0
-    # via terminado
+    # via
+    #   pexpect
+    #   terminado
+pure-eval==0.2.3
+    # via stack-data
 pyarrow==17.0.0
     # via datasets
 pyarrow-hotfix==0.6
@@ -468,6 +604,8 @@ pydub==0.25.1
     # via gradio
 pygments==2.18.0
     # via
+    #   ipython
+    #   jupyter-console
     #   nbconvert
     #   nbdime
     #   rich
@@ -476,6 +614,15 @@ pynndescent==0.5.13
 pyparsing==3.1.2
     # via matplotlib
 pyrallis==0.3.1
+    # via repepo (pyproject.toml)
+pyright==1.1.384
+    # via repepo (pyproject.toml)
+pytest==8.3.3
+    # via
+    #   pytest-mock
+    #   repepo (pyproject.toml)
+    #   syrupy
+pytest-mock==3.14.0
     # via repepo (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -496,12 +643,15 @@ pyyaml==6.0.1
     #   gradio
     #   huggingface-hub
     #   jupyter-events
+    #   pre-commit
     #   pyrallis
     #   transformers
     #   wandb
 pyzmq==26.1.0
     # via
+    #   ipykernel
     #   jupyter-client
+    #   jupyter-console
     #   jupyter-server
 referencing==0.35.1
     # via
@@ -518,6 +668,7 @@ requests==2.32.3
     #   evaluate
     #   google-api-core
     #   huggingface-hub
+    #   jupyterlab-server
     #   nbdime
     #   spacy
     #   transformers
@@ -542,7 +693,9 @@ rpds-py==0.19.1
 rsa==4.9
     # via google-auth
 ruff==0.5.6
-    # via gradio
+    # via
+    #   gradio
+    #   repepo (pyproject.toml)
 safetensors==0.4.4
     # via
     #   accelerate
@@ -560,6 +713,8 @@ scipy==1.14.0
     #   scikit-learn
     #   statsmodels
     #   umap-learn
+seaborn==0.13.2
+    # via repepo (pyproject.toml)
 semantic-version==2.10.0
     # via gradio
 send2trash==1.8.3
@@ -574,6 +729,7 @@ simple-parsing==0.1.5
     # via repepo (pyproject.toml)
 six==1.16.0
     # via
+    #   asttokens
     #   bleach
     #   docker-pycreds
     #   patsy
@@ -603,6 +759,8 @@ srsly==2.4.8
     #   spacy
     #   thinc
     #   weasel
+stack-data==0.6.3
+    # via ipython
 starlette==0.37.2
     # via fastapi
 statsmodels==0.14.2
@@ -611,6 +769,10 @@ steering-vectors==0.12.1
     # via repepo (pyproject.toml)
 sympy==1.13.1
     # via torch
+syrupy==4.7.2
+    # via repepo (pyproject.toml)
+tenacity==9.0.0
+    # via plotly
 termcolor==2.4.0
     # via repepo (pyproject.toml)
 terminado==0.18.1
@@ -625,6 +787,11 @@ tinycss2==1.3.0
     # via nbconvert
 tokenizers==0.19.1
     # via transformers
+tomli==2.0.2
+    # via
+    #   black
+    #   jupyterlab
+    #   pytest
 tomlkit==0.12.0
     # via gradio
 toolwrapper==2.1.0
@@ -639,9 +806,12 @@ torchmetrics==1.4.1
     # via repepo (pyproject.toml)
 tornado==6.4.1
     # via
+    #   ipykernel
     #   jupyter-client
     #   jupyter-server
+    #   jupyterlab
     #   nbdime
+    #   notebook
     #   terminado
 tqdm==4.66.5
     # via
@@ -656,10 +826,17 @@ tqdm==4.66.5
     #   umap-learn
 traitlets==5.14.3
     # via
+    #   comm
+    #   ipykernel
+    #   ipython
+    #   ipywidgets
     #   jupyter-client
+    #   jupyter-console
     #   jupyter-core
     #   jupyter-events
     #   jupyter-server
+    #   jupyterlab
+    #   matplotlib-inline
     #   nbclient
     #   nbconvert
     #   nbformat
@@ -681,15 +858,19 @@ types-python-dateutil==2.9.0.20240316
 typing-extensions==4.12.2
     # via
     #   anyio
+    #   async-lru
+    #   black
     #   cloudpathlib
     #   fastapi
     #   gradio
     #   gradio-client
     #   huggingface-hub
+    #   ipython
     #   lightning-utilities
     #   openai
     #   pydantic
     #   pydantic-core
+    #   pyright
     #   simple-parsing
     #   torch
     #   typer
@@ -712,6 +893,8 @@ urllib3==2.2.2
     #   sentry-sdk
 uvicorn==0.30.5
     # via gradio
+virtualenv==20.26.6
+    # via pre-commit
 wandb==0.17.5
     # via repepo (pyproject.toml)
 wasabi==1.1.3
@@ -719,6 +902,8 @@ wasabi==1.1.3
     #   spacy
     #   thinc
     #   weasel
+wcwidth==0.2.13
+    # via prompt-toolkit
 weasel==0.4.1
     # via spacy
 webcolors==24.6.0
@@ -731,6 +916,8 @@ websocket-client==1.8.0
     # via jupyter-server
 websockets==12.0
     # via gradio-client
+widgetsnbextension==4.0.13
+    # via ipywidgets
 wrapt==1.16.0
     # via smart-open
 xxhash==3.4.1
