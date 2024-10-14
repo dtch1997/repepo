@@ -60,6 +60,7 @@ def evaluate_cross_steering(
 
     """Evaluate steering vectors on multiple datasets"""
     steering_labels = list(steering_vectors.keys())
+    steering_labels.remove("mean")
     dataset_labels = list(datasets.keys())
 
     # Get baseline logits
@@ -75,7 +76,7 @@ def evaluate_cross_steering(
     first_sv = list(steering_vectors.values())[0]
 
     for dataset_label in dataset_labels:
-        if not 'baseline' in dataset_label:
+        if not "baseline" in dataset_label:
             continue
         dataset_steering: dict[float, list[EvalResult]] = defaultdict(list)
         dataset = datasets[dataset_label]
@@ -95,6 +96,7 @@ def evaluate_cross_steering(
             skip_first_n_generation_tokens=skip_first_n_generation_tokens,
             completion_template=completion_template,
             show_progress=False,
+            slim_results=True,
         )[0]
         baseline_results.append(result)
         for steering_label in steering_labels:
