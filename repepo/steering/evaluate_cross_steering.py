@@ -75,6 +75,8 @@ def evaluate_cross_steering(
     first_sv = list(steering_vectors.values())[0]
 
     for dataset_label in dataset_labels:
+        if not 'baseline' in dataset_label:
+            continue
         dataset_steering: dict[float, list[EvalResult]] = defaultdict(list)
         dataset = datasets[dataset_label]
         pipeline = build_pipeline(model, tokenizer, dataset_label)
