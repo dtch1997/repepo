@@ -31,9 +31,14 @@ def plot_sweep_layers_result(
 
     plt.title(title)
     plt.legend(title="Dataset", loc="lower left", fontsize="small")
+    # Move the legend outside the plot
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
 
     if save_path is not None:
         plt.savefig(save_path)
 
     # Show the plot
     plt.show()
+
+    return df

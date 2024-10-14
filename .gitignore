@@ -128,3 +128,5 @@ ENV/
 
 # ruff
 .ruff_cache/
+
+requirements.txt.new
