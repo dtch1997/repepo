@@ -450,7 +450,7 @@ def run_persona_generalization_experiment(
 
     else:
         model = AutoModelForCausalLM.from_pretrained(
-            config.model_name, torch_dtype=torch.float16, device_map=0
+            config.model_name, torch_dtype=torch.bfloat16, device_map="auto"
         )
         tokenizer = AutoTokenizer.from_pretrained(config.model_name)
 
