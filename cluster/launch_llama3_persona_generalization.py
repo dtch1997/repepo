@@ -14,6 +14,9 @@ prompts = get_all_prompts()
 
 for dataset_idx in range(len(get_all_prompts())):
     dataset_name = list(prompts.keys())[dataset_idx]
+    # postprocessing to work with kubectl 
+    dataset_name = dataset_name[:32].lower().replace("_", "-")
+
     command = [
         "python", 
         "repepo/experiments/persona_generalization.py",
@@ -26,8 +29,8 @@ for dataset_idx in range(len(get_all_prompts())):
     ]
     print(template.format(
         COMMAND=shlex.join(command),
-        NAME=f"persona_generalization-{dataset_name}",
-        IMAGE='ghcr.io/alignmentresearch/repepo:a26aee0-main',
+        NAME=f"persona-generalization-{dataset_name}",
+        IMAGE='ghcr.io/alignmentresearch/repepo:501912a-main',
         COMMIT_HASH=commit_hash,
         PRIORITY='normal-batch',
         CPU="4",
