@@ -21,18 +21,18 @@ from repepo.steering.steerability import (
 
 steering_labels = [
     "baseline",
-    "SYS_positive",
-    "PT_positive",
-    "SYS_negative",
-    "PT_negative",
-    "mean",
+    # "SYS_positive",
+    # "PT_positive",
+    # "SYS_negative",
+    # "PT_negative",
+    # "mean",
 ]
 dataset_labels = [
     "baseline",
-    "SYS_positive",
-    "PT_positive",
-    "SYS_negative",
-    "PT_negative",
+    # "SYS_positive",
+    # "PT_positive",
+    # "SYS_negative",
+    # "PT_negative",
 ]
 
 
@@ -112,6 +112,8 @@ def load_all_results_as_df(experiment_dir) -> pd.DataFrame:
     """Extract raw data from the experiments"""
     dfs = []
     dataset_names = list(get_all_prompts().keys())
+    # survival instinct had some issue 
+    dataset_names.remove("survival-instinct")
     for dataset_name in dataset_names:
         # print(dataset_name)
         df = load_all_results_for_dataset_as_df(dataset_name, experiment_dir)
@@ -133,6 +135,8 @@ def run_load_and_preprocess_results(config: PreprocessConfig):
     model = config.model
     experiment_dir = get_experiment_dir(model)
     dataset_names = list(get_all_prompts().keys())
+    # NOTE: this is a hack as survival instinct had some issue 
+    dataset_names.remove("survival-instinct")
 
     # NOTE: If configured, only process a subset of the datasets
     # Useful for testing.
