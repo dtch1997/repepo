@@ -8,8 +8,9 @@ sns.set_theme()
 
 
 # %%
-model = "llama7b"
+# model = "llama7b"
 # model = 'qwen'
+model = "llama3_70b"
 
 df = pd.read_parquet(f"{model}_steerability.parquet.gzip")
 

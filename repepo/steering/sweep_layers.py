@@ -28,7 +28,7 @@ from repepo.steering.utils.helpers import (
 
 @dataclass
 class SweepLayersResult:
-    steering_vectors: dict[str, dict[int, SteeringVector]]
+    steering_vectors: dict[str, dict[int, SteeringVector]] # dataset -> layer -> steering vector
     multipliers: list[float]
     layers: list[int]
     steering_results: dict[str, dict[int, list[EvalResult]]]
@@ -127,17 +127,18 @@ def sweep_layers(
     force: bool = False,
 ) -> SweepLayersResult:
     pipeline = Pipeline(model, tokenizer, formatter=formatter)
-    steering_vectors = train_steering_vectors_for_sweep(
-        model,
-        tokenizer,
-        pipeline,
-        datasets=datasets,
-        train_split=train_split,
-        layers=layers,
-        show_progress=show_progress,
-        save_progress_dir=save_progress_dir,
-        force=force,
-    )
+    # steering_vectors = train_steering_vectors_for_sweep(
+    #     model,
+    #     tokenizer,
+    #     pipeline,
+    #     datasets=datasets,
+    #     train_split=train_split,
+    #     layers=layers,
+    #     show_progress=show_progress,
+    #     save_progress_dir=save_progress_dir,
+    #     force=force,
+    # )
+    steering_vectors = {}
     steering_results: dict[str, dict[int, list[EvalResult]]] = defaultdict(dict)
     pbar = tqdm(
         total=len(datasets) * len(layers),
@@ -157,7 +158,7 @@ def sweep_layers(
                 steering_results[dataset][layer] = multiplier_results
                 pbar.update(1)
                 continue
-            steering_vector = steering_vectors[dataset][layer]
+            steering_vector = torch.load(save_progress_dir / f"sv_{dataset}_{layer}.pt", map_location="cuda:0")
             multiplier_results = evaluate_steering_vector(
                 pipeline,
                 steering_vector,

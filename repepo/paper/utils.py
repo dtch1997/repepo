@@ -11,7 +11,7 @@ from repepo.experiments.persona_generalization import (
 )
 
 EvalResultSweep = dict[float, EvalResult]  # A sweep over a multiplier
-Model = Literal["llama7b", "qwen", "gemma"]
+Model = Literal["llama7b", "qwen", "gemma", "llama3_70b"]
 
 
 def get_model_full_name(model: Model) -> str:
@@ -19,6 +19,7 @@ def get_model_full_name(model: Model) -> str:
         "qwen": "Qwen-1.5-14b-Chat",
         "llama7b": "Llama-2-7b-Chat",
         "gemma": "Gemma-2-2b-it",
+        "llama3_70b": "Llama-3.1-70b-Chat",
     }
     return name_dict[model]
 

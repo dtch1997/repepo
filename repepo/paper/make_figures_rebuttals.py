@@ -1,3 +1,10 @@
+""" Script to make figures used in rebuttals 
+
+Requires the following to be precomputed:
+- {model}_steerability.parquet.gzip for each model
+
+"""
+
 # %%
 import pandas as pd
 import seaborn as sns
@@ -122,8 +129,59 @@ qwen_steerability_df = compute_steerability_df(qwen_df, "qwen")
 gemma_df = pd.read_parquet("gemma_steerability.parquet.gzip").drop_duplicates()
 gemma_steerability_df = compute_steerability_df(gemma_df, "gemma")
 
+# NOTE: llama3 results need special treatment bc they don't have ood splits
+
+
+def compute_steerability_df_llama3(df: pd.DataFrame, model_name: str):
+    """Get a dataframe with various ID / OOD settings."""
+    # Calculate overall steerability by dataset.
+    # Calculate steerability within each flavour
+    mean_slope = df.groupby(["dataset_name", "steering_label", "dataset_label"])[
+        "slope"
+    ].mean()
+    df = df.merge(
+        mean_slope,
+        on=["dataset_name", "steering_label", "dataset_label"],
+        suffixes=("", "_mean"),
+    )
+
+    # BASE -> BASE
+    steerability_id_df = df[
+        (df.steering_label == "baseline")
+        & (df.dataset_label == "baseline")
+        & (df.multiplier == 0)
+    ][["dataset_name", "slope_mean"]].drop_duplicates()
+    # Rename 'slope_mean' to 'steerability'
+    steerability_id_df = steerability_id_df.rename(
+        columns={"slope_mean": "steerability_id"}
+    )
+
+    steerability_df = steerability_id_df
+
+    print(steerability_df.columns)
+
+    # Save the dataframe for plotting between models
+    steerability_df.to_parquet(
+        f"{model_name}_steerability_summary.parquet.gzip", compression="gzip"
+    )
+    steerability_df = steerability_df.rename(
+        columns={
+            "steerability_id": "BASE -> BASE",
+            "steerability_ood": "SYS_POS -> SYS_NEG",
+            "steerability_base_to_user_neg": "BASE -> USER_NEG",
+            "steerability_base_to_user_pos": "BASE -> USER_POS",
+            "steerability_ood_to_user_neg": "SYS_POS -> USER_NEG",
+            "steerability_ood_to_user_pos": "SYS_NEG -> USER_POS",
+        }
+    )
+
+    return steerability_df
+
+
+llama3_df = pd.read_parquet("llama3_70b_steerability.parquet.gzip").drop_duplicates()
+llama3_steerability_df = compute_steerability_df_llama3(llama3_df, "llama3_70b")
+
 # %%
-print(len(gemma_steerability_df))
 print(gemma_steerability_df.columns)
 print(qwen_steerability_df.columns)
 print(llama_steerability_df.columns)
@@ -136,6 +194,7 @@ def make_cross_model_df(
     llama_steerability_df,
     qwen_steerability_df,
     gemma_steerability_df,
+    llama3_steerability_df,
     select_columns,
 ):
     steerability_df = (
@@ -149,6 +208,11 @@ def make_cross_model_df(
             gemma_steerability_df[select_columns],
             on="dataset_name",
             suffixes=("", "_gemma"),
+        )
+        .merge(
+            llama3_steerability_df[select_columns],
+            on="dataset_name",
+            suffixes=("", "_llama3"),
         )
     )
     # TODO: Why does the gemma name not get updated correctly?
@@ -166,17 +230,11 @@ id_df = make_cross_model_df(
     llama_steerability_df,
     qwen_steerability_df,
     gemma_steerability_df,
+    llama3_steerability_df,
     select_columns=["dataset_name", "BASE -> BASE"],
-)
-ood_df = make_cross_model_df(
-    llama_steerability_df,
-    qwen_steerability_df,
-    gemma_steerability_df,
-    select_columns=["dataset_name", "SYS_POS -> USER_NEG"],
 )
 
 print(id_df.columns)
-print(ood_df.columns)
 
 # %%
 # Scatterplot matrix of steerability between different models, both ID and OOD
@@ -210,6 +268,7 @@ def make_scatterplot_matrix(df, type: str, title):
         get_model_full_name("llama7b"),
         get_model_full_name("qwen"),
         get_model_full_name("gemma"),
+        get_model_full_name("llama3_70b"),
     ]
     # Rename columns
     df = df.rename(
@@ -218,10 +277,12 @@ def make_scatterplot_matrix(df, type: str, title):
             "BASE -> BASE_llama": get_model_full_name("llama7b"),
             "BASE -> BASE_qwen": get_model_full_name("qwen"),
             "BASE -> BASE_gemma": get_model_full_name("gemma"),
+            "BASE -> BASE_llama3": get_model_full_name("llama3_70b"),
             # OOD
-            "SYS_POS -> USER_NEG_llama": get_model_full_name("llama7b"),
-            "SYS_POS -> USER_NEG_qwen": get_model_full_name("qwen"),
-            "SYS_POS -> USER_NEG_gemma": get_model_full_name("gemma"),
+            # "SYS_POS -> USER_NEG_llama": get_model_full_name("llama7b"),
+            # "SYS_POS -> USER_NEG_qwen": get_model_full_name("qwen"),
+            # "SYS_POS -> USER_NEG_gemma": get_model_full_name("gemma"),
+            # "SYS_POS -> USER_NEG_llama3": get_model_full_name("llama3_70b"),
         }
     )
 
@@ -236,4 +297,3 @@ def make_scatterplot_matrix(df, type: str, title):
 
 
 make_scatterplot_matrix(id_df, "id", "Steerability between different models (ID)")
-make_scatterplot_matrix(ood_df, "ood", "Steerability between different models (OOD)")

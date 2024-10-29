@@ -192,35 +192,35 @@ def run_persona_cross_steering_experiment(
     test_dataset_mapping = {
         "baseline": test_ds,
     }
-    for persona in non_baseline_personas:
-        steering_vectors["SYS_" + persona] = (
-            train_steering_vector_for_persona_and_dataset(
-                model,
-                tokenizer,
-                persona,
-                dataset_name=dataset_name,
-                train_split=train_split,
-                formatter_name=formatter_name,
-                layer=layer,
-                use_sys_prompt=True,
-                show_progress=show_progress,
-            )
-        )
-        test_dataset_mapping["SYS_" + persona] = test_ds
-        steering_vectors["PT_" + persona] = (
-            train_steering_vector_for_persona_and_dataset(
-                model,
-                tokenizer,
-                persona,
-                formatter_name=formatter_name,
-                dataset_name=dataset_name,
-                train_split=train_split,
-                layer=layer,
-                use_sys_prompt=False,
-                show_progress=show_progress,
-            )
-        )
-        test_dataset_mapping["PT_" + persona] = test_ds
+    # for persona in non_baseline_personas:
+    #     steering_vectors["SYS_" + persona] = (
+    #         train_steering_vector_for_persona_and_dataset(
+    #             model,
+    #             tokenizer,
+    #             persona,
+    #             dataset_name=dataset_name,
+    #             train_split=train_split,
+    #             formatter_name=formatter_name,
+    #             layer=layer,
+    #             use_sys_prompt=True,
+    #             show_progress=show_progress,
+    #         )
+    #     )
+    #     test_dataset_mapping["SYS_" + persona] = test_ds
+    #     steering_vectors["PT_" + persona] = (
+    #         train_steering_vector_for_persona_and_dataset(
+    #             model,
+    #             tokenizer,
+    #             persona,
+    #             formatter_name=formatter_name,
+    #             dataset_name=dataset_name,
+    #             train_split=train_split,
+    #             layer=layer,
+    #             use_sys_prompt=False,
+    #             show_progress=show_progress,
+    #         )
+    #     )
+    #     test_dataset_mapping["PT_" + persona] = test_ds
     mean_layer_activation = torch.stack(
         [sv.layer_activations[layer] for sv in steering_vectors.values()]
     ).mean(dim=0)
@@ -450,7 +450,7 @@ def run_persona_generalization_experiment(
 
     else:
         model = AutoModelForCausalLM.from_pretrained(
-            config.model_name, torch_dtype=torch.float16, device_map=0
+            config.model_name, torch_dtype=torch.bfloat16, device_map="auto"
         )
         tokenizer = AutoTokenizer.from_pretrained(config.model_name)
 
@@ -477,6 +477,7 @@ def run_persona_generalization_experiment(
     all_persona_prompts = get_all_prompts()
 
     if sge_task_id is not None:
+        # Select a single dataset
         persona_prompt = list(all_persona_prompts.keys())[sge_task_id]
         all_persona_prompts = {persona_prompt: all_persona_prompts[persona_prompt]}
 

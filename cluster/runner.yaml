@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {NAME}
+  labels:
+    kueue.x-k8s.io/queue-name: farai
+spec:
+  suspend: true
+  backoffLimit: 0  # Never retry the pod on error
+  # Make sure to retry the pod if the pod/job is preempted
+  podFailurePolicy:
+    rules:
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+
+  template:
+    metadata:
+      generateName: {NAME}
+    spec:
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+      priorityClassName: {PRIORITY}
+      containers:
+      - name: devbox-container
+        image: "{IMAGE}"
+        imagePullPolicy: Always
+        command:
+          - bash
+          - -c
+          - |
+            git pull
+            git checkout {COMMIT_HASH}
+            git submodule update --recursive
+            {COMMAND}
+        resources:
+          requests:
+            cpu: {CPU}
+          limits:
+            memory: {MEMORY}
+            nvidia.com/gpu: {GPU}
+        env:
+        - name: OMP_NUM_THREADS
+          value: {OMP_NUM_THREADS}
+        - name: HF_HOME
+          value: "/hf-cache/hf_home"
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: huggingface
+              key: token
+        volumeMounts:
+        - name: training
+          mountPath: {TRAINING_MOUNT}
+        - name: hf-cache
+          mountPath: /hf-cache
+        - name: dshm
+          mountPath: /dev/shm
+      volumes:
+      - name: training
+        persistentVolumeClaim:
+          claimName: az-repepo
+      - name: hf-cache
+        persistentVolumeClaim:
+          claimName: repepo-local
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 10Gi
+      restartPolicy: Never
