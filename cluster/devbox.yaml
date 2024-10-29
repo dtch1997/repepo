@@ -50,6 +50,7 @@ spec:
             secretKeyRef:
               name: huggingface
               key: token
+              optional: true # Added this for debug purposes
         volumeMounts:
         - name: training
           mountPath: /training

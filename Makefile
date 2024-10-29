@@ -133,7 +133,8 @@ release: release/main
 devbox/%:
 	git push
 	CURRENT_NAMESPACE="$$(kubectl config view --minify -o jsonpath='{..namespace}' | cut -d'-' -f2)"
-	python -c "print(open('cluster/devbox.yaml').read().format(NAME='${DEVBOX_NAME}', IMAGE='${PROJECT_URL}:${RELEASE_PREFIX}-$*', COMMIT_HASH='${COMMIT_FULL}', CPU='${CPU}', MEMORY='${MEMORY}', GPU='${GPU}', USER_ID=${DEVBOX_UID}, GROUP_ID=${DEVBOX_UID}, WANDB_PROJECT='${IMAGE_NAME}'))" | kubectl create -f -
+	kubectl --insecure-skip-tls-verify delete job ${DEVBOX_NAME}
+	python -c "print(open('cluster/devbox.yaml').read().format(NAME='${DEVBOX_NAME}', IMAGE='${PROJECT_URL}:${RELEASE_PREFIX}-$*', COMMIT_HASH='${COMMIT_FULL}', CPU='${CPU}', MEMORY='${MEMORY}', GPU='${GPU}', USER_ID=${DEVBOX_UID}, GROUP_ID=${DEVBOX_UID}, WANDB_PROJECT='${IMAGE_NAME}'))" | kubectl --insecure-skip-tls-verify create -f -
 devbox: devbox/main
 	true
 
