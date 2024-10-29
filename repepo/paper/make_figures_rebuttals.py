@@ -210,6 +210,7 @@ def make_scatterplot_matrix(df, type: str, title):
         get_model_full_name("llama7b"),
         get_model_full_name("qwen"),
         get_model_full_name("gemma"),
+        get_model_full_name('llama3_70b'),
     ]
     # Rename columns
     df = df.rename(
@@ -218,10 +219,12 @@ def make_scatterplot_matrix(df, type: str, title):
             "BASE -> BASE_llama": get_model_full_name("llama7b"),
             "BASE -> BASE_qwen": get_model_full_name("qwen"),
             "BASE -> BASE_gemma": get_model_full_name("gemma"),
+            "BASE -> BASE": get_model_full_name('llama3_70b'),
             # OOD
             "SYS_POS -> USER_NEG_llama": get_model_full_name("llama7b"),
             "SYS_POS -> USER_NEG_qwen": get_model_full_name("qwen"),
             "SYS_POS -> USER_NEG_gemma": get_model_full_name("gemma"),
+            "SYS_POS -> USER_NEG": get_model_full_name('llama3_70b'),
         }
     )
 
@@ -236,4 +239,4 @@ def make_scatterplot_matrix(df, type: str, title):
 
 
 make_scatterplot_matrix(id_df, "id", "Steerability between different models (ID)")
-make_scatterplot_matrix(ood_df, "ood", "Steerability between different models (OOD)")
+# make_scatterplot_matrix(ood_df, "ood", "Steerability between different models (OOD)")
