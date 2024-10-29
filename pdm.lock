@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:c5797dff6b3e92aa90f9d489cc8a6b21db3bb0dbcb1c18f8a40e7e29cf0668e7"
+content_hash = "sha256:2be9eac93f38dc0f4ffbfcd2a4c1dff3ab7a82849fe944dcb319be6671c8a103"
 
 [[metadata.targets]]
 requires_python = "~=3.11"
@@ -359,23 +359,27 @@ files = [
 
 [[package]]
 name = "blis"
-version = "0.7.11"
+version = "1.0.1"
 summary = ""
 dependencies = [
     "numpy",
 ]
 files = [
-    {file = "blis-0.7.11-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:1b68df4d01d62f9adaef3dad6f96418787265a6878891fc4e0fabafd6d02afba"},
-    {file = "blis-0.7.11-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:162e60d941a8151418d558a94ee5547cb1bbeed9f26b3b6f89ec9243f111a201"},
-    {file = "blis-0.7.11-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:686a7d0111d5ba727cd62f374748952fd6eb74701b18177f525b16209a253c01"},
-    {file = "blis-0.7.11-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0421d6e44cda202b113a34761f9a062b53f8c2ae8e4ec8325a76e709fca93b6e"},
-    {file = "blis-0.7.11-cp311-cp311-win_amd64.whl", hash = "sha256:0dc9dcb3843045b6b8b00432409fd5ee96b8344a324e031bfec7303838c41a1a"},
-    {file = "blis-0.7.11-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:dadf8713ea51d91444d14ad4104a5493fa7ecc401bbb5f4a203ff6448fadb113"},
-    {file = "blis-0.7.11-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5bcdaf370f03adaf4171d6405a89fa66cb3c09399d75fc02e1230a78cd2759e4"},
-    {file = "blis-0.7.11-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7de19264b1d49a178bf8035406d0ae77831f3bfaa3ce02942964a81a202abb03"},
-    {file = "blis-0.7.11-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8ea55c6a4a60fcbf6a0fdce40df6e254451ce636988323a34b9c94b583fc11e5"},
-    {file = "blis-0.7.11-cp312-cp312-win_amd64.whl", hash = "sha256:5a305dbfc96d202a20d0edd6edf74a406b7e1404f4fa4397d24c68454e60b1b4"},
-    {file = "blis-0.7.11.tar.gz", hash = "sha256:cec6d48f75f7ac328ae1b6fbb372dde8c8a57c89559172277f66e01ff08d4d42"},
+    {file = "blis-1.0.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:5076b33c04b864709d0d22c40e9f57dc06ee9c2bd2f7ab72b10ffa74a470d9e6"},
+    {file = "blis-1.0.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:b6b1f791fa3eeb267b97f5877a6bdcc09c868603b84422acf7fd138ec9b96c3c"},
+    {file = "blis-1.0.1-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3c249649c0f7c06b2368a9d5c6b12209255981e96304c6140a3beffaff6cae62"},
+    {file = "blis-1.0.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:632580f1d3ff44fb36e8a21a9457f23aeaff5d35d108bd2ef0393b9f6d85de93"},
+    {file = "blis-1.0.1-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:64393297304712818020734fa75735f4543243eefc44858ef3c99375d5bb029a"},
+    {file = "blis-1.0.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:d3b3293c795007dbf4ba8ceaf3184a6bf510ca3252d0229607792f52e8702bb2"},
+    {file = "blis-1.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:60e1b03663bee7a37b4b3131b4179d283868ccb10a3260fed01dd980866bc49f"},
+    {file = "blis-1.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:e031b6cf0dcc026d697a860bf53bc02b5f26ddb5a3ecd23933c51cf22803825b"},
+    {file = "blis-1.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f860c1723928c40d4920a05130d21a600dcb5fbf07aa1fe8f4bdff2c4a5238a5"},
+    {file = "blis-1.0.1-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:399196506829c278836028511f351f32f2c992263e91ef876c6bc41dc2483d3d"},
+    {file = "blis-1.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ce20590af2c6ff02d66ffed4148ea8ea1e3f772febb8471e3e58614e71d428c1"},
+    {file = "blis-1.0.1-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:e6ad60d9cd81523429f46109b31e3c4bbdd0dc28a328d6dbdcdff8447a53a61e"},
+    {file = "blis-1.0.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:eb553b233fc815957c5bbb5d2fc2f6d2b199c123ec15c5000db935662849e543"},
+    {file = "blis-1.0.1-cp312-cp312-win_amd64.whl", hash = "sha256:376188493f590c4310ca534b687ef96c21c8224eb1ef4a0420703eebe175d6fa"},
+    {file = "blis-1.0.1.tar.gz", hash = "sha256:91739cd850ca8100dcddbd8ad66942cab20c9473cdea9a35b165b11d7b8d91e4"},
 ]
 
 [[package]]
@@ -3739,7 +3743,7 @@ files = [
 
 [[package]]
 name = "spacy"
-version = "3.7.5"
+version = "3.8.2"
 summary = ""
 dependencies = [
     "catalogue",
@@ -3763,17 +3767,17 @@ dependencies = [
     "weasel",
 ]
 files = [
-    {file = "spacy-3.7.5-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:cd93c34bf2a02bbed7df73d42aed8df5e3eb9688c4ea84ec576f740ba939cce5"},
-    {file = "spacy-3.7.5-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:190ba0032a5efdb138487c587c0ebb7a98f86adb917f464b252ee8766b8eec4a"},
-    {file = "spacy-3.7.5-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:38de1c9bbb73b8cdfea2dd6e57450f093c1a1af47515870c1c8640b85b35ab16"},
-    {file = "spacy-3.7.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3dad4853950a2fe6c7a0bdfd791a762d1f8cedd2915c4ae41b2e0ca3a850eefc"},
-    {file = "spacy-3.7.5-cp311-cp311-win_amd64.whl", hash = "sha256:4e00d076871af784c2e43185a71ee676b58893853a05c5b81717b8af2b666c07"},
-    {file = "spacy-3.7.5-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:bf54c3c2425428b328b53a65913d47eb4cb27a1429aa4e8ed979ffc97d4663e0"},
-    {file = "spacy-3.7.5-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:4145cea7f9814fa7d86b2028c2dd83e02f13f80d5ac604a400b2f7d7b26a0e8c"},
-    {file = "spacy-3.7.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:262f8ebb71f7ed5ffe8e4f384b2594b7a296be50241ce9fbd9277b5da2f46f38"},
-    {file = "spacy-3.7.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:faa1e2b6234ae33c0b1f8dfa5a8dcb66fb891f19231725dfcff4b2666125c250"},
-    {file = "spacy-3.7.5-cp312-cp312-win_amd64.whl", hash = "sha256:07677e270a6d729453cc04b5e2247a96a86320b8845e6428d9f90f217eff0f56"},
-    {file = "spacy-3.7.5.tar.gz", hash = "sha256:a648c6cbf2acc7a55a69ee9e7fa4f22bdf69aa828a587a1bc5cfff08cf3c2dd3"},
+    {file = "spacy-3.8.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:7e5d48918028cff6d69d9915dad64f0e32ebd5f1e4f1fa81a2e17e56a6f61e05"},
+    {file = "spacy-3.8.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:455f845b88ed795d7e595070ee84b65b3ea382357811e09fc744789a20b7b5f7"},
+    {file = "spacy-3.8.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:05d8a4cbfdb90049053564790a0d12fa790c9471580cb6a1f8bdc2b6e74703dd"},
+    {file = "spacy-3.8.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:e3c3e67f786f1410d08420ffcaba0f80dc58387ab6172dcdac1a73353d3a85c7"},
+    {file = "spacy-3.8.2-cp311-cp311-win_amd64.whl", hash = "sha256:cfe0c4558f635c67677e36d9a315f51d51f824870589c4846c95e880042a2ceb"},
+    {file = "spacy-3.8.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:0ce56f3c46dd4cebb5aaa3a40966e813b7fc6a540d547788a7d00cca10cd60a9"},
+    {file = "spacy-3.8.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:09faa873cf23d5136b1c1ce6378054a885f650fda96e1655a3ab49e2e7fdd15b"},
+    {file = "spacy-3.8.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:33e992a11de9b727c61288541945c0ffc37ed998aca76bfd557937c2c195d7d4"},
+    {file = "spacy-3.8.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:be962a8188fb20d6c2065e1e865d1799ebbf544c1af67ab8c75cb279bf5448c7"},
+    {file = "spacy-3.8.2-cp312-cp312-win_amd64.whl", hash = "sha256:04546c5f5ed607387d4e9ecf57614e90c5784866a10a3c6dbe5b06e9b18a2f29"},
+    {file = "spacy-3.8.2.tar.gz", hash = "sha256:4b37ebd25ada4059b0dc9e0893e70dde5df83485329a068ef04580e70892a65d"},
 ]
 
 [[package]]
@@ -3946,7 +3950,7 @@ files = [
 
 [[package]]
 name = "thinc"
-version = "8.2.4"
+version = "8.3.2"
 summary = ""
 dependencies = [
     "blis",
@@ -3963,17 +3967,17 @@ dependencies = [
     "wasabi",
 ]
 files = [
-    {file = "thinc-8.2.4-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ccc58e47bc285e9afbf92ed6104f555abfa285a4b92198d955d344c4c1942607"},
-    {file = "thinc-8.2.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:baa4af044bfcaf9df6a02d6c6d6e96c960da540478a522daabfbde8923df3554"},
-    {file = "thinc-8.2.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0b0e34bf322516a039e45c1da72eb82bcc97eb1f7c232b66b88f0c86f15a1202"},
-    {file = "thinc-8.2.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ebc8ab48d19cd69ad9a0de2bbe49b7c20a91150faeb119638bea4c502c52b77f"},
-    {file = "thinc-8.2.4-cp311-cp311-win_amd64.whl", hash = "sha256:9f8c6c006b7cbe3ebb543c224159b004b52a8ff8922615577656e1458ee4bbf0"},
-    {file = "thinc-8.2.4-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:997a1a399af074b34e25695f37ad48f8437e7c150705891f4db89aeb430df35a"},
-    {file = "thinc-8.2.4-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:8e28ba753cdf925ac25b52ea6c4baf5104c6ed6874d9e3dfe768ff98d5118db1"},
-    {file = "thinc-8.2.4-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b5c3874361a1d3c469dd7c9054d4d16b7afcf791e9c47705766d690685fe702d"},
-    {file = "thinc-8.2.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c4a22e76e4651fb6b209cfba2e1c167e8537286ae35fb87769a17af491f995b5"},
-    {file = "thinc-8.2.4-cp312-cp312-win_amd64.whl", hash = "sha256:ebfd9d79d2bdadec551cb9ca8c7fdeacb56db642158c56cdb039de47e9aad995"},
-    {file = "thinc-8.2.4.tar.gz", hash = "sha256:9383b39f286291519ebbb6454bab76404992599b0cbdfaec56b2f985023186a7"},
+    {file = "thinc-8.3.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:12e998780f40d36d4d5f3b760ef60ac60637643f2965ebe1948801ba44261a03"},
+    {file = "thinc-8.3.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:54a5411daaca1718a73982767b714c1d0a5e142de73c916367baf1c13d79e8f0"},
+    {file = "thinc-8.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ed88275031dcaadd85d3deeb8eb12d1ec0ee6b4679e24cc893c81a30409ac4ee"},
+    {file = "thinc-8.3.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:ef0868e55108f05300f4508e6896ae4e9492f3415220e3da65579f693225816e"},
+    {file = "thinc-8.3.2-cp311-cp311-win_amd64.whl", hash = "sha256:813942d59881c4e4165ce95fef37ba30ce3366dac43289697d13a952a8208854"},
+    {file = "thinc-8.3.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:bce8ca6a62ab82f4595210ba7f18bbdb6e33561277c59060f2f04bdb93ac4fbc"},
+    {file = "thinc-8.3.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:b014a282e9ea6330a678b472d74f479c7a38168cbf570bdc740e50d960dd78a1"},
+    {file = "thinc-8.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a80384c228ac6bbaf4ab7f7c9ca4a53c6053f2fb37b2b50c4730b9057f07e9fd"},
+    {file = "thinc-8.3.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:ae309b0788478984eafeac4e3c33a2de84a6ea251fd1e3528d8018d4b4347247"},
+    {file = "thinc-8.3.2-cp312-cp312-win_amd64.whl", hash = "sha256:fe8dac2749db23f8ebf09d7a7f29e1b99d67e7d7b183e106aa2b6c9b570f3015"},
+    {file = "thinc-8.3.2.tar.gz", hash = "sha256:3e8ef69eac89a601e11d47fc9e43d26ffe7ef682dcf667c94ff35ff690549aeb"},
 ]
 
 [[package]]
